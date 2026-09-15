@@ -1,0 +1,300 @@
+\documentclass[11pt]{report}
+
+% ============================================================
+% PROJECT DOCUMENTATION TEMPLATE
+% Structure based on the Sales Assist sample documentation.
+% Guidance boxes flag the most common Iteration 1 pitfalls
+% (see pitfalls.pdf) at the point in the document where teams
+% most often make them. Delete the guidance boxes once you are
+% confident a section is complete -- do not leave them in your
+% final submission.
+% ============================================================
+
+\usepackage[margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{tcolorbox}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\tcbuselibrary{skins,breakable}
+
+% ---------- Guidance box (remove before final submission) ----------
+\newtcolorbox{guidance}[1][]{
+  breakable,
+  colback=yellow!8,
+  colframe=orange!70!black,
+  fonttitle=\bfseries,
+  title={Watch out: #1},
+  boxrule=0.6pt,
+  arc=2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt
+}
+
+% ---------- Fill-in placeholder ----------
+\newcommand{\fillin}[1]{\textcolor{gray!70}{\emph{[#1]}}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{\leftmark}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\chapter}[hang]{\normalfont\huge\bfseries}{\thechapter.}{1em}{}
+\setlist[itemize]{leftmargin=1.5em}
+
+% ============================================================
+\title{\textbf{\fillin{Project Name}\\Documentation}}
+\author{\fillin{Team Number}\\
+\fillin{Member A}\\ \fillin{Member B}\\ \fillin{Member C}\\ \fillin{Member D}\\ \fillin{Member E}}
+\date{\fillin{Date}}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+% ============================================================
+\chapter*{Change Log}
+\addcontentsline{toc}{chapter}{Change Log}
+
+\begin{guidance}[Treating early iterations as "draft"]
+Do not use placeholder text or "to be decided" sections anywhere in this
+document. Each iteration should be written as a complete, reviewable
+deliverable -- assume it is final unless a later iteration explicitly
+revises it.
+\end{guidance}
+
+\textbf{Iteration 1:}
+\begin{itemize}
+  \item \fillin{What was created/changed in Iteration 1}
+\end{itemize}
+
+\textbf{Iteration 2:}
+\begin{itemize}
+  \item \fillin{What was created/changed in Iteration 2}
+\end{itemize}
+
+\textbf{Iteration 3:}
+\begin{itemize}
+  \item \fillin{What was created/changed in Iteration 3}
+\end{itemize}
+
+\textbf{Final Iteration:}
+\begin{itemize}
+  \item \fillin{What was created/changed in the Final Iteration}
+\end{itemize}
+
+% ============================================================
+\chapter{Requirements Analysis}
+
+\begin{guidance}[Analysis before implementation]
+Finish this section and the Use Cases section \emph{before} you discuss
+any classes, code, or UI screens elsewhere in the document. Every
+planned feature must trace to at least one requirement and one use case.
+Avoid phrases like "we plan to implement \ldots" without first explaining
+\emph{why} the feature is needed from the user's perspective.
+\end{guidance}
+
+\textbf{Customer / Stakeholder Perspective:}
+\fillin{Describe who the end users are and what they are trying to
+achieve, in their own words.}
+
+\textbf{Functional Requirements:}
+\begin{itemize}
+  \item \fillin{Functional requirement 1}
+  \item \fillin{Functional requirement 2}
+  \item \fillin{Functional requirement 3}
+\end{itemize}
+
+\textbf{Non-Functional Requirements / Environment:}
+\begin{itemize}
+  \item \fillin{Platform, performance, deployment constraints, etc.}
+\end{itemize}
+
+% ============================================================
+\chapter{User Story}
+
+\begin{guidance}[Requirements traceability]
+Every requirement above should be reflected in at least one user story,
+and every user story should later map to a use case. Keep IDs or
+consistent wording so a reader can trace a requirement all the way
+through to the System Sequence Diagrams.
+\end{guidance}
+
+\begin{itemize}
+  \item As a \fillin{role}, I want to \fillin{goal} so that \fillin{benefit}.
+  \item As a \fillin{role}, I want to \fillin{goal} so that \fillin{benefit}.
+  \item As a \fillin{role}, I want to \fillin{goal} so that \fillin{benefit}.
+\end{itemize}
+
+% ============================================================
+\chapter{Key Technical Challenges}
+
+\begin{itemize}
+  \item \fillin{Challenge 1 and how it will be approached}
+  \item \fillin{Challenge 2 and how it will be approached}
+\end{itemize}
+
+\section*{Key Risks}
+\begin{itemize}
+  \item \fillin{Risk 1}
+  \item \fillin{Risk 2}
+\end{itemize}
+
+\section*{Competition}
+\begin{itemize}
+  \item \fillin{Competitor / existing solution 1 -- what it does, what it lacks}
+  \item \fillin{Competitor / existing solution 2}
+\end{itemize}
+
+% ============================================================
+\chapter{What's New?}
+
+\fillin{Summarize what is novel about this project compared to
+existing solutions listed under Competition.}
+
+% ============================================================
+\chapter{Workflow}
+
+\begin{guidance}[System boundary]
+Make sure the workflow diagram clearly separates what the \emph{actor}
+does from what the \emph{system} does. Actors should never be shown
+performing system responsibilities (e.g., "system authenticates," not
+"user authenticates"), and external systems should not be drawn as if
+they were internal components.
+\end{guidance}
+
+\fillin{Insert workflow / activity diagram here, e.g.\\
+\texttt{\textbackslash includegraphics[width=\textbackslash textwidth]\{workflow.png\}}}
+
+% ============================================================
+\chapter{Use Cases}
+
+\begin{guidance}[Use cases are not UI click-throughs]
+Do not write use cases as a sequence of UI actions ("user clicks
+button, system shows page"). Describe the \emph{system's
+responsibilities and guarantees} -- business rules, alternative flows,
+and constraints -- not screen navigation. UI details will change over
+time; system behavior should be the stable part of the documentation.
+\end{guidance}
+
+\section{\fillin{Subsystem / Module Name (e.g., Client Application)}}
+
+\textbf{Actor:} \fillin{Actor name}
+
+\textbf{Use Cases:} \fillin{Use case 1}, \fillin{Use case 2}, \fillin{Use case 3}
+
+\textbf{Actor Description:} \fillin{One or two sentences describing the actor.}
+
+\subsection*{Use Case: \fillin{Name}}
+\fillin{Short description of the use case.}
+
+\begin{longtable}{|p{0.48\textwidth}|p{0.48\textwidth}|}
+\hline
+\textbf{Actor: \fillin{Actor}} & \textbf{System: \fillin{System Name}} \\
+\hline
+1. \fillin{Actor step} & \\
+\hline
+ & 2. \fillin{System step} \\
+\hline
+3. \fillin{Actor step} & \\
+\hline
+\end{longtable}
+
+\bigskip
+\textit{Repeat the subsection above for each use case, and repeat the
+section above for each subsystem/actor group (e.g., a Server /
+Manager-facing module, following the pattern of the Client module).}
+
+% ============================================================
+\chapter{Use Case Diagrams}
+
+\fillin{Insert use case diagram(s) here, one per subsystem, e.g.\\
+\texttt{\textbackslash includegraphics[width=0.8\textbackslash textwidth]\{use\_case\_diagram.png\}}}
+
+% ============================================================
+\chapter{System Sequence Diagram}
+
+\begin{guidance}[Consistency with use cases]
+Every scenario shown here should correspond to a use case described
+earlier, using the same name. Missing or renamed scenarios break
+traceability between Use Cases and SSDs.
+\end{guidance}
+
+\section*{\fillin{Scenario Name}}
+\fillin{Insert system sequence diagram here.}
+
+\begin{longtable}{|p{0.48\textwidth}|p{0.48\textwidth}|}
+\hline
+\textbf{Actor} & \textbf{System} \\
+\hline
+1. \fillin{step} & \\
+\hline
+ & 2. *\fillin{system response} \\
+\hline
+3. \fillin{step} & \\
+\hline
+\end{longtable}
+
+\bigskip
+\textit{Repeat for each scenario.}
+
+% ============================================================
+\chapter{Domain Model}
+
+\begin{guidance}[Domain model is not a class diagram]
+Use only nouns from the problem statement as domain classes. Do not
+include methods, data types, UI classes, or persistence/database
+details -- those belong to design, not analysis. Show entities and the
+associations/multiplicities between them, not implementation.
+\end{guidance}
+
+\fillin{Insert domain model diagram here, e.g.\\
+\texttt{\textbackslash includegraphics[width=\textbackslash textwidth]\{domain\_model.png\}}}
+
+% ============================================================
+\chapter{Test Cases}
+
+\begin{guidance}[Traceability of tests]
+Each test case should reference the requirement or use case it
+verifies. Keep test case IDs consistent across iterations so gaps in
+coverage are easy to spot.
+\end{guidance}
+
+\section{Test Cases for Iteration 1}
+
+\textbf{Target Users:} \fillin{Who}
+
+\textbf{What is covered in the tests:}
+\begin{enumerate}
+  \item \fillin{Area of functionality covered}
+\end{enumerate}
+
+\subsection*{Test Case: \fillin{ID, e.g., T1}}
+\begin{itemize}
+  \item \textbf{Description:} \fillin{What this test checks}
+  \item \textbf{Action:} \fillin{Function/action exercised}
+  \item \textbf{Related Requirements:} \fillin{Preconditions}
+  \item \textbf{Expected Result:} \fillin{Expected behavior}
+  \item \textbf{Test Result:} \fillin{Actual behavior observed}
+  \item \textbf{Status:} \fillin{Pass / Fail}
+\end{itemize}
+
+\bigskip
+\textit{Repeat the Test Case block above for each test in this iteration.}
+
+\section{Test Cases for Iteration 2}
+\fillin{Same structure as Iteration 1.}
+
+\section{Test Cases for Iteration 3}
+\fillin{Same structure as Iteration 1.}
+
+\section{Test Cases for Final Iteration}
+\fillin{Same structure as Iteration 1.}
+
+\end{document}

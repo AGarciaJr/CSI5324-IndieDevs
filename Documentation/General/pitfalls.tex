@@ -1,0 +1,144 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\title{\textbf{Iteration 1 -- Common Documentation Pitfalls}}
+\author{\textit{Read Carefully}}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+Iteration 1 is the foundation of your entire project. Most major project issues originate here. The following mistakes are the most common reasons teams lose points in Iteration 1.
+
+\section*{1. Jumping to Implementation Without Solid Analysis}
+
+\subsection*{What we often see}
+\begin{itemize}[noitemsep]
+    \item UI sketches or screenshots, but unclear requirements
+    \item Classes or code discussed before use cases are complete
+    \item ``We plan to implement \dots'' without explaining why
+\end{itemize}
+
+\subsection*{Why this fails}
+\begin{itemize}[noitemsep]
+    \item Iteration 1 is analysis-first, not implementation-first
+    \item Weak analysis leads to redesign later (and lost time)
+\end{itemize}
+
+\subsection*{How to avoid}
+\begin{itemize}[noitemsep]
+    \item Finish requirements and use cases before discussing classes
+    \item Ensure every planned feature appears in at least one use case
+\end{itemize}
+
+\section*{2. Use Cases That Are Just UI Click Steps}
+
+\subsection*{What we often see}
+\begin{itemize}[noitemsep]
+    \item ``User clicks button $\rightarrow$ system shows page''
+    \item No business rules, no alternatives, no constraints
+\end{itemize}
+
+\subsection*{Why this fails}
+\begin{itemize}[noitemsep]
+    \item Use cases describe system behavior, not UI navigation
+    \item UI details change; system responsibilities should not
+\end{itemize}
+
+\subsection*{How to avoid}
+\begin{itemize}[noitemsep]
+    \item Focus on what the system guarantees
+\end{itemize}
+
+\section*{3. Missing or Weak System Boundary}
+
+\subsection*{What we often see}
+\begin{itemize}[noitemsep]
+    \item Actors doing system work
+    \item External systems treated as internal components
+    \item No clear distinction between user and system responsibility
+\end{itemize}
+
+\subsection*{Why this fails}
+\begin{itemize}[noitemsep]
+    \item System boundary defines what you are responsible for building
+    \item Unclear boundaries cause inconsistent diagrams and scope creep
+\end{itemize}
+
+\subsection*{How to avoid}
+\begin{itemize}[noitemsep]
+    \item Explicitly define actors and system scope
+\end{itemize}
+
+\section*{4. Domain Model that Looks Like a Class Diagram}
+
+\subsection*{What we often see}
+\begin{itemize}[noitemsep]
+    \item Methods, data types, or technical classes in the domain model
+    \item UI or database concepts mixed in
+\end{itemize}
+
+\subsection*{Why this fails}
+\begin{itemize}[noitemsep]
+    \item Domain models represent business concepts, not implementation
+    \item Premature design hides real domain complexity
+\end{itemize}
+
+\subsection*{How to avoid}
+\begin{itemize}[noitemsep]
+    \item Use nouns from the problem statement
+    \item No methods, no UI classes, no persistence details
+\end{itemize}
+
+\section*{5. Treating Iteration 1 as ``Draft'' Documentation}
+
+\subsection*{What we often see}
+\begin{itemize}[noitemsep]
+    \item Placeholder text
+    \item ``To be decided'' sections
+    \item Sloppy diagrams expecting later fixes
+\end{itemize}
+
+\subsection*{Why this fails}
+\begin{itemize}[noitemsep]
+    \item Iteration 1 is graded as a complete analysis deliverable
+    \item Later iterations build on this foundation
+\end{itemize}
+
+\subsection*{How to avoid}
+\begin{itemize}[noitemsep]
+    \item Write Iteration 1 as if it will be reviewed by a client
+    \item Assume all sections are final unless explicitly revised later
+\end{itemize}
+
+\section*{6. Poor Traceability and Consistency across Artifacts}
+
+\subsection*{What we often see}
+\begin{itemize}[noitemsep]
+    \item Requirements not reflected in use cases
+    \item Use cases not appearing in SSDs
+    \item No clear mapping between artifacts
+\end{itemize}
+
+\subsection*{Why this fails}
+\begin{itemize}[noitemsep]
+    \item Traceability and consistency are core learning objectives of this course
+\end{itemize}
+
+\subsection*{How to avoid}
+\begin{itemize}[noitemsep]
+    \item \textbf{Cross-check:} Requirements $\rightarrow$ Use Cases $\rightarrow$ SSDs $\rightarrow$ Operation Contracts
+    \item Use consistent naming and IDs
+\end{itemize}
+
+\section*{Final Reminder for Iteration 1}
+
+If Iteration 1 is weak, Iteration 2 and 3 will suffer. Strong teams invest time here and save effort later.
+
+\textbf{Iteration 1 success} = Clear requirements + solid use cases + correct system boundary.
+
+\end{document}
