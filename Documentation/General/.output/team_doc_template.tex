@@ -116,6 +116,17 @@ achieve, in their own words.}
   \item \fillin{Platform, performance, deployment constraints, etc.}
 \end{itemize}
 
+\section*{Requirements Clarification Questions}
+\begin{guidance}[Track open questions]
+List any clarification questions your team has raised with the client
+or instructor, and the answers once given. Update this list every
+iteration rather than deleting resolved items -- it shows the grader
+your requirements evolved deliberately.
+\end{guidance}
+\begin{itemize}
+  \item \textbf{Q:} \fillin{Question} \\ \textbf{A:} \fillin{Answer, or "Pending"}
+\end{itemize}
+
 % ============================================================
 \chapter{User Story}
 
@@ -183,33 +194,175 @@ and constraints -- not screen navigation. UI details will change over
 time; system behavior should be the stable part of the documentation.
 \end{guidance}
 
-\section{\fillin{Subsystem / Module Name (e.g., Client Application)}}
+\begin{guidance}[Fully-dressed format required]
+Each team member is responsible for exactly 3 use cases in
+\emph{fully-dressed} form (Primary Actor, Preconditions, Postconditions,
+Main Success Scenario, Extensions). A one-line summary or a bare
+actor/system table is not sufficient for this deliverable.
+\end{guidance}
 
-\textbf{Actor:} \fillin{Actor name}
+\section*{Actors Overview}
+\begin{itemize}
+  \item \textbf{Fan} -- discovers and follows artists, messages them, and books events.
+  \item \textbf{Artist} -- manages a public profile, proposes events, and communicates with fans.
+  \item \textbf{Admin} -- moderates content and accounts by reviewing user-filed reports.
+  \item \fillin{System actor (e.g., Payment Processor, Push Notification Service) -- add if/when identified}
+\end{itemize}
 
-\textbf{Use Cases:} \fillin{Use case 1}, \fillin{Use case 2}, \fillin{Use case 3}
+% ------------------------------------------------------------
+\section{\fillin{Team Member Name} -- Use Cases}
 
-\textbf{Actor Description:} \fillin{One or two sentences describing the actor.}
+\subsection{UC: Search for Artist -- Fan}
 
-\subsection*{Use Case: \fillin{Name}}
-\fillin{Short description of the use case.}
+\begin{description}[leftmargin=2.2cm, style=nextline]
+  \item[Primary Actor] Fan
+  \item[Scope] ArtistConnect chat application
+  \item[Level] User goal
+  \item[Stakeholders \& Interests]
+    \begin{itemize}
+      \item \textbf{Fan:} wants to quickly find artists matching their interests.
+      \item \textbf{Artist:} wants to be discoverable by relevant fans.
+    \end{itemize}
+  \item[Preconditions]
+    \begin{itemize}
+      \item The Fan is authenticated and logged into the system.
+    \end{itemize}
+  \item[Postconditions (Success Guarantee)]
+    \begin{itemize}
+      \item A list of artists matching the Fan's search criteria was displayed.
+      \item If the Fan selected a result, the corresponding action (profile view, chat, follow, or booking request) was recorded by the system.
+    \end{itemize}
+  \item[Main Success Scenario]
+    \begin{enumerate}
+      \item The Fan selects the search feature.
+      \item The system prompts the Fan for search criteria (name, genre/style, location).
+      \item The Fan enters one or more criteria and submits the search.
+      \item The system queries registered artists matching the given criteria.
+      \item The system displays a list of matching artists, each showing name, genre, location, and profile thumbnail.
+      \item The Fan selects an artist from the results list.
+      \item The system displays the selected artist's full profile.
+      \item The Fan chooses a follow-up action: start a direct chat, follow the artist, or book the artist.
+      \item The system performs the selected action and confirms it to the Fan.
+    \end{enumerate}
+  \item[Extensions]
+    \begin{itemize}
+      \item[2a.] The Fan submits the search with no criteria entered: the system prompts the Fan to enter at least one search criterion.
+      \item[4a.] No artists match the given criteria: the system displays a "no results found" message and suggests broadening the search.
+      \item[6a.] The Fan exits without selecting a result: the use case ends with no further action taken.
+      \item[8a.] The Fan chooses "Start Chat" and a conversation already exists with that artist: the system opens the existing conversation instead of creating a new one.
+      \item[8b.] The Fan chooses "Book": the system starts the booking-request flow (a separate use case) and, on submission, notifies the Artist that a booking request is pending.
+    \end{itemize}
+  \item[Special Requirements]
+    \begin{itemize}
+      \item Search results should be returned in under 2 seconds for typical query loads.
+      \item Result lists longer than 20 artists are paginated.
+    \end{itemize}
+  \item[Frequency of Occurrence] High -- expected to be one of the most common Fan actions.
+\end{description}
 
-\begin{longtable}{|p{0.48\textwidth}|p{0.48\textwidth}|}
-\hline
-\textbf{Actor: \fillin{Actor}} & \textbf{System: \fillin{System Name}} \\
-\hline
-1. \fillin{Actor step} & \\
-\hline
- & 2. \fillin{System step} \\
-\hline
-3. \fillin{Actor step} & \\
-\hline
-\end{longtable}
+\subsection{UC: Review Report -- Admin}
+
+\begin{description}[leftmargin=2.2cm, style=nextline]
+  \item[Primary Actor] Admin
+  \item[Scope] ArtistConnect chat application
+  \item[Level] User goal
+  \item[Stakeholders \& Interests]
+    \begin{itemize}
+      \item \textbf{Admin:} needs enough context to make a fair, auditable moderation decision.
+      \item \textbf{Reporting user (Fan or Artist):} wants inappropriate content or behavior addressed.
+      \item \textbf{Reported user (Fan or Artist):} has an interest in fair treatment and being informed of any action taken.
+    \end{itemize}
+  \item[Preconditions]
+    \begin{itemize}
+      \item The Admin is authenticated with administrative privileges.
+      \item At least one report exists with status "Pending," filed by a Fan or an Artist against a message, profile, or event.
+    \end{itemize}
+  \item[Postconditions (Success Guarantee)]
+    \begin{itemize}
+      \item The report's status was updated to "Resolved," with the decision and acting Admin recorded.
+      \item Any moderation action taken (dismiss, warn, delete content, suspend/ban account) was applied to the reported content or account.
+      \item Both the reporting user and the reported user were notified of the outcome.
+    \end{itemize}
+  \item[Main Success Scenario]
+    \begin{enumerate}
+      \item The Admin opens the reports queue.
+      \item The system displays pending reports, each showing the reporter, reported content or user, reason, and timestamp.
+      \item The Admin selects a report to review.
+      \item The system displays full report details, including the reported message, profile, or event, and the reporter's stated reason.
+      \item The Admin evaluates the report and selects an action: dismiss, warn the user, delete the content, or suspend/ban the account.
+      \item The system applies the selected action.
+      \item The system records the resolution (Admin identity, action taken, timestamp) and sets the report status to "Resolved."
+      \item The system notifies the reporting user that their report was reviewed, and notifies the reported user of any action taken against them.
+    \end{enumerate}
+  \item[Extensions]
+    \begin{itemize}
+      \item[3a.] The selected report was already resolved by another Admin: the system informs the Admin and returns to the queue.
+      \item[5a.] The Admin dismisses the report as unfounded: the system records the dismissal and notifies only the reporting user.
+      \item[5b.] The Admin suspends or bans the reported user's account: the system also terminates any active sessions for that account.
+      \item[6a.] The reported content was already removed (e.g., deleted by its owner): the system notes this and proceeds directly to logging the resolution.
+    \end{itemize}
+  \item[Special Requirements]
+    \begin{itemize}
+      \item The reports queue must support filtering by report type (message, profile, or event).
+      \item All resolutions must be permanently logged for audit purposes.
+    \end{itemize}
+  \item[Frequency of Occurrence] Low to moderate -- driven by user-filed reports rather than a routine action.
+\end{description}
+
+\subsection{UC: Create Event -- Artist}
+
+\begin{description}[leftmargin=2.2cm, style=nextline]
+  \item[Primary Actor] Artist
+  \item[Scope] ArtistConnect chat application
+  \item[Level] User goal
+  \item[Stakeholders \& Interests]
+    \begin{itemize}
+      \item \textbf{Artist:} wants to promote and sell tickets to an upcoming event.
+      \item \textbf{Admin:} needs to approve proposed pricing before the event is publicly visible.
+      \item \textbf{Fan:} wants accurate, trustworthy event listings.
+    \end{itemize}
+  \item[Preconditions]
+    \begin{itemize}
+      \item The Artist is authenticated and has an account in good standing.
+    \end{itemize}
+  \item[Postconditions (Success Guarantee)]
+    \begin{itemize}
+      \item A new event was created with status "Pending Approval" and routed to the Admin queue.
+      \item Once approved, the event's status was updated to "Published" and it became visible/searchable to Fans, who were notified if they follow the Artist.
+    \end{itemize}
+  \item[Main Success Scenario]
+    \begin{enumerate}
+      \item The Artist selects "Create Event."
+      \item The system displays the event creation form.
+      \item The Artist enters the event details: title, date/time, location (physical or virtual link), description, capacity, and one or more proposed ticket prices/tiers.
+      \item The Artist submits the event.
+      \item The system validates the submitted data.
+      \item The system creates the event with status "Pending Approval" and adds it to the Admin approval queue.
+      \item The system confirms to the Artist that the event was submitted for review.
+      \item The Admin reviews and approves the proposed pricing (see UC: Review Event Pricing).
+      \item The system updates the event's status to "Published," notifies the Artist of the approval, and makes the event visible/searchable to Fans, notifying the Artist's followers.
+    \end{enumerate}
+  \item[Extensions]
+    \begin{itemize}
+      \item[3a.] The Artist saves the event as a draft instead of submitting: the system stores it with status "Draft" and does not route it for approval.
+      \item[5a.] The submitted data is missing required fields or contains an invalid date/price: the system flags the offending fields and asks the Artist to correct them before resubmitting.
+      \item[8a.] The Admin rejects the proposed pricing: the system notifies the Artist with the rejection reason(s); the Artist may revise and resubmit, returning to step 3.
+      \item[9a.] The Artist edits event details after publication: the system flags the event for Admin re-approval if the change affects pricing, otherwise the update is applied immediately.
+    \end{itemize}
+  \item[Special Requirements]
+    \begin{itemize}
+      \item Ticket pricing must support multiple tiers (e.g., general admission, VIP).
+      \item Artists should be notified promptly (e.g., push/email) of an approval or rejection decision.
+    \end{itemize}
+  \item[Frequency of Occurrence] Moderate -- expected whenever an Artist plans a new event.
+\end{description}
 
 \bigskip
-\textit{Repeat the subsection above for each use case, and repeat the
-section above for each subsystem/actor group (e.g., a Server /
-Manager-facing module, following the pattern of the Client module).}
+\textit{Repeat the section above for each additional team member, with their own 3 use cases in the same fully-dressed format.}
+
+% ------------------------------------------------------------
+\section{\fillin{Team Member Name} -- Use Cases}
+\fillin{Add this member's 3 fully-dressed use cases here, following the format above.}
 
 % ============================================================
 \chapter{Use Case Diagrams}
@@ -256,6 +409,70 @@ associations/multiplicities between them, not implementation.
 
 \fillin{Insert domain model diagram here, e.g.\\
 \texttt{\textbackslash includegraphics[width=\textbackslash textwidth]\{domain\_model.png\}}}
+
+% ============================================================
+\chapter{Operation Contracts}
+
+\begin{guidance}[One contract per key system operation]
+An operation contract documents \emph{what} a system operation
+guarantees, not \emph{how} it is implemented. Postconditions describe
+instances created/deleted, associations formed/broken, and attributes
+changed -- written in the past tense, as if describing what has already
+happened. Write one contract per team member's use cases (typically the
+one system operation in the main success scenario that changes state).
+\end{guidance}
+
+\section*{Operation: searchArtists(criteria: SearchCriteria): List\textlangle ArtistSummary\textrangle}
+\begin{description}[leftmargin=2.8cm, style=nextline]
+  \item[Cross Reference] UC: Search for Artist -- Fan
+  \item[Preconditions]
+    \begin{itemize}
+      \item The Fan is logged into the system.
+    \end{itemize}
+  \item[Postconditions]
+    \begin{itemize}
+      \item A collection of Artist instances matching the given criteria (name, genre, location) was retrieved.
+      \item No system state was created, modified, or deleted (read-only operation).
+    \end{itemize}
+\end{description}
+
+\section*{Operation: resolveReport(reportId: ReportID, action: ActionType): void}
+\begin{description}[leftmargin=2.8cm, style=nextline]
+  \item[Cross Reference] UC: Review Report -- Admin
+  \item[Preconditions]
+    \begin{itemize}
+      \item The Admin is logged in with administrative privileges.
+      \item A Report instance identified by \texttt{reportId} exists with status = "Pending."
+    \end{itemize}
+  \item[Postconditions]
+    \begin{itemize}
+      \item The Report instance's \texttt{status} attribute was changed to "Resolved."
+      \item A new Resolution instance was created and associated with the Report, recording the acting Admin, the action taken, and a timestamp.
+      \item If \texttt{action} = DeleteContent, the associated Message, Profile, or Event instance's \texttt{status} attribute was changed to "Removed."
+      \item If \texttt{action} = Suspend or Ban, the reported User instance's \texttt{status} attribute was changed to "Suspended" or "Banned" respectively.
+      \item A new Notification instance was created and associated with the reporting User.
+      \item A new Notification instance was created and associated with the reported User, if \texttt{action} $\neq$ Dismiss.
+    \end{itemize}
+\end{description}
+
+\section*{Operation: submitEvent(eventData: EventForm): Event}
+\begin{description}[leftmargin=2.8cm, style=nextline]
+  \item[Cross Reference] UC: Create Event -- Artist
+  \item[Preconditions]
+    \begin{itemize}
+      \item The Artist is logged in and owns an account in good standing.
+    \end{itemize}
+  \item[Postconditions]
+    \begin{itemize}
+      \item A new Event instance was created with \texttt{title}, \texttt{dateTime}, \texttt{location}, \texttt{description}, \texttt{capacity}, and \texttt{proposedPrices} set from \texttt{eventData}.
+      \item The new Event instance's \texttt{status} attribute was set to "Pending Approval."
+      \item An association was formed between the new Event instance and the Artist who created it.
+      \item The new Event instance was added to the Admin approval queue.
+    \end{itemize}
+\end{description}
+
+\bigskip
+\textit{Repeat the operation contract pattern above for each additional team member's key use-case operation.}
 
 % ============================================================
 \chapter{Test Cases}
