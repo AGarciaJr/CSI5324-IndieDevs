@@ -1,0 +1,121 @@
+\documentclass{article}
+
+\begin{document}
+
+{\bfseries Use case:} Suspending Artist Account
+
+{\bfseries Actor:} Administrator
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+	\item The Administrator is logged into the system.
+	\item A user account has been reported or flagged for potential terms of service (ToS) violations.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+	\item The user's account is suspended or banned.
+	\item The system revokes the user's access and permissions.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+	\item The Administrator requests to view reported user accounts.
+	\item The system provides the pending reports and associated user activity.
+	\item The Administrator determines the user's actions violate the ToS.
+	\item The Administrator submits a request to ban the user.
+	\item The system updates the account status to banned and revokes the user's permissions.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+	\item [3a.] Report does not violate ToS
+	\begin{enumerate}
+		\item [3a1.] The Administrator determines the user's actions do not violate the ToS.
+		\item [3a2.] The Administrator dismisses the report, and the system maintains the account's active status.
+	\end{enumerate}
+\end{enumerate}
+
+
+\hrule
+\bigskip
+
+{\bfseries Use case:} Comment on Artwork
+
+{\bfseries Actor:} Fan
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+	\item The Fan is logged in with "user" role permissions.
+	\item An Artist has published media that allows comments.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+	\item The Fan's comment is saved in the database and published on the Artist's post.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+	\item The Fan requests to add a comment to an Artist's media.
+	\item The system prompts the Fan for the comment content.
+	\item The Fan provides the comment content.
+	\item The system validates the comment against business rules.
+	\item The system saves and publishes the comment to the Artist's page.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+	\item [4a.] Content flagged by system business rules
+	\begin{enumerate}
+		\item [4a1.] The system determines the content violates business rules (e.g., via basic word filters or optional AI-based content moderation, if enabled).
+		\item [4a2.] The system rejects the comment and notifies the Fan.
+	\end{enumerate}
+	\item [5a.] Inappropriate comment reported post-publication
+	\begin{enumerate}
+		\item [5a1.] An Artist monitors their comments and identifies a published comment as inappropriate.
+		\item [5a2.] The Artist submits a report regarding the comment for Administrator review.
+	\end{enumerate}
+\end{enumerate}
+
+
+\hrule
+\bigskip
+
+{\bfseries Use case:} Review Artist Verification Application
+
+{\bfseries Actor:} Administrator
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+	\item The Administrator is logged in and authorized to manage accounts.
+	\item A user has submitted an application to upgrade to the Artist role.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+	\item The user's application is resolved (approved or rejected).
+	\item If approved, the user is granted the Artist role and associated permissions.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+	\item The Administrator requests pending Artist verification applications.
+	\item The system provides the submitted application materials.
+	\item The Administrator evaluates the application to verify the applicant's identity.
+	\item The Administrator approves the application.
+	\item The system assigns the user the "Artist" role and updates their permissions.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+	\item [3a.] Application fails verification
+	\begin{enumerate}
+		\item [3a1.] The Administrator determines the application is illegitimate or incomplete.
+		\item [3a2.] The Administrator rejects the application.
+		\item [3a3.] The system maintains the user's current role and notifies them of the rejection.
+	\end{enumerate}
+\end{enumerate}
+
+
+\end{document}
