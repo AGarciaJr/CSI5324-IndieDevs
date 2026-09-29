@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  28 SEP 2026 23:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  28 SEP 2026 23:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1155,7 +1155,7 @@ thkerncmss.
 [20
 
 ]
-<../../UseCaseDiagram/UseCaseDiagram.png, id=161, 1269.0612pt x 896.6298pt>
+<../../UseCaseDiagram/UseCaseDiagram.png, id=173, 1269.0612pt x 896.6298pt>
 File: ../../UseCaseDiagram/UseCaseDiagram.png Graphic file (type png)
 <use ../../UseCaseDiagram/UseCaseDiagram.png>
 Package pdftex.def Info: ../../UseCaseDiagram/UseCaseDiagram.png  used on input
@@ -1170,7 +1170,7 @@ Package pdftex.def Info: ../../UseCaseDiagram/UseCaseDiagram.png  used on input
 [22
 
 ]
-<../../DomainModel/DomainModel.png, id=172, 769.87625pt x 655.44875pt>
+<../../DomainModel/DomainModel.png, id=184, 769.87625pt x 655.44875pt>
 File: ../../DomainModel/DomainModel.png Graphic file (type png)
 <use ../../DomainModel/DomainModel.png>
 Package pdftex.def Info: ../../DomainModel/DomainModel.png  used on input line 
@@ -1185,10 +1185,16 @@ Package pdftex.def Info: ../../DomainModel/DomainModel.png  used on input line
 [24
 
 ]
+<updated-ui-initial-draft.png, id=197, 834.7185pt x 555.2745pt>
+File: updated-ui-initial-draft.png Graphic file (type png)
+<use updated-ui-initial-draft.png>
+Package pdftex.def Info: updated-ui-initial-draft.png  used on input line 220.
+(pdftex.def)             Requested size: 281.24045pt x 187.0878pt.
+
 
 [25
 
-]
+ <./updated-ui-initial-draft.png>]
 
 [26
 
@@ -1217,6 +1223,14 @@ Package pdftex.def Info: ../../DomainModel/DomainModel.png  used on input line
 [32
 
 ]
+
+[33
+
+]
+
+[34
+
+]
 \tf@nav=\write6
 \openout6 = `iteration_slides_template.nav'.
 
@@ -1231,22 +1245,15 @@ Package pdftex.def Info: ../../DomainModel/DomainModel.png  used on input line
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
-
-
-Package rerunfilecheck Warning: File `iteration_slides_template.out' has change
-d.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `iteration_slides_template.out':
-(rerunfilecheck)             Before: 44B7DF9EB44B23C6D88C1B2F6D3392E0;919
-(rerunfilecheck)             After:  1787529F3A531FFB4A5F004E6DF8ACE0;1127.
+Package rerunfilecheck Info: File `iteration_slides_template.out' has not chang
+ed.
+(rerunfilecheck)             Checksum: 157949D9D4CC5CE0E9F8B833C83C56A9;1223.
  ) 
 Here is how much of TeX's memory you used:
- 27405 strings out of 473190
- 564002 string characters out of 5715801
+ 27441 strings out of 473190
+ 564494 string characters out of 5715801
  914542 words of memory out of 5000000
- 50050 multiletter control sequences out of 15000+600000
+ 50081 multiletter control sequences out of 15000+600000
  574678 words of font info for 92 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,16n,123p,1892b,759s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1262,10 +1269,10 @@ local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/lo
 cal/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/loc
 al/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local
 /texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfss1095.pfb>
-Output written on iteration_slides_template.pdf (32 pages, 458458 bytes).
+Output written on iteration_slides_template.pdf (34 pages, 2851530 bytes).
 PDF statistics:
- 305 PDF objects out of 1000 (max. 8388607)
- 235 compressed objects within 3 object streams
- 72 named destinations out of 1000 (max. 500000)
- 101 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 329 PDF objects out of 1000 (max. 8388607)
+ 255 compressed objects within 3 object streams
+ 77 named destinations out of 1000 (max. 500000)
+ 122 words of extra memory for PDF output out of 10000 (max. 10000000)
 
