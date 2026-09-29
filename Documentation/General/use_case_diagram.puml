@@ -1,0 +1,60 @@
+@startuml use_case_diagram
+title ArtistConnect - Use Case Diagram (Iteration 1)
+
+' ---- Use case diagram conventions ----
+' - The rectangle is the system boundary: everything the system is
+'   responsible for goes inside it. Actors stay outside.
+' - <<include>> = the base use case ALWAYS triggers the included one.
+' - <<extend>>  = the extending use case is OPTIONAL / conditional.
+' - Update this diagram whenever a teammate's use cases below change.
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Fan
+actor Artist
+actor Admin
+
+rectangle "ArtistConnect System" {
+
+  ' --- Alejandro Garcia Jr's use cases ---
+  usecase "Search for Artist" as UC_Search
+  usecase "Start Direct Chat" as UC_Chat
+  usecase "Follow Artist" as UC_Follow
+  usecase "Request Booking" as UC_Book
+  usecase "Review Report" as UC_Report
+  usecase "Create Event" as UC_CreateEvent
+  usecase "Review Event Pricing" as UC_ReviewPricing
+
+  ' --- Placeholder use cases for remaining team members ---
+  usecase "[Teammate 2 - UC 1]" as UC_T2_1 #line.dashed
+  usecase "[Teammate 2 - UC 2]" as UC_T2_2 #line.dashed
+  usecase "[Teammate 2 - UC 3]" as UC_T2_3 #line.dashed
+  usecase "[Teammate 3 - UC 1]" as UC_T3_1 #line.dashed
+  usecase "[Teammate 3 - UC 2]" as UC_T3_2 #line.dashed
+  usecase "[Teammate 3 - UC 3]" as UC_T3_3 #line.dashed
+}
+
+Fan --> UC_Search
+Fan --> UC_Chat
+Fan --> UC_Follow
+Fan --> UC_Book
+Fan --> UC_Report
+
+Artist --> UC_CreateEvent
+Artist --> UC_Report
+Artist --> UC_Chat
+
+Admin --> UC_Report
+Admin --> UC_ReviewPricing
+
+UC_Search .> UC_Chat : <<extend>>
+UC_Search .> UC_Follow : <<extend>>
+UC_Search .> UC_Book : <<extend>>
+UC_CreateEvent .> UC_ReviewPricing : <<include>>
+
+Fan -[hidden]- UC_T2_1
+Artist -[hidden]- UC_T3_1
+
+@enduml

@@ -1,0 +1,308 @@
+\documentclass[11pt,aspectratio=169]{beamer}
+
+% ============================================================
+% ITERATION 1 DELIVERABLE SLIDES -- Indie Devs
+% Structure mirrors the project documentation (.tex) so the
+% slides and the written documentation stay in sync.
+% ============================================================
+
+% --- CONFIGURATION ---
+\newcommand{\iterationNumber}{1} % Set iteration number here (e.g., 1, 2, 3)
+
+% Robust integer calculation for the next iteration number
+\newcounter{nextIter}
+\setcounter{nextIter}{\iterationNumber}
+\stepcounter{nextIter}
+\newcommand{\nextIteration}{\thenextIter}
+
+\usetheme{metropolis}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tcolorbox}
+
+% Prevent hyperref warnings when \\ is used inside author tags
+\pdfstringdefDisableCommands{\def\\{ }}
+
+\newcommand{\fillin}[1]{\textcolor{gray}{\itshape [#1]}}
+
+\title{Indie Devs}
+\subtitle{Iteration \iterationNumber{} Deliverable}
+\author{Alejandro Garcia Jr \and Garrett DeYong \and Nicholas Nolen \and William Waweru \and Gan-Orgil Gantumur}
+\date{9/27/2026}
+
+\begin{document}
+
+\maketitle
+
+% ------------------------------------------------------------
+\begin{frame}{Agenda}
+\tableofcontents
+\end{frame}
+
+% ============================================================
+\section{Problem \& Requirements}
+
+\begin{frame}{Problem Statement \& Scope}
+Small independent artists need one place to host their art and build deeper connections with local fan communities. This iteration establishes the requirements, user stories, and use cases for the platform.
+\begin{itemize}
+  \item \textbf{Artist:} Upload music, images, stories, and videos; promote events; interact directly with supporters.
+  \item \textbf{Fan:} Discover artists nearby, follow their updates, attend shows, and interact with the community.
+  \item \textbf{Administrator:} Moderate content, review artist applications, and keep the community safe.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Functional Requirements -- Iteration \iterationNumber}
+\begin{itemize}
+  \item Role-based access control with distinct workflows for Fans, Artists, and Admins \hfill \textit{(New)}
+  \item Artist profiles with multimedia uploads (music, art, stories, videos) and event promotion \hfill \textit{(New)}
+  \item Fan ``about'' profiles and proximity-based radius search for artists \hfill \textit{(New)}
+  \item Direct messaging between fans and artists, and between fans \hfill \textit{(New)}
+  \item Admin tools to review artist applications, handle user reports, and ban accounts that violate the ToS \hfill \textit{(New)}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Environment \& Constraints}
+\begin{itemize}
+  \item Web-based application with a 3-tier architecture: frontend web server, backend application layer, and database
+  \item Deployed to a cloud provider (GCP, AWS, or Azure)
+  \item CI/CD pipeline with mandatory pull requests
+  \item Optional AI features (moderation, recommendations, AI-generated art detection) must respect user privacy, include human oversight, and have fallback behavior
+\end{itemize}
+\end{frame}
+
+% ============================================================
+\section{User Stories \& Features}
+
+\begin{frame}{User Stories -- Iteration \iterationNumber{} Focus (Fan \& Artist)}
+\begin{itemize}
+  \item \textbf{US-01} As a Fan, I want to search for artists by proximity radius so that I can discover and attend local shows.
+  \item \textbf{US-02} As a Fan, I want to receive artist recommendations so that I can find creators similar to ones I enjoy.
+  \item \textbf{US-03} As an Artist, I want to post music, images, and videos so that I can share my art with my fans.
+  \item \textbf{US-04/05} Fans comment on artwork; Artists monitor and manage those comments.
+  \item \textbf{US-06} Users send direct messages to collaborate or socialize.
+  \item \textbf{US-07/08} Artists create and update events so fans have accurate details.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{User Stories -- Iteration \iterationNumber{} Focus (Administrator)}
+\begin{itemize}
+  \item \textbf{US-09} As an Administrator, I want to review artist verification applications so that only legitimate artists are granted the Artist role.
+  \item \textbf{US-10} As an Administrator, I want to review conduct reports so that I can make fair moderation decisions.
+  \item \textbf{US-11} As an Administrator, I want to suspend or ban accounts that violate the ToS so that the platform stays safe.
+  \item \textbf{US-12} As an Administrator, I want to process ban appeals so that unfair or incorrect bans can be reversed.
+\end{itemize}
+\end{frame}
+
+% ============================================================
+\section{Technical Challenges, Risks \& Progress}
+
+\begin{frame}{Key Technical Challenges}
+\begin{itemize}
+  \item \textbf{AI feature integration:} Moderation and recommendations raise performance and privacy concerns. \\
+  \textit{Approach:} Decouple AI processing from core traffic via scalable REST APIs, with heuristic fallbacks if models fail.
+  \item \textbf{3-tier cloud deployment:} Frontend, backend, database, and a strict CI/CD pipeline add DevOps overhead. \\
+  \textit{Approach:} Set up automated testing and mandatory pull requests early; use managed cloud services.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Key Risks \& Mitigation}
+\begin{itemize}
+  \item \textbf{Scope creep:} Hybrid media, messaging, and AI may exceed the semester timeframe. \\
+  \textit{Mitigation:} Prioritize core workflows (authentication, media, messaging) over optional AI features using agile sprints.
+  \item \textbf{Content moderation:} User-generated media and messages risk ToS violations. \\
+  \textit{Mitigation:} User reporting, Admin review workflows, and automated moderation filters.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Competitive Advantage \& Enhancements}
+\begin{itemize}
+  \item \textbf{SoundCloud} -- Strong audio hosting, discovery, and timestamped comments, but no visual art, video interaction, or local discovery.
+  \item \textbf{Instagram} -- Huge reach for visual art, video, and messaging, but not tailored to independent artists, weak audio hosting, and favors viral content over local community.
+  \item \textbf{Our Value Add} -- A multi-disciplinary hub (audio, art, video in one profile), proximity-based discovery, and an authenticity \& safety focus with privacy-respecting AI tools.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Iteration \iterationNumber{} Progress}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\textbf{Completed}
+\begin{itemize}
+  \item GitHub repository and Trello board
+  \item 15 fully-dressed use cases (3 per member)
+  \item Use case diagram
+  \item Domain model
+  \item Project slides
+\end{itemize}
+\column{0.5\textwidth}
+\textbf{Carried into Iteration \nextIteration}
+\begin{itemize}
+  \item Wireframes
+  \item Clarifying questions for the client
+  \item Workflow diagram
+  \item System sequence diagrams
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ============================================================
+\section{Use Cases}
+
+\begin{frame}{Use Cases -- Alejandro Garcia Jr}
+\textbf{Actors:} Fan, Admin, Artist
+\vspace{0.5em}
+\begin{itemize}
+  \item \textbf{Search for Artist (Fan):} Find artists by name, genre, or location, then view a profile, chat, follow, or book. \textit{(Planned)}
+  \item \textbf{Review Report (Admin):} Review pending user reports and dismiss, warn, delete content, or suspend/ban, with an audit trail. \textit{(Planned)}
+  \item \textbf{Create Event (Artist):} Submit an event with tiered pricing; it is published after Admin approval. \textit{(Planned)}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Use Cases -- Garrett DeYong}
+\textbf{Actors:} Artist, User (Artist or Fan)
+\vspace{0.5em}
+\begin{itemize}
+  \item \textbf{Make a Post (Artist):} Publish text and files with public/private and comment permissions. \textit{(Planned)}
+  \item \textbf{Message Another User:} Start a new conversation thread with a recipient who accepts messages. \textit{(Planned)}
+  \item \textbf{Monitor Comments (Artist):} Hide comments on their posts, and optionally report or block the commenter. \textit{(Planned)}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Use Cases -- Nicholas Nolen}
+\textbf{Actors:} Artist, Admin, Fan
+\vspace{0.5em}
+\begin{itemize}
+  \item \textbf{Update Event:} As an artist I want my fans to get the most up to date information about my events. \textit{(Planned)}
+  \item \textbf{Unban Fan:} As an admin I want to do my job and unban fans who file appeals. \textit{(Planned)}
+  \item \textbf{Receive Recommendation:} As a fan I want to get recommendations for artists similar to the ones I like. \textit{(Planned)}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Use Cases -- William Waweru}
+\textbf{Actor:} Fan
+\vspace{0.5em}
+\begin{itemize}
+  \item \textbf{Follow Artist:} Follow an active Artist without creating duplicate relationships. \textit{(Planned)}
+  \item \textbf{Manage Fan Profile:} Update bio, interests, and image with privacy preferences applied. \textit{(Planned)}
+  \item \textbf{Report Inappropriate Content:} File a report that is stored as pending for Admin review. \textit{(Planned)}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Use Cases -- Gan-Orgil Gantumur}
+\textbf{Actors:} Admin, Fan
+\vspace{0.5em}
+\begin{itemize}
+  \item \textbf{Suspending Artist Account (Admin):} Suspend or ban an account that violates the ToS, revoking its permissions. \textit{(Planned)}
+  \item \textbf{Comment on Artwork (Fan):} Post a comment that is validated against business rules before publishing. \textit{(Planned)}
+  \item \textbf{Review Artist Verification Application (Admin):} Approve or reject applications to grant the Artist role. \textit{(Planned)}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Use Case Diagram}
+\centering
+\includegraphics[width=0.85\textwidth,height=0.78\textheight,keepaspectratio]{../../UseCaseDiagram/UseCaseDiagram.png}
+\end{frame}
+
+% ============================================================
+\section{Domain / Class Model}
+
+\begin{frame}{Domain Model}
+\centering
+\includegraphics[width=0.85\textwidth,height=0.82\textheight,keepaspectratio]{../../DomainModel/DomainModel.png}
+\end{frame}
+
+% ============================================================
+\section{UI Mockups}
+
+\begin{frame}{UI}
+	\centering
+	\includegraphics[width=0.85\textwidth,height=0.82\textheight,keepaspectratio]{updated-ui-initial-draft.png}
+\end{frame}
+
+% ============================================================
+\section{Next Steps}
+
+\begin{frame}{Looking Ahead to Iteration \nextIteration}
+\begin{itemize}
+  \item Complete wireframes, the workflow diagram, and system sequence diagrams for each use case
+  \item Send clarifying questions to the client and record the answers
+  \item Extend operation contracts and test cases to every team member's use cases
+  \item Set up the 3-tier skeleton, CI/CD pipeline, and mandatory pull requests; begin authentication and role-based access
+\end{itemize}
+\end{frame}
+
+\section{Trello Breakdown \& Team Roster}
+
+\begin{frame}{Resolved Tickets (12)}
+\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+Ticket & Label & Owner \\
+\midrule
+Create GitHub & Individual & A. Garcia \\
+Create Trello & Individual & A. Garcia \\
+Complete Use-Case Diagram & Team & N. Nolen \\
+Complete Domain Model & Team, Requirements Eng. & N. Nolen \\
+Create Project Slides & Team, Project Librarian & A. Garcia \\
+Domain Modeling & -- & -- \\
+UC: Search for Artist -- Fan & Individual & A. Garcia \\
+UC: Review Report -- Admin & Individual & A. Garcia \\
+UC: Create Event -- Artist & Individual & A. Garcia \\
+UC: Suspending Artist Account -- Admin & Individual & G. Gantumur \\
+UC: Comment on Artwork -- Fan & Individual & G. Gantumur \\
+UC: Review Artist Verification Application -- Admin & Individual & G. Gantumur \\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+\begin{frame}{Open Tickets (13)}
+\footnotesize
+\begin{tabular}{@{}lll@{}}
+\toprule
+Ticket & Label & Owner \\
+\midrule
+Schedule Team Meeting & -- & -- \\
+Complete Individual Use-Cases (3/Person) & Individual, Team & -- \\
+Create and Design Wireframes & Team, Design Engineer & -- \\
+Create Clarifying Questions & Team, Project Librarian & -- \\
+UC: Message Other User -- Artist/Fan & Individual & G. DeYong \\
+UC: Make a Post -- Artist & Individual & G. DeYong \\
+UC: Monitor Comments -- Artist & Individual & G. DeYong \\
+UC: Update Event -- Artist & Individual & N. Nolen \\
+UC: Unban Fan -- Admin & Individual & N. Nolen \\
+UC: Receive Recommendation -- Fan & Individual & N. Nolen \\
+UC: Follow Artist -- Fan & Individual & -- \\
+UC: Manage Fan Profile -- Fan & Individual & -- \\
+UC: Report Inappropriate Content -- Fan & Individual & -- \\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+
+\begin{frame}{Team Roster: Commits \& Hours}
+\small
+Repository: \texttt{AGarciaJr/CSI5324-IndieDevs} \hfill Open pull requests: 2
+
+\vspace{0.6em}
+\footnotesize
+\begin{tabular}{@{}lccp{0.5\textwidth}@{}}
+\toprule
+Member & Hours & Main contributions \\
+\midrule
+Alejandro Garcia Jr & 12 & 10 & Repo and board setup, 3 use cases, documentation, slides \\
+Garrett DeYong & 4 & 8 & 3 use cases (posts, messaging, comment monitoring) \\
+Nicholas Nolen & 17 & 10 & 3 use cases (events, unbans, recommendations), use case diagram\\
+William Waweru & 4 & 8 & 3 use cases (follow, fan profile, reports) \\
+Gan-Orgil Gantumur & 7 & 10 & 3 use cases (suspensions, comments, artist verification), domain model \\
+\midrule
+\textbf{Total} & 44 & 48 & \\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+
+\begin{frame}[standout]
+Questions?
+\end{frame}
+
+\end{document}
