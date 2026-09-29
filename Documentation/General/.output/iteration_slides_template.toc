@@ -3,4 +3,5 @@
 \beamer@sectionintoc {3}{Technical Challenges, Risks \& Progress}{10}{0}{3}
 \beamer@sectionintoc {4}{Use Cases}{15}{0}{4}
 \beamer@sectionintoc {5}{Domain / Class Model}{22}{0}{5}
-\beamer@sectionintoc {6}{Next Steps}{24}{0}{6}
+\beamer@sectionintoc {6}{UI Mockups}{24}{0}{6}
+\beamer@sectionintoc {7}{Next Steps}{26}{0}{7}
