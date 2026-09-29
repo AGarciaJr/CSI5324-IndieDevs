@@ -171,28 +171,44 @@ through to the System Sequence Diagrams.
 \chapter{Key Technical Challenges}
 
 \begin{itemize}
-  \item \fillin{Challenge 1 and how it will be approached}
-  \item \fillin{Challenge 2 and how it will be approached}
+  \item \textbf{AI Feature Integration:} Integrating machine learning for moderation and recommendations poses performance and privacy challenges. \\
+  \textbf{\textit{Approach:}} Decouple AI processing from core traffic using scalable REST APIs and implement heuristic fallbacks to ensure uptime if models fail.
+  
+  \item \textbf{3-Tier Cloud Deployment:} Managing a frontend, backend, database, and strict CI/CD pipeline requires significant DevOps overhead. \\
+  \textbf{\textit{Approach:}} Establish automated testing and mandatory pull requests early, utilizing managed cloud services (GCP, AWS, or Azure) to minimize infrastructure management.
 \end{itemize}
 
 \section*{Key Risks}
 \begin{itemize}
-  \item \fillin{Risk 1}
-  \item \fillin{Risk 2}
+  \item \textbf{Scope Creep:} The extensive feature set (hybrid media, messaging, AI) risks exceeding the semester timeframe. \\
+  \textbf{\textit{Mitigation:}} Strictly prioritize core workflows (authentication, media, messaging) over optional AI features using agile sprints.
+  
+  \item \textbf{Content Moderation:} User-generated media and messaging introduce risks of Terms of Service violations. \\
+  \textbf{\textit{Mitigation:}} Implement robust user-reporting systems, Admin review workflows, and automated moderation filters.
 \end{itemize}
 
 \section*{Competition}
 \begin{itemize}
-  \item \fillin{Competitor / existing solution 1 -- what it does, what it lacks}
-  \item \fillin{Competitor / existing solution 2}
+  \item \textbf{SoundCloud:} 
+  \textit{What it does well:} Excellent audio hosting, discovery, and timestamped comments. \\
+  \textit{Where it falls short:} Lacks visual art hosting, video interactions, and proximity-based local discovery.
+  
+  \item \textbf{Instagram:} 
+  \textit{What it does well:} Massive reach for visual art, short-form videos, and messaging. \\
+  \textit{Where it falls short:} Not tailored to independent artists, lacks high-quality audio hosting, and prioritizes viral content over local community connections.
 \end{itemize}
 
 % ============================================================
 \chapter{What's New?}
 
-\fillin{Summarize what is novel about this project compared to
-existing solutions listed under Competition.}
+Existing platforms generally focus on a single medium (e.g., SoundCloud) or cater to broad audiences (e.g., Instagram). Our project introduces a \textbf{hybrid platform tailored explicitly for small, independent, multi-disciplinary artists}. 
 
+\textbf{Key Differentiators:}
+\begin{itemize}
+  \item \textbf{Multi-Disciplinary Hub:} Consolidates high-quality audio, visual art, and video hosting into a single profile.
+  \item \textbf{Proximity-Based Discovery:} Replaces viral-chasing algorithms with a location-based search to foster real-world, local community connections.
+  \item \textbf{Authenticity \& Safety Focus:} Proposes specialized AI tools—like AI-generated art detectors and privacy-respecting moderation—to maintain a secure, human-centric ecosystem dedicated to independent art.
+\end{itemize}
 % ============================================================
 \chapter{Workflow}
 
