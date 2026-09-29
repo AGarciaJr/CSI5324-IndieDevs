@@ -48,7 +48,7 @@
 \setlist[itemize]{leftmargin=1.5em}
 
 % ============================================================
-\title{\textbf{\fillin{Project Name}\\Documentation}}
+\title{\textbf{Indie Devs\\Documentation}}
 \author{
 {Alejandro Garcia Jr}\\ {Garrett DeYong} \\ {Nicholas Nolen}\\ {William Waweru}\\ {Gan-Orgil Gantumur}}
 \date{{9/27/2026}}
@@ -59,46 +59,46 @@
 \tableofcontents
 
 % ============================================================
-\chapter*{Change Log}
+%\chapter*{Change Log}
 \addcontentsline{toc}{chapter}{Change Log}
 
-\begin{guidance}[Treating early iterations as "draft"]
-Do not use placeholder text or "to be decided" sections anywhere in this
-document. Each iteration should be written as a complete, reviewable
-deliverable -- assume it is final unless a later iteration explicitly
-revises it.
-\end{guidance}
+% \begin{guidance}[Treating early iterations as "draft"]
+% Do not use placeholder text or "to be decided" sections anywhere in this
+% document. Each iteration should be written as a complete, reviewable
+% deliverable -- assume it is final unless a later iteration explicitly
+% revises it.
+% \end{guidance}
 
-\textbf{Iteration 1:}
-\begin{itemize}
-  \item \fillin{What was created/changed in Iteration 1}
-\end{itemize}
+%\textbf{Iteration 1:}
+%\begin{itemize}
+%  \item \fillin{What was created/changed in Iteration 1}
+%\end{itemize}
 
-\textbf{Iteration 2:}
-\begin{itemize}
-  \item \fillin{What was created/changed in Iteration 2}
-\end{itemize}
+%\textbf{Iteration 2:}
+%\begin{itemize}
+%  \item \fillin{What was created/changed in Iteration 2}
+%\end{itemize}
 
-\textbf{Iteration 3:}
-\begin{itemize}
-  \item \fillin{What was created/changed in Iteration 3}
-\end{itemize}
+%\textbf{Iteration 3:}
+%\begin{itemize}
+%  \item \fillin{What was created/changed in Iteration 3}
+%\end{itemize}
 
-\textbf{Final Iteration:}
-\begin{itemize}
-  \item \fillin{What was created/changed in the Final Iteration}
-\end{itemize}
+%\textbf{Final Iteration:}
+%\begin{itemize}
+%  \item \fillin{What was created/changed in the Final Iteration}
+%\end{itemize}
 
 % ============================================================
 \chapter{Requirements Analysis}
 
-\begin{guidance}[Analysis before implementation]
-Finish this section and the Use Cases section \emph{before} you discuss
-any classes, code, or UI screens elsewhere in the document. Every
-planned feature must trace to at least one requirement and one use case.
-Avoid phrases like "we plan to implement \ldots" without first explaining
-\emph{why} the feature is needed from the user's perspective.
-\end{guidance}
+% \begin{guidance}[Analysis before implementation]
+% Finish this section and the Use Cases section \emph{before} you discuss
+% any classes, code, or UI screens elsewhere in the document. Every
+% planned feature must trace to at least one requirement and one use case.
+% Avoid phrases like "we plan to implement \ldots" without first explaining
+% \emph{why} the feature is needed from the user's perspective.
+% \end{guidance}
 
 \textbf{Customer / Stakeholder Perspective:}
 Small independent artists need a platform to host their art and foster deeper connections with their fan communities. As an artist, I want a hybrid social media and art hosting site to upload my music, images, and stories, promote events, and interact directly with my supporters through messages and videos. As a fan, I want to discover new artists near me, follow their updates, attend their shows, and interact with other members of the community. As an administrator, I need tools to moderate the platform, review applications, and keep the community safe.
@@ -120,26 +120,26 @@ Small independent artists need a platform to host their art and foster deeper co
   \item Any optional AI functionalities (e.g., content moderation, recommendation engines, or AI-generated art detectors) must be designed to respect user privacy, include human oversight, and feature fallback behavior.
 \end{itemize}
 
-\section*{Requirements Clarification Questions}
-\begin{guidance}[Track open questions]
-List any clarification questions your team has raised with the client
-or instructor, and the answers once given. Update this list every
-iteration rather than deleting resolved items -- it shows the grader
-your requirements evolved deliberately.
-\end{guidance}
-\begin{itemize}
-  \item \textbf{Q:} \fillin{Question} \\ \textbf{A:} \fillin{Answer, or "Pending"}
-\end{itemize}
+%\section*{Requirements Clarification Questions}
+% \begin{guidance}[Track open questions]
+% List any clarification questions your team has raised with the client
+% or instructor, and the answers once given. Update this list every
+% iteration rather than deleting resolved items -- it shows the grader
+% your requirements evolved deliberately.
+% \end{guidance}
+%\begin{itemize}
+%  \item \textbf{Q:} \fillin{Question} \\ \textbf{A:} \fillin{Answer, or "Pending"}
+%\end{itemize}
 
 % ============================================================
 \chapter{User Story}
 
-\begin{guidance}[Requirements traceability]
-Every requirement above should be reflected in at least one user story,
-and every user story should later map to a use case. Keep IDs or
-consistent wording so a reader can trace a requirement all the way
-through to the System Sequence Diagrams.
-\end{guidance}
+% \begin{guidance}[Requirements traceability]
+% Every requirement above should be reflected in at least one user story,
+% and every user story should later map to a use case. Keep IDs or
+% consistent wording so a reader can trace a requirement all the way
+% through to the System Sequence Diagrams.
+% \end{guidance}
 
 \begin{itemize}
   \item \textbf{[US-01]} As a \textbf{Fan}, I want to \textbf{search for artists using a proximity-based radius} so that \textbf{I can discover and attend local shows}. \textit{(Maps to UC: Search for Artist)}
@@ -210,43 +210,43 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
   \item \textbf{Authenticity \& Safety Focus:} Proposes specialized AI tools—like AI-generated art detectors and privacy-respecting moderation—to maintain a secure, human-centric ecosystem dedicated to independent art.
 \end{itemize}
 % ============================================================
-\chapter{Workflow}
+%\chapter{Workflow}
 
-\begin{guidance}[System boundary]
-Make sure the workflow diagram clearly separates what the \emph{actor}
-does from what the \emph{system} does. Actors should never be shown
-performing system responsibilities (e.g., "system authenticates," not
-"user authenticates"), and external systems should not be drawn as if
-they were internal components.
-\end{guidance}
+% \begin{guidance}[System boundary]
+% Make sure the workflow diagram clearly separates what the \emph{actor}
+% does from what the \emph{system} does. Actors should never be shown
+% performing system responsibilities (e.g., "system authenticates," not
+% "user authenticates"), and external systems should not be drawn as if
+% they were internal components.
+% \end{guidance}
 
-\fillin{Insert workflow / activity diagram here, e.g.\\
-\texttt{\textbackslash includegraphics[width=\textbackslash textwidth]\{workflow.png\}}}
+%\fillin{Insert workflow / activity diagram here, e.g.\\
+%texttt{\textbackslash includegraphics[width=\textbackslash %textwidth]\{workflow.png\}}}
 
 % ============================================================
 \chapter{Use Cases}
 
-\begin{guidance}[Use cases are not UI click-throughs]
-Do not write use cases as a sequence of UI actions ("user clicks
-button, system shows page"). Describe the \emph{system's
-responsibilities and guarantees} -- business rules, alternative flows,
-and constraints -- not screen navigation. UI details will change over
-time; system behavior should be the stable part of the documentation.
-\end{guidance}
+% \begin{guidance}[Use cases are not UI click-throughs]
+% Do not write use cases as a sequence of UI actions ("user clicks
+% button, system shows page"). Describe the \emph{system's
+% responsibilities and guarantees} -- business rules, alternative flows,
+% and constraints -- not screen navigation. UI details will change over
+% time; system behavior should be the stable part of the documentation.
+% \end{guidance}
 
-\begin{guidance}[Fully-dressed format required]
-Each team member is responsible for exactly 3 use cases in
-\emph{fully-dressed} form (Primary Actor, Preconditions, Postconditions,
-Main Success Scenario, Extensions). A one-line summary or a bare
-actor/system table is not sufficient for this deliverable.
-\end{guidance}
+% \begin{guidance}[Fully-dressed format required]
+% Each team member is responsible for exactly 3 use cases in
+% \emph{fully-dressed} form (Primary Actor, Preconditions, Postconditions,
+% Main Success Scenario, Extensions). A one-line summary or a bare
+% actor/system table is not sufficient for this deliverable.
+% \end{guidance}
 
 \section*{Actors Overview}
 \begin{itemize}
   \item \textbf{Fan} -- discovers and follows artists, messages them, and books events.
   \item \textbf{Artist} -- manages a public profile, proposes events, and communicates with fans.
   \item \textbf{Admin} -- moderates content and accounts by reviewing user-filed reports.
-  \item \fillin{System actor (e.g., Payment Processor, Push Notification Service) -- add if/when identified}
+  %\item \fillin{System actor (e.g., Payment Processor, Push Notification Service) -- add if/when identified}
 \end{itemize}
 
 % ------------------------------------------------------------
@@ -956,68 +956,68 @@ None
 % ============================================================
 \chapter{Use Case Diagrams}
 
-\begin{guidance}[Every use case must appear here]
-Every fully-dressed use case in the previous chapter -- from every team
-member -- should appear as an oval in this diagram, associated with its
-actor(s). If a use case is missing here, or a use case appears here with
-no matching fully-dressed writeup, that is a traceability gap graders
-will look for.
-\end{guidance}
+% \begin{guidance}[Every use case must appear here]
+% Every fully-dressed use case in the previous chapter -- from every team
+% member -- should appear as an oval in this diagram, associated with its
+% actor(s). If a use case is missing here, or a use case appears here with
+% no matching fully-dressed writeup, that is a traceability gap graders
+% will look for.
+% \end{guidance}
 
 \begin{center}
 \includegraphics[width=\textwidth]{../../UseCaseDiagram/UseCaseDiagram.png}
 \end{center}
 
 % ============================================================
-\chapter{System Sequence Diagram}
+% \chapter{System Sequence Diagram}
 
-\begin{guidance}[Consistency with use cases]
-Every scenario shown here should correspond to a use case described
-earlier, using the same name. Missing or renamed scenarios break
-traceability between Use Cases and SSDs.
-\end{guidance}
+% \begin{guidance}[Consistency with use cases]
+% Every scenario shown here should correspond to a use case described
+% earlier, using the same name. Missing or renamed scenarios break
+% traceability between Use Cases and SSDs.
+% \end{guidance}
 
-\section*{\fillin{Scenario Name}}
-\fillin{Insert system sequence diagram here.}
+% \section*{\fillin{Scenario Name}}
+% \fillin{Insert system sequence diagram here.}
 
-\begin{longtable}{|p{0.48\textwidth}|p{0.48\textwidth}|}
-\hline
-\textbf{Actor} & \textbf{System} \\
-\hline
-1. \fillin{step} & \\
-\hline
- & 2. *\fillin{system response} \\
-\hline
-3. \fillin{step} & \\
-\hline
-\end{longtable}
+% \begin{longtable}{|p{0.48\textwidth}|p{0.48\textwidth}|}
+% \hline
+% \textbf{Actor} & \textbf{System} \\
+% \hline
+% 1. \fillin{step} & \\
+% \hline
+%  & 2. *\fillin{system response} \\
+% \hline
+% 3. \fillin{step} & \\
+% \hline
+% \end{longtable}
 
-\bigskip
-\textit{Repeat for each scenario.}
+% \bigskip
+% \textit{Repeat for each scenario.}
 
 % ============================================================
 \chapter{Domain Model}
 
-\begin{guidance}[Domain model is not a class diagram]
-Use only nouns from the problem statement as domain classes. Do not
-include methods, data types, UI classes, or persistence/database
-details -- those belong to design, not analysis. Show entities and the
-associations/multiplicities between them, not implementation.
-\end{guidance}
+% \begin{guidance}[Domain model is not a class diagram]
+% Use only nouns from the problem statement as domain classes. Do not
+% include methods, data types, UI classes, or persistence/database
+% details -- those belong to design, not analysis. Show entities and the
+% associations/multiplicities between them, not implementation.
+% \end{guidance}
 
 \includegraphics[width=\textwidth]{../../DomainModel/DomainModel.png}
 
 % ============================================================
 \chapter{Operation Contracts}
 
-\begin{guidance}[One contract per key system operation]
-An operation contract documents \emph{what} a system operation
-guarantees, not \emph{how} it is implemented. Postconditions describe
-instances created/deleted, associations formed/broken, and attributes
-changed -- written in the past tense, as if describing what has already
-happened. Write one contract per team member's use cases (typically the
-one system operation in the main success scenario that changes state).
-\end{guidance}
+% \begin{guidance}[One contract per key system operation]
+% An operation contract documents \emph{what} a system operation
+% guarantees, not \emph{how} it is implemented. Postconditions describe
+% instances created/deleted, associations formed/broken, and attributes
+% changed -- written in the past tense, as if describing what has already
+% happened. Write one contract per team member's use cases (typically the
+% one system operation in the main success scenario that changes state).
+% \end{guidance}
 
 \section*{Operation: searchArtists(criteria: SearchCriteria): List\textlangle ArtistSummary\textrangle}
 \begin{description}[leftmargin=2.8cm, style=nextline]
@@ -1068,49 +1068,19 @@ one system operation in the main success scenario that changes state).
     \end{itemize}
 \end{description}
 
-\bigskip
-\textit{Repeat the operation contract pattern above for each additional team member's key use-case operation.}
-
 % ============================================================
 \chapter{Test Cases}
 
-\begin{guidance}[Traceability of tests]
-Each test case should reference the requirement or use case it
-verifies. Keep test case IDs consistent across iterations so gaps in
-coverage are easy to spot.
-\end{guidance}
+% \begin{guidance}[Traceability of tests]
+% Each test case should reference the requirement or use case it
+% verifies. Keep test case IDs consistent across iterations so gaps in
+% coverage are easy to spot.
+% \end{guidance}
 
 \section{Test Cases for Iteration 1}
+No test cases were produced during iteration one.
 
-\textbf{Target Users:} \fillin{Who}
-
-\textbf{What is covered in the tests:}
-\begin{enumerate}
-  \item \fillin{Area of functionality covered}
-\end{enumerate}
-
-\subsection*{Test Case: \fillin{ID, e.g., T1}}
-\begin{itemize}
-  \item \textbf{Description:} \fillin{What this test checks}
-  \item \textbf{Action:} \fillin{Function/action exercised}
-  \item \textbf{Related Requirements:} \fillin{Preconditions}
-  \item \textbf{Expected Result:} \fillin{Expected behavior}
-  \item \textbf{Test Result:} \fillin{Actual behavior observed}
-  \item \textbf{Status:} \fillin{Pass / Fail}
-\end{itemize}
-
-\bigskip
-\textit{Repeat the Test Case block above for each test in this iteration.}
-
-\section{Test Cases for Iteration 2}
-\fillin{Same structure as Iteration 1.}
-
-\section{Test Cases for Iteration 3}
-\fillin{Same structure as Iteration 1.}
-
-\section{Test Cases for Final Iteration}
-\fillin{Same structure as Iteration 1.}
-
+% ============================================================
 \chapter{UI Mockups}
 
 \begin{center}
