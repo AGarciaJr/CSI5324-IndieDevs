@@ -101,19 +101,23 @@ Avoid phrases like "we plan to implement \ldots" without first explaining
 \end{guidance}
 
 \textbf{Customer / Stakeholder Perspective:}
-\fillin{Describe who the end users are and what they are trying to
-achieve, in their own words.}
+Small independent artists need a platform to host their art and foster deeper connections with their fan communities. As an artist, I want a hybrid social media and art hosting site to upload my music, images, and stories, promote events, and interact directly with my supporters through messages and videos. As a fan, I want to discover new artists near me, follow their updates, attend their shows, and interact with other members of the community. As an administrator, I need tools to moderate the platform, review applications, and keep the community safe.
 
 \textbf{Functional Requirements:}
 \begin{itemize}
-  \item \fillin{Functional requirement 1}
-  \item \fillin{Functional requirement 2}
-  \item \fillin{Functional requirement 3}
+  \item The system must support role-based access control with distinct permissions and workflows for Fans, Artists, and Administrators.
+  \item The system must allow Artists to maintain a profile, upload multimedia content (music, art images, stories, videos), and promote their events.
+  \item The system must enable Fans to maintain an "about" profile and discover new artists using a proximity-based radius search.
+  \item The system must provide a messaging infrastructure allowing fans to message artists and each other.
+  \item The system must allow Administrators to review prospective artist applications, respond to user reports, and manage/ban accounts violating the Terms of Service (ToS).
 \end{itemize}
 
 \textbf{Non-Functional Requirements / Environment:}
 \begin{itemize}
-  \item \fillin{Platform, performance, deployment constraints, etc.}
+  \item The system must be a web-based application utilizing a 3-tier architecture (frontend web server, backend application layer, and database) to handle persistence and advanced business logic.
+  \item The system must be deployed to a cloud hosting service such as Google Cloud Platform (GCP), Amazon Web Services (AWS), or Microsoft Azure.
+  \item The development lifecycle must incorporate a CI/CD pipeline with mandatory pull requests.
+  \item Any optional AI functionalities (e.g., content moderation, recommendation engines, or AI-generated art detectors) must be designed to respect user privacy, include human oversight, and feature fallback behavior.
 \end{itemize}
 
 \section*{Requirements Clarification Questions}
