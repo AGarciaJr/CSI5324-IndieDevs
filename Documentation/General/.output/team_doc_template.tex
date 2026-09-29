@@ -50,7 +50,7 @@
 % ============================================================
 \title{\textbf{\fillin{Project Name}\\Documentation}}
 \author{
-{Alejandro Garcia Jr}\\ \fillin{Member B}\\ \fillin{Member C}\\ \fillin{Member D}\\ \fillin{Member E}}
+{Alejandro Garcia Jr}\\ {Garrett DeYong} \\ {Nicholas Nolen}\\ {William Waweru}\\ {Gan Orgil}}
 \date{{9/27/2026}}
 
 \begin{document}
@@ -405,7 +405,7 @@ actor/system table is not sufficient for this deliverable.
 \end{itemize}
 
 
-\subsection{UC: Message Another User (Beginning a New Conversation)
+\subsection{UC: Message Another User (Beginning a New Conversation)}
 
 {\bfseries Use case:} Message another user (beginning a new conversation)
 
@@ -495,6 +495,142 @@ None
 \end{itemize}
 
 
+\section{{Nicholas Nolen} -- Use Cases}
+
+\subsection{UC: Update Event}
+
+\begin{description}[leftmargin=2.2cm, style=nextline]
+  \item[Primary Actor] Artist
+  \item[Scope] Artist Home Page
+  \item[Level] User goal
+  \item[Stakeholders \& Interests]
+    \begin{itemize}
+      \item \textbf{Fan:} As a fan I want to be able to view artist's most up to date event information.
+      \item \textbf{Artist:} As an artist I want to provide up to date information about my events.
+    \end{itemize}
+  \item[Preconditions]
+    \begin{itemize}
+      \item An artist has logged into the system.
+      \item An artist has already created an event.
+
+    \end{itemize}
+  \item[Postconditions (Success Guarantee)]
+    \begin{itemize}
+      \item An event has been updated on the artist's profile.
+    \end{itemize}
+  \item[Main Success Scenario]
+    \begin{enumerate}
+      \item The artist selects the edit event option in their profile.
+      \item The system prompts the artist to write over the event information (e.g. event type, description, date, time, relevant images/flyers).
+      \item The artist updates their event’s information.
+      \item The system validates the input.
+      \item The system prompts the artist to review their updated event details.
+      \item The artist acknowledges they reviewed their details and submits the event.
+      \item The event shows up on the artist’s profile to everyone who views it.
+
+    \end{enumerate}
+  \item[Extensions]
+    \begin{itemize}
+      \item[5a. Invalid Input]
+        \item The system detects invalid input.
+        \item The system displays an error message and requests the artist correct the issue.
+      \item[6a.] Artist fails to acknowledge
+        \item The system displays an error message stating the artist must acknowledge they have reviewed the details of their submission before submitting.
+        \item The artist acknowledges their review.
+        \item The artist submits their event.  
+
+    \end{itemize}
+  \item[Frequency of Occurrence] Mdderate -- It is expected for artists to make mistakes uploading event information. 
+\end{description}
+
+
+\subsection{UC: Unban Fan}
+
+\begin{description}[leftmargin=2.2cm, style=nextline]
+  \item[Primary Actor] Admin
+  \item[Scope] Administrative service
+  \item[Level] System goal
+  \item[Stakeholders \& Interests]
+    \begin{itemize}
+      \item \textbf{Admin:} As an admin I want to do my job and process appeals 
+      \item \textbf{Fan:} As a fan I want to be appealed to access the site.
+    \end{itemize}
+  \item[Preconditions]
+    \begin{itemize}
+      \item An Admin has logged into the system.
+      \item A ban appeal has been made by a fan.
+
+    \end{itemize}
+  \item[Postconditions (Success Guarantee)]
+    \begin{itemize}
+      \item A different admin than the banning admin has reviewed the appeal.
+      \item Fans are either unbanned or the ban is upheld.
+      
+    \end{itemize}
+  \item[Main Success Scenario]
+    \begin{enumerate}
+      \item The admin selects the option to review open appeals from bans performed by admin other than themselves.
+      \item The admin selects an appeal.
+      \item The admin reviews fan submitted reasoning for the appeal along with related report material.
+      \item The admin reviews the automated AI recommendation for how to proceed based on ToS.
+      \item The admin selects an option to proceed with unbanning the user.
+      \item The system removes the user's ban.
+      \item The system grants the user the ability to log into the website.
+    
+    \end{enumerate}
+  \item[Extensions]
+    \begin{itemize}
+      \item[1a.]No appeals
+        \item The system shows no open appeals.
+        \item The admin closes the reports tab.
+      \item[5a. Appeal is invalid] 
+        \item The admin selects an option to mark the appeal as invalid.
+        \item The system logs the appeal as invalid and removes it from the open appeals list.
+    \end{itemize}
+  \item[Frequency of Occurrence] High -- There will likely always be fans trying to appeal bans.
+\end{description}
+
+
+\subsection{UC: Recieve Reccomendation}
+
+\begin{description}[leftmargin=2.2cm, style=nextline]
+  \item[Primary Actor] Fan
+  \item[Scope] Fan Home Page
+  \item[Level] User goal
+  \item[Stakeholders \& Interests]
+    \begin{itemize}
+      \item \textbf{Fan:} As a fan I want to be able to find artists similar to those I like.
+      \item \textbf{Artist:} As an artist I want to get my art out there to fans.
+    \end{itemize}
+  \item[Preconditions]
+    \begin{itemize}
+      \item A fan has logged into the system.
+      \item A fan has previously interacted with artists on the platform.
+
+    \end{itemize}
+  \item[Postconditions (Success Guarantee)]
+    \begin{itemize}
+      \item A fan receives recommendations for artists they might like.
+    \end{itemize}
+  \item[Main Success Scenario]
+    \begin{enumerate}
+      \item A fan selects the option to display artists they might like.
+      \item The system retrieves the artists a fan has previously interacted with (e.g. viewed profiles, liking posts, commenting on posts, etc.).
+      \item The system constructs a numerical score for each of the types and genres of content the user interacts with.  
+      \item The system uses an AI process to find artists with similar content to the user’s most interacted with types.
+      \item The system displays a list of artists to the user.
+
+    \end{enumerate}
+  \item[Extensions]
+    \begin{itemize}
+      \item[1a.] New Fan
+      \item The fan has logged into the system for the first time and does not have interactions.
+      \item The system does not show the option to display artists they might like.
+    \end{itemize}
+  \item[Frequency of Occurrence] High -- It is likely fans will want frequent reccomendations.
+\end{description}
+
+
 % ============================================================
 \chapter{Use Case Diagrams}
 
@@ -507,7 +643,7 @@ will look for.
 \end{guidance}
 
 \begin{center}
-\includegraphics[width=\textwidth]{use_case_diagram.png}
+\includegraphics[width=\textwidth]{../use_case_diagram.png}
 \end{center}
 
 \fillin{This diagram currently shows only Alejandro's 3 use cases plus
