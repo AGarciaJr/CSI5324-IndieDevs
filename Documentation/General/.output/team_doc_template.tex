@@ -361,8 +361,139 @@ actor/system table is not sufficient for this deliverable.
 \textit{Repeat the section above for each additional team member, with their own 3 use cases in the same fully-dressed format.}
 
 % ------------------------------------------------------------
-\section{\fillin{Team Member Name} -- Use Cases}
-\fillin{Add this member's 3 fully-dressed use cases here, following the format above.}
+\section{Garrett DeYong -- Use Cases}
+
+\subsection{UC: Make a Post -- Artist}
+
+{\bfseries Use case:} Make a post
+
+{\bfseries Actor:} Artist
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+	\item The artist is logged in.
+	\item The artist is allowed to post.
+\end{enumerate}
+
+{\bfseries Postconditions;}
+\begin{enumerate}
+	\item A new post belonging to the user is saved in the database.
+	\item This post can be viewed and commented on according to provided settings.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+	\item The artist selects the option to create a post.
+	\item The system prompts the artist to provide post content (text, files) and post permissions (whether it is public, whether it can be commented on).
+	\item The artist provides this information.
+	\item The system stores the post.
+	\item The system adds the post to the artist's account.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+	\item [4a.] No post content provided
+	\begin{enumerate}
+		\item [4a1.] The system determines no post content was provided.
+		\item [4a2.] The system prompts the sender to provide post content.
+	\end{enumerate}
+\end{enumerate}
+
+{\bfseries Special requirements:}
+\begin{itemize}
+	\item For public posts, the system should update the artist's profile content quickly (within 5 seconds, ideally).
+\end{itemize}
+
+
+\subsection{UC: Message Another User (Beginning a New Conversation)
+
+{\bfseries Use case:} Message another user (beginning a new conversation)
+
+{\bfseries Actor:} User (artist or fan)
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+	\item The sender is logged in.
+	\item The sender is allowed to send messages.
+	\item The sender has accessed the recipient's page.
+	\item The recipient is accepting messages (both in general and from the sender specifically).
+	\item The sender and recipient do not currently have an ongoing conversation.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+	\item A new conversation thread is established.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+	\item The sender selects the option on the recipients profile to begin a message.
+	\item The system prompts the sender to type the message.
+	\item The sender inputs the message.
+	\item The system checks and validates the message.
+	\item The system creates a new conversation thread with the provided message.
+	\item The system enables access to this thread to the sender and the recipient.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+	\item [4a.] Message empty
+	\begin{enumerate}
+		\item [4a1.] The system determines no message was provided.
+		\item [4a2.] The system prompts the sender to type the message.
+	\end{enumerate}
+	\item[4b.] Message not appropriate/allowable
+	\begin{enumerate}
+		\item [4b1.] The system determines the message is not appropriate in some way.
+		\item [4b2.] The system warns the sender of this and prompts for message modifications.
+	\end{enumerate}
+\end{enumerate}
+
+{\bfseries Special requirements:}
+\begin{itemize}
+	\item The recipient should be notified that they have received a new message.
+\end{itemize}
+
+
+\subsection{UC: Monitor Comments -- Artist}
+
+{\bfseries Use case:} Monitor comments
+
+{\bfseries Actor:} Artist
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+	\item The artist is logged in.
+	\item The artist has accessed the comment section of one of their posts.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+	\item A given comment has been hidden from users.
+	\item Admins have been informed, if the artist so chooses.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+	\item The artist selects the manage option on a comment.
+	\item The system prompts the artist to select the desired action (delete/report/block user).
+	\item The artist provides this information.
+	\item The system hides the comment from users.
+	\item If reporting was selected, the system files a report.
+	\item If blocking the user was selected, the system makes a request for this.
+\end{enumerate}
+
+{\bfseries Extensions:}
+None
+
+{\bfseries Special requirements:}
+\begin{itemize}
+	\item The system should not delete the comment from the database; it should be stored, but not visible to non-admin users.
+	\item The comment should be hidden quickly (within 2 seconds, ideally).
+	\item The user should be blocked (if applicable) quickly (within 2 seconds, ideally).
+	\item The report (if applicable) should be sent within a few minutes.
+\end{itemize}
+
 
 % ============================================================
 \chapter{Use Case Diagrams}
