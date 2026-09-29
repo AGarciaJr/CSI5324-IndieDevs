@@ -419,6 +419,11 @@ INPUT ../../UseCaseDiagram/UseCaseDiagram.png
 INPUT ../../UseCaseDiagram/UseCaseDiagram.png
 INPUT ../../UseCaseDiagram/UseCaseDiagram.png
 INPUT ../../UseCaseDiagram/UseCaseDiagram.png
+INPUT ../../DomainModel/DomainModel.png
+INPUT ../../DomainModel/DomainModel.png
+INPUT ../../DomainModel/DomainModel.png
+INPUT ../../DomainModel/DomainModel.png
+INPUT ../../DomainModel/DomainModel.png
 OUTPUT iteration_slides_template.nav
 OUTPUT iteration_slides_template.toc
 OUTPUT iteration_slides_template.snm
