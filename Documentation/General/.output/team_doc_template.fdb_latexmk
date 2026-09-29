@@ -1,7 +1,7 @@
 # Fdb version 4
-["pdflatex"] 1790646545.7867 "/home/nicholasnolen/Classwork/Software Engineering/Deliverable_02/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" "team_doc_template.pdf" "team_doc_template" 1790646546.51032 0
+["pdflatex"] 1790651479.94719 "/home/nicholasnolen/Classwork/Software Engineering/Deliverable_02/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" "team_doc_template.pdf" "team_doc_template" 1790651480.65701 0
   "../use_case_diagram.png" 1790616075.12273 32284 046cfb78f19351fe200ce3130247496b ""
-  "/home/nicholasnolen/Classwork/Software Engineering/Deliverable_02/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" 1790646545.59115 33605 e53b7f926cb5a8bdee6962a7f6091dea ""
+  "/home/nicholasnolen/Classwork/Software Engineering/Deliverable_02/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" 1790651478.27184 51034 124334fd27bf11c36e6860573cdcefaa ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/tcbx1440.tfm" 1136768653 1536 31d7b1d6f1ef88de2aa925487cab16c7 ""
@@ -157,10 +157,10 @@
   "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1777593600 43785 66587115382950aca692b5f6e3c2fb74 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1788369061 1852937 ae85433a67525f4bfd07d924927a0dd6 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1788368970 3334134 17791fa52a8f85c9760ca865bffb83f2 ""
-  "team_doc_template.aux" 1790646546.44528 4579 7a2d900eddaaba2204c4f8108c97bc71 "pdflatex"
-  "team_doc_template.out" 1790646546.44628 4762 4e5f494a398326f1567087b814f55d8d "pdflatex"
-  "team_doc_template.tex" 1790646545.59115 33605 e53b7f926cb5a8bdee6962a7f6091dea ""
-  "team_doc_template.toc" 1790646546.44678 2355 73d008b2d8324d7bdb110df32446cc69 "pdflatex"
+  "team_doc_template.aux" 1790651480.59003 5730 6ac8b1d2d68acec7a40a5344067a6c79 "pdflatex"
+  "team_doc_template.out" 1790651480.59103 6682 95c9c65ea1381ddb96998f9afa161db6 "pdflatex"
+  "team_doc_template.tex" 1790651478.27184 51034 124334fd27bf11c36e6860573cdcefaa ""
+  "team_doc_template.toc" 1790651480.59103 3178 d67a74d45e6251b8ed38ff31c9d3ea1b "pdflatex"
   (generated)
   "team_doc_template.aux"
   "team_doc_template.log"
