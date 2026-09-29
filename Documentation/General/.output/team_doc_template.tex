@@ -631,6 +631,171 @@ None
 \end{description}
 
 
+
+% ------------------------------------------------------------
+\section{William Waweru -- Use Cases}
+
+\subsection{UC: Follow Artist -- Fan}
+
+{\bfseries Use case:} Follow Artist
+
+{\bfseries Actor:} Fan
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+    \item The Fan is logged into the system.
+    \item The Artist has an active account that is visible to the Fan.
+    \item The Fan is not currently following the Artist.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+    \item The Fan is recorded as a follower of the Artist.
+    \item The Artist is added to the Fan's list of followed Artists.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+    \item The Fan requests to follow an Artist.
+    \item The system verifies that the Artist's account is active.
+    \item The system verifies that the Fan is not already following the Artist.
+    \item The system creates a following relationship between the Fan and the Artist.
+    \item The system updates the Artist's follower information.
+    \item The system confirms that the Fan is now following the Artist.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+    \item[2a.] Artist account is unavailable.
+    \begin{enumerate}
+        \item[2a1.] The system determines that the Artist's account is suspended, banned, or otherwise unavailable.
+        \item[2a2.] The system does not create the following relationship.
+        \item[2a3.] The system informs the Fan that the Artist cannot currently be followed.
+    \end{enumerate}
+
+    \item[3a.] Fan already follows the Artist.
+    \begin{enumerate}
+        \item[3a1.] The system detects an existing following relationship.
+        \item[3a2.] The system does not create a duplicate relationship.
+        \item[3a3.] The existing following relationship remains unchanged.
+    \end{enumerate}
+\end{enumerate}
+
+
+\subsection{UC: Manage Fan Profile -- Fan}
+
+{\bfseries Use case:} Manage Fan Profile
+
+{\bfseries Actor:} Fan
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+    \item The Fan is logged into the system.
+    \item The Fan has an existing account and profile.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+    \item Valid profile changes are stored by the system.
+    \item The updated information is associated with the Fan's profile.
+    \item Profile information is displayed according to the Fan's privacy settings.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+    \item The Fan requests to modify their profile.
+    \item The system provides the Fan's existing profile information.
+    \item The Fan provides updated profile information, such as a biography, artistic interests, supported Artists, or profile image.
+    \item The Fan specifies applicable privacy preferences.
+    \item The Fan submits the updated profile information.
+    \item The system validates the submitted information according to profile and content rules.
+    \item The system stores the valid changes.
+    \item The system applies the Fan's privacy preferences to the updated information.
+    \item The system confirms that the profile has been updated.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+    \item[6a.] Invalid profile information.
+    \begin{enumerate}
+        \item[6a1.] The system identifies invalid profile information.
+        \item[6a2.] The system rejects the affected changes and informs the Fan which information must be corrected.
+        \item[6a3.] The Fan provides corrected information.
+        \item[6a4.] The process resumes at Step 5.
+    \end{enumerate}
+
+    \item[6b.] Profile content violates platform rules.
+    \begin{enumerate}
+        \item[6b1.] The system determines that the submitted content violates platform content rules.
+        \item[6b2.] The system rejects the prohibited content.
+        \item[6b3.] The system informs the Fan that the profile cannot be updated with that content.
+    \end{enumerate}
+
+    \item[7a.] Profile update cannot be stored.
+    \begin{enumerate}
+        \item[7a1.] The system preserves the previously stored profile information.
+        \item[7a2.] The system informs the Fan that the update was unsuccessful.
+    \end{enumerate}
+\end{enumerate}
+
+
+\subsection{UC: Report Inappropriate Content -- Fan}
+
+{\bfseries Use case:} Report Inappropriate Content
+
+{\bfseries Actor:} Fan
+
+{\bfseries Preconditions:}
+\begin{enumerate}
+    \item The Fan is logged into the system.
+    \item The content or account being reported exists and is accessible to the Fan.
+\end{enumerate}
+
+{\bfseries Postconditions:}
+\begin{enumerate}
+    \item A new report is stored with a pending status.
+    \item The report contains the reporting Fan, reported content or account, reason, and relevant information.
+    \item The report is available for Administrator review.
+\end{enumerate}
+
+{\bfseries Main flow:}
+\begin{enumerate}
+    \item The Fan identifies content or user behavior that they believe violates the platform's rules.
+    \item The Fan requests to report the content or account.
+    \item The system identifies the content or account associated with the report.
+    \item The system requests a report reason and any additional relevant information.
+    \item The Fan provides a reason and submits the report.
+    \item The system validates that the report contains the required information.
+    \item The system creates the report and records the relevant information.
+    \item The system assigns the report a pending status and makes it available for Administrator review.
+    \item The system confirms to the Fan that the report has been submitted.
+\end{enumerate}
+
+{\bfseries Extensions:}
+\begin{enumerate}
+    \item[3a.] Reported content is no longer available.
+    \begin{enumerate}
+        \item[3a1.] The system determines that the reported content is no longer publicly available.
+        \item[3a2.] If sufficient information about the original content remains available, the system allows the report to continue.
+        \item[3a3.] Otherwise, the system informs the Fan that the report cannot be completed.
+    \end{enumerate}
+
+    \item[6a.] Report does not contain required information.
+    \begin{enumerate}
+        \item[6a1.] The system determines that required report information is missing.
+        \item[6a2.] The system does not submit the report.
+        \item[6a3.] The system requests the missing information from the Fan.
+    \end{enumerate}
+
+    \item[7a.] Duplicate report exists.
+    \begin{enumerate}
+        \item[7a1.] The system identifies an existing pending report from the same Fan for the same content or account.
+        \item[7a2.] The system prevents creation of a duplicate report.
+        \item[7a3.] The system informs the Fan that they have already reported the content or account.
+    \end{enumerate}
+\end{enumerate}
+
+
 % ============================================================
 \chapter{Use Case Diagrams}
 
