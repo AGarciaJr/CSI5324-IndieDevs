@@ -1,0 +1,51 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# JVM crash logs and runtime logs
+hs_err_pid*
+replay_pid*
+*.log
+
+# OS-specific clutter
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local DB / H2 test artifacts (if you ever run H2 in file mode instead of memory)
+*.mv.db
+*.trace.db
+
+# Local environment variables
+.env
+.env.local

@@ -1,0 +1,40 @@
+# ==========================================
+# Root-Level IDE & Editor Configurations
+# ==========================================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# ==========================================
+# Operating System Noise
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ==========================================
+# Global Logs & Crash Reports
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+hs_err_pid*
+replay_pid*
+
+# ==========================================
+# Local Environment Files
+# ==========================================
+*.env
+*.env.local
+*.env.*.local
