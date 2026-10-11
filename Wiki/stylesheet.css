@@ -1,0 +1,18 @@
+body {
+    background-color: #101030;
+    color: #EEEEEE;
+}
+
+h1 {
+    text-align: center;
+}
+
+.member {
+    background-color: #A0C0F0;
+    color: #010110;
+    border-style: solid;
+    box-sizing: border-box;
+    margin: 10px;
+    padding: 10px;
+    display: inline-block;
+}
