@@ -1,0 +1,91 @@
+\documentclass[a4paper]{article}
+
+\usepackage{pgf-umlsd}
+
+\begin{document}
+
+
+{\bfseries Artist - Make a post}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{a}{Artist}
+	\newinst[1]{c}{PostController}
+	\newinst[1]{s}{PostService}
+	\newinst[1]{r}{PostRepository}
+	\newinst[1]{f}{FileRepository}
+	
+	\begin{call}{a}{makePost(text, files, permissions)}{c}{newPostWrapper}
+		
+		\begin{call}{c}{savePost(postData)}{s}{newPostWrapper}
+			
+			\begin{call}{s}{save(post)}{r}{newPost}
+			\end{call}
+			
+			\begin{call}{s}{save(file)}{f}{newFile}
+			\end{call}
+			
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+\hrule
+\bigskip
+
+{\bfseries Artist/Fan - Message another user}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{u}{User}
+	\newinst[2]{c}{MessageController}
+	
+	\begin{call}{u}{sendNewMessage(recipient)}{c}{success}
+		
+		\begin{call}{c}{checkCanSendMessage(user, recipient)}{c}{allowed}
+		\end{call}
+		
+		\begin{call}{c}{promptForMessage()}{u}{messageBody}
+		\end{call}
+		
+		\begin{call}{c}{validateMessage(messageBody)}{c}{messageAcceptable}
+		\end{call}
+		
+		\begin{call}{c}{startConversation(user, recipient, messageBody)}{c}{}
+		\end{call}
+		
+		\begin{call}{c}{notifyUser(recipient)}{c}{}
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+\hrule
+\bigskip
+
+{\bfseries Artist - Monitor comments}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{a}{Artist}
+	\newinst[2]{c}{CommentController}
+	\newinst[2]{r}{ReportController}
+	
+	\begin{call}{a}{manageComment(comment, options)}{c}{success}
+		
+		\begin{call}{c}{[if options.delete] hideComment(comment)}{c}{}
+		\end{call}
+		
+		\begin{call}{c}{[if options.report] reportComment(comment)}{r}{}
+		\end{call}
+		
+		\begin{call}{c}{[if options.block] blockUser(comment.poster)}{c}{}
+		\end{call}
+		
+	\end{call}
+
+
+\end{sequencediagram}
+
+
+\end{document}
