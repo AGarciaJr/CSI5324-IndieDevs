@@ -1,0 +1,92 @@
+\documentclass[a4paper]{article}
+
+\usepackage{pgf-umlsd}
+
+\begin{document}
+
+\begin{minipage}{\textwidth}
+
+    {\bfseries Administrator - Suspending Artist Account}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{a}{Administrator}
+        \newinst[2]{c}{AdminController}
+        \newinst[2]{s}{AccountService}
+        
+        \begin{call}{a}{viewReportedAccounts()}{c}{reportsList}
+            \begin{call}{c}{getPendingReports()}{s}{reportsList}
+            \end{call}
+        \end{call}
+        
+        \begin{call}{a}{banUser(userId)}{c}{success}
+            \begin{call}{c}{updateAccountStatus(userId, 'banned')}{s}{statusUpdated}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\begin{minipage}{\textwidth}
+
+    {\bfseries Fan - Comment on Artwork}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{f}{Fan}
+        \newinst[1]{c}{CommentController}
+        \newinst[1]{s}{CommentService}
+        \newinst[1]{r}{CommentRepository}
+        
+        \begin{call}{f}{requestAddComment(mediaId)}{c}{promptForContent}
+        \end{call}
+        
+        \begin{call}{f}{submitComment(mediaId, content)}{c}{success}
+            \begin{call}{c}{validateComment(content)}{s}{isValid}
+            \end{call}
+            
+            \begin{call}{c}{saveAndPublish(mediaId, content)}{s}{commentSaved}
+                \begin{call}{s}{save(comment)}{r}{newComment}
+                \end{call}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+
+\begin{minipage}{\textwidth}
+
+    {\bfseries Administrator - Review Artist Verification Application}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{a}{Administrator}
+        \newinst[1]{c}{ApplicationController}
+        \newinst[1]{s}{ApplicationService}
+        \newinst[1]{r}{UserRepository}
+        
+        \begin{call}{a}{requestPendingApplications()}{c}{applicationMaterials}
+            \begin{call}{c}{fetchApplications()}{s}{applicationMaterials}
+            \end{call}
+        \end{call}
+        
+        \begin{call}{a}{approveApplication(applicationId)}{c}{success}
+            \begin{call}{c}{assignArtistRole(userId)}{s}{roleUpdated}
+                \begin{call}{s}{updatePermissions(userId, 'Artist')}{r}{userUpdated}
+                \end{call}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+
+\end{document}
