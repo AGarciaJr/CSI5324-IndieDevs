@@ -19,6 +19,9 @@ public class Post {
     private Long posterId;
     private LocalDateTime postDate;
 
+    private boolean isPublic;
+    private boolean commentsAllowed;
+
     private String postText;
 
     public Post() {

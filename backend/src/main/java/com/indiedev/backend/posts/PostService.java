@@ -11,14 +11,35 @@ import java.util.List;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final FileRepository fileRepository;
 
-    public PostService(PostRepository postRepository) { this.postRepository = postRepository; }
+    public PostService(PostRepository postRepository, FileRepository fileRepository) {
+        this.postRepository = postRepository;
+        this.fileRepository = fileRepository;
+    }
 
-    public Post savePost(Post post) { return postRepository.save(post); }
+    // Save a Post and a PostFile (stored together in a wrapper) to their respective repositories
+    public PostWrapper savePost(PostWrapper postWrapper) {
+        PostWrapper confirmationWrapper = new PostWrapper();
+        confirmationWrapper.setPost(postRepository.save(postWrapper.getPost()));
+        confirmationWrapper.setFile(fileRepository.save(postWrapper.getFile()));
+        return confirmationWrapper;
+    }
 
-    public List<Post> getAllPosts() {return postRepository.findAll(); }
+    // Get posts by criteria
+
+    public List<Post> getAllPosts() { return postRepository.findAll(); }
 
     public List<Post> getAllPostsByUser(Long posterId) { return postRepository.findByPosterId(posterId); }
 
     public Post getPostById(Long postId) { return postRepository.findPostById(postId); }
+
+    // Get files by criteria
+
+    public List<PostFile> getAllFiles() { return fileRepository.findAll(); }
+
+    public List<PostFile> getFilesByPostId(Long postId) { return fileRepository.findByPostId(postId); }
+
+    public PostFile getFileById(Long fileId) { return fileRepository.findFileById(fileId); }
+
 }
