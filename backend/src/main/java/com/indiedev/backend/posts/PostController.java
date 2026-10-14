@@ -1,6 +1,12 @@
 /* The api for creating and retrieving posts of any type
  */
 
+/* NOTE:
+ * To add a post to the backend, format the JSON as follows:
+ * {"post" : {"posterId":#, "postText":"#", "isPublic":bool, "commentsAllowed":bool},
+ * "files" : [ {"type":"#", "content":"#"}, {"type":"#", "content":"#"}, {etc.} ] }'
+ */
+
 package com.indiedev.backend.posts;
 
 import org.springframework.web.bind.annotation.*;

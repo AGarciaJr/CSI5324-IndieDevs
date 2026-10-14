@@ -17,7 +17,8 @@ public class PostFile {
 
     private Long postId;
 
-    private float file;
+    private String type;
+    private String content;
 
     public PostFile() {}
 

@@ -5,6 +5,7 @@ package com.indiedev.backend.posts;
 
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,7 +23,15 @@ public class PostService {
     public PostWrapper savePost(PostWrapper postWrapper) {
         PostWrapper confirmationWrapper = new PostWrapper();
         confirmationWrapper.setPost(postRepository.save(postWrapper.getPost()));
-        confirmationWrapper.setFile(fileRepository.save(postWrapper.getFile()));
+
+        List<PostFile> files = postWrapper.getFiles();
+        List<PostFile> newFiles = new ArrayList<>();
+        for (PostFile f : files) {
+            f.setPostId(postWrapper.getPost().getId());
+            newFiles.add(fileRepository.save(f));
+        }
+
+        confirmationWrapper.setFiles(newFiles);
         return confirmationWrapper;
     }
 
