@@ -136,6 +136,7 @@ Small independent artists need a platform to host their art and foster deeper co
   \item The system must enable Fans to maintain an "about" profile and discover new artists using a proximity-based radius search.
   \item The system must provide a messaging infrastructure allowing fans to message artists and each other.
   \item The system must allow Administrators to review prospective artist applications, respond to user reports, and manage/ban accounts violating the Terms of Service (ToS).
+  \item The system must allow Fans to submit appeals on their ban decisions and have an Admin other than the one who initially banned them review the appeals requests.
 \end{itemize}
 
 \textbf{Non-Functional Requirements / Environment:}
@@ -586,13 +587,13 @@ None
     \end{itemize}
   \item[Main Success Scenario]
     \begin{enumerate}
-      \item The artist selects the edit event option in their profile.
+      \item The artist requests to modify an existing event.
       \item The system prompts the artist to write over the event information (e.g. event type, description, date, time, relevant images/flyers).
-      \item The artist updates their event’s information.
+      \item The artist updates their event's information.
       \item The system validates the input.
       \item The system prompts the artist to review their updated event details.
       \item The artist acknowledges they reviewed their details and submits the event.
-      \item The event shows up on the artist’s profile to everyone who views it.
+      \item The event shows up on the artist's profile to everyone who views it.
 
     \end{enumerate}
   \item[Extensions]
@@ -630,15 +631,14 @@ None
   \item[Postconditions (Success Guarantee)]
     \begin{itemize}
       \item A different admin than the banning admin has reviewed the appeal.
-      \item Fans are either unbanned or the ban is upheld.
+      \item The appeal request has been processed and the fan is unbanned.
 
     \end{itemize}
   \item[Main Success Scenario]
     \begin{enumerate}
       \item The admin selects the option to review open appeals from bans performed by admin other than themselves.
       \item The admin selects an appeal.
-      \item The admin reviews fan submitted reasoning for the appeal along with related report material.
-      \item The admin reviews the automated AI recommendation for how to proceed based on ToS.
+      \item The admin reviews fan submitted reasoning for the appeal along with related report material along with an automated AI recommendation based on the ToS.
       \item The admin selects an option to proceed with unbanning the user.
       \item The system removes the user's ban.
       \item The system grants the user the ability to log into the website.
