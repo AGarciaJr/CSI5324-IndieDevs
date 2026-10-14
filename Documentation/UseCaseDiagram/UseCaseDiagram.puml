@@ -1,0 +1,67 @@
+@startuml
+left to right direction
+skinparam nodesep 20
+skinparam ranksep 50
+
+' --- Visual Styling ---
+skinparam actorStyle hollow
+skinparam roundcorner 10
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+
+skinparam usecase {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    BorderThickness 1.2
+    ArrowColor #495057
+    ArrowThickness 1.2
+}
+
+skinparam rectangle {
+    BorderColor #343A40
+    BorderThickness 1.5
+    FontSize 16
+    FontStyle bold
+}
+
+' --- Actors ---
+actor Artist
+actor Fan
+actor Admin
+
+' --- System Boundary & Use Cases ---
+rectangle "Use Case Diagram" {
+    usecase "Create Event" as UC_CreateEvent
+    usecase "Update Event" as UC_UpdateEvent
+    usecase "Monitor Comments" as UC_MonitorComments
+    usecase "Make a post" as UC_MakePost
+    
+    usecase "Search for Artist" as UC_SearchArtist
+    usecase "Receive Recommendations" as UC_ReceiveRec
+    usecase "Comment on Artwork" as UC_CommentArtwork
+    usecase "Message Users" as UC_MessageUsers
+    
+    usecase "Review Report" as UC_ReviewReport
+    usecase "Suspend Artist Account" as UC_SuspendAccount
+    usecase "Unban Fan" as UC_UnbanFan
+    usecase "Review Artist Verification\nApplication" as UC_ReviewVerif
+}
+
+' --- Relationships ---
+Artist -- UC_CreateEvent
+Artist -- UC_UpdateEvent
+Artist -- UC_MonitorComments
+Artist -- UC_MakePost
+Artist -- UC_MessageUsers
+
+Fan -- UC_SearchArtist
+Fan -- UC_CommentArtwork
+Fan -- UC_MessageUsers
+
+UC_SearchArtist ..> UC_ReceiveRec : <<include>>
+
+Admin -- UC_ReviewReport
+Admin -- UC_SuspendAccount
+Admin -- UC_UnbanFan
+Admin -- UC_ReviewVerif
+@enduml
