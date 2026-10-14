@@ -11,6 +11,7 @@
 % ============================================================
 
 \usepackage{pgf-umlsd}
+\usepackage{pgf-umlcd}
 \usepackage[margin=1in]{geometry}
 \usepackage{titlesec}
 \usepackage{fancyhdr}
@@ -1495,7 +1496,154 @@ None
 % associations/multiplicities between them, not implementation.
 % \end{guidance}
 
-\includegraphics[width=\textwidth]{../../DomainModel/DomainModel.png}
+\begin{center}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}
+% 1. Global Styles
+\tikzset{
+  umlcolor/.style={color=black},
+  umlcd style/.append style={color=black, text=black, draw=black},
+  inline label/.style={fill=white, inner sep=2pt, font=\small},
+  multi/.style={font=\footnotesize}
+}
+
+% ---------------------------------------------------
+% 2. DEFINE CLASSES & COORDINATES
+% ---------------------------------------------------
+
+% Center Row (Y=0)
+\begin{class}[text width=3.5cm]{User}{0,0}
+  \attribute{userID}
+  \attribute{username}
+  \attribute{email}
+  \attribute{accountStatus}
+  \attribute{joinDate}
+\end{class}
+
+\begin{class}[text width=3cm]{Profile}{-7,0}
+  \attribute{profileID}
+  \attribute{avatarURL}
+  \attribute{displayTheme}
+\end{class}
+
+\begin{class}[text width=4cm]{Report}{8,0}
+  \attribute{reportID}
+  \attribute{reportedUser}
+  \attribute{reportingUser}
+  \attribute{reportedMessage}
+  \attribute{reason}
+  \attribute{timestamp}
+  \attribute{resolutionStatus}
+\end{class}
+
+% Top Row (Y=8)
+\begin{class}[text width=4.5cm]{VerificationApplication}{0,8}
+  \attribute{applicationID}
+  \attribute{submissionDate}
+  \attribute{identityProofURL}
+  \attribute{status}
+\end{class}
+
+\begin{class}[text width=3.5cm]{DirectMessage}{-7,8}
+  \attribute{messageID}
+  \attribute{content}
+  \attribute{timestamp}
+  \attribute{readStatus}
+  \attribute{sender}
+  \attribute{recipient}
+\end{class}
+
+\begin{class}[text width=3cm]{Admin}{8,8}
+  \attribute{adminID}
+  \attribute{workEmail}
+  \attribute{adminLevel}
+\end{class}
+
+% Bottom Row (Y=-8)
+\begin{class}[text width=4cm]{Fan}{-4,-8}
+  \attribute{searchRadiusPreference}
+  \attribute{aboutBio}
+\end{class}
+
+\begin{class}[text width=3.5cm]{Artist}{4,-8}
+  \attribute{artistBio}
+  \attribute{verificationStatus}
+\end{class}
+
+\begin{class}[text width=3.5cm]{Comment}{11,-8}
+  \attribute{commentID}
+  \attribute{textContent}
+  \attribute{timestamp}
+  \attribute{visibilityStatus}
+\end{class}
+
+% Lowest Row (Y=-16)
+\begin{class}[text width=3.5cm]{Event}{4,-16}
+  \attribute{eventID}
+  \attribute{title}
+  \attribute{dateTime}
+  \attribute{location}
+  \attribute{description}
+  \attribute{capacity}
+  \attribute{approvalStatus}
+\end{class}
+
+\begin{class}[text width=3.5cm]{MediaPost}{11,-16}
+  \attribute{postID}
+  \attribute{mediaType}
+  \attribute{contentURL}
+  \attribute{caption}
+  \attribute{uploadTimestamp}
+\end{class}
+
+
+% ---------------------------------------------------
+% 3. DRAW ASSOCIATIONS (Custom Routed with Dual Multiplicities)
+% ---------------------------------------------------
+
+% Inheritance
+\draw[umlcd style, ->, >=open triangle 90] (Fan.north) -- ++(0,1.5) -| (User.south west);
+\draw[umlcd style, ->, >=open triangle 90] (Artist.north) -- ++(0,1.5) -| (User.south east);
+
+% Admin & Verification
+\draw[umlcd style, ->, >=angle 90] (Admin.west) -- node[inline label]{Reviews} node[near start, above, multi]{1} node[pos=0.95, above, multi]{0..*} (VerificationApplication.east);
+\draw[umlcd style, ->, >=angle 90] (User.north) -- node[inline label]{Submits} node[near start, right, multi]{1} node[pos=0.95, right, multi]{0..*} (VerificationApplication.south);
+\draw[umlcd style, ->, >=angle 90] (Admin.south) -- node[near start, right, multi]{1} ++(0,-2.5) -| node[pos=0.25, inline label]{Bans} node[pos=0.95, right, multi]{0..*} (User.north east);
+
+% Profile
+\draw[umlcd style, ->, >=angle 90] (User.west) -- node[inline label]{Has} node[near start, above, multi]{1} node[pos=0.95, above, multi]{1} (Profile.east);
+
+% Direct Messages
+\draw[umlcd style, ->, >=angle 90] (User.west) -- node[near start, above, multi]{1} ++(-1.5,0) |- node[pos=0.75, inline label]{Sender} node[pos=0.95, above, multi]{0..*} (DirectMessage.east);
+\draw[umlcd style, ->, >=angle 90] (User.north west) -- node[near start, left, multi]{1} ++(0,1.5) -| node[pos=0.25, inline label]{Recipient} node[pos=0.95, left, multi]{0..*} (DirectMessage.south);
+
+% Reports System
+\draw[umlcd style, ->, >=angle 90] (Admin.south) -- node[inline label]{Resolves} node[near start, right, multi]{1} node[pos=0.95, right, multi]{0..*} (Report.north);
+\draw[umlcd style, ->, >=angle 90] (User.east) -- node[inline label]{Submits} node[near start, above, multi]{1} node[pos=0.95, above, multi]{0..*} (Report.west);
+\draw[umlcd style, ->, >=angle 90] (Report.south west) -- node[near start, left, multi]{0..*} ++(0,-1.5) -| node[pos=0.25, inline label]{Flags Account} node[pos=0.95, right, multi]{0..1} (User.south);
+\draw[umlcd style, ->, >=angle 90] (Report.south) -- node[near start, right, multi]{0..*} ++(0,-2.5) -| node[pos=0.25, inline label]{Flags Comment} node[pos=0.95, left, multi]{0..1} (Comment.north);
+\draw[umlcd style, ->, >=angle 90] (Report.east) -- node[near start, above, multi]{0..*} ++(4.5,0) |- node[pos=0.85, inline label]{Flags Post} node[pos=0.95, above, multi]{0..1} (MediaPost.east);
+
+% Follows & Events
+\draw[umlcd style, ->, >=angle 90] (Fan.east) -- node[inline label]{Follows} node[near start, above, multi]{0..*} node[pos=0.95, above, multi]{0..*} (Artist.west);
+\draw[umlcd style, ->, >=angle 90] (Artist.south) -- node[inline label]{Proposes} node[near start, right, multi]{1} node[pos=0.95, right, multi]{0..*} (Event.north);
+\draw[umlcd style, ->, >=angle 90] (Fan.south) |- node[pos=0.75, inline label]{Attends} node[near start, right, multi]{0..*} node[pos=0.95, above, multi]{0..*} (Event.west);
+
+% Content Creation
+\draw[umlcd style, ->, >=angle 90] (User.south) -- node[near start, left, multi]{1} ++(0,-3.5) -| node[pos=0.25, inline label]{Writes} node[pos=0.95, right, multi]{0..*} (Comment.north west);
+\draw[umlcd style, ->, >=angle 90] (Artist.east) -- node[near start, above, multi]{1} ++(1.5,0) |- node[pos=0.75, inline label]{Uploads} node[pos=0.95, above, multi]{0..*} (MediaPost.west);
+\draw[umlcd style, ->, >=angle 90] (Comment.south) -- node[inline label]{Belongs To} node[near start, right, multi]{0..*} node[pos=0.95, right, multi]{1} (MediaPost.north);
+
+% XOR Note
+\node[draw, fill=white, text width=4cm, rounded corners, font=\small] at (16, 2) {
+  \textbf{\{xor\} Constraint:}\\ 
+  A Report must target exactly one entity:\\ 
+  a User, a MediaPost, or a Comment.
+};
+
+\end{tikzpicture}%
+}
+\end{center}
 
 % ============================================================
 \chapter{Operation Contracts}
