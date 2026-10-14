@@ -1,0 +1,113 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide methods
+skinparam shadowing false
+skinparam roundcorner 5
+skinparam nodesep 80
+skinparam ranksep 90
+
+class VerificationApplication {
+  applicationID
+  submissionDate
+  identityProofURL
+  status
+}
+
+class DirectMessage {
+  messageID
+  content
+  timestamp
+  readStatus
+}
+
+class User {
+  userID
+  username
+  email
+  accountStatus
+  joinDate
+}
+
+class Profile {
+  profileID
+  avatarURL
+  displayTheme
+}
+
+class Admin {
+  adminID
+  workEmail
+  adminLevel
+}
+
+class Artist {
+  artistBio
+  verificationStatus
+}
+
+class Fan {
+  searchRadiusPreference
+  aboutBio
+}
+
+class Report {
+  reportID
+  reason
+  timestamp
+  resolutionStatus
+}
+
+class Event {
+  eventID
+  title
+  dateTime
+  location
+  description
+  capacity
+  approvalStatus
+}
+
+class MediaPost {
+  postID
+  mediaType
+  contentURL
+  caption
+  uploadTimestamp
+}
+
+class Comment {
+  commentID
+  textContent
+  timestamp
+  visibilityStatus
+}
+
+' 1. Top Row: Admin, Verification, Messages
+Admin "1" -right- "0..*" VerificationApplication : Reviews >
+VerificationApplication "0..1" -down- "1" User : < Submits
+User "1" -up- "0..*" DirectMessage : Sends & Receives >
+
+' 2. Middle Row: Profile, User, Report
+Profile "1" -right- "1" User : < Has
+User "1" -right- "0..*" Report : Submits > \n < Flags
+Admin "1" -down- "0..*" User : Bans >
+Admin "1" -- "0..*" Report : Resolves >
+
+' 3. Inheritance (Center Bottom)
+User <|-- Fan
+User <|-- Artist
+Fan "0..*" -right- "0..*" Artist : Follows >
+
+' 4. Content Generation Zone (Bottom)
+Artist "1" -down- "0..*" MediaPost : Uploads >
+Artist "1" -down- "0..*" Event : Proposes >
+Fan "0..*" -down- "0..*" Event : Attends >
+
+User "1" -- "0..*" Comment : Writes >
+Comment "0..*" -left- "1" MediaPost : Belongs To >
+
+' 5. Reporting Links to Content (Far Right to Bottom)
+Report "0..*" -down- "0..1" MediaPost : Flags >
+Report "0..*" -down- "0..1" Comment : Flags >
+
+@enduml
