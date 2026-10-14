@@ -144,27 +144,27 @@ Small independent artists need a platform to host their art and foster deeper co
 
 \begin{itemize}
   \item \textbf{[US-01]} As a \textbf{Fan}, I want to \textbf{search for artists using a proximity-based radius} so that \textbf{I can discover and attend local shows}. \textit{(Maps to UC: Search for Artist)}
-  
+
   \item \textbf{[US-02]} As a \textbf{Fan}, I want to \textbf{receive artist recommendations} so that \textbf{I can easily find new creators similar to the ones I already enjoy}. \textit{(Maps to UC: Receive Recommendation)}
-  
+
   \item \textbf{[US-03]} As an \textbf{Artist}, I want to \textbf{create posts with multimedia content (music, images, videos)} so that \textbf{I can share my art and stories with my fan community}. \textit{(Maps to UC: Make a Post)}
-  
+
   \item \textbf{[US-04]} As a \textbf{Fan}, I want to \textbf{comment on an artist's uploaded artwork or posts} so that \textbf{I can show my support and engage with the community}. \textit{(Maps to UC: Comment on Artwork)}
-  
+
   \item \textbf{[US-05]} As an \textbf{Artist}, I want to \textbf{monitor and manage the comments on my posts} so that \textbf{I can hide inappropriate content and report abusive users to admins}. \textit{(Maps to UC: Monitor Comments)}
-  
+
   \item \textbf{[US-06]} As a \textbf{User (Fan or Artist)}, I want to \textbf{send direct messages to other users} so that \textbf{I can privately communicate, collaborate, or socialize}. \textit{(Maps to UC: Message Another User)}
-  
+
   \item \textbf{[US-07]} As an \textbf{Artist}, I want to \textbf{create and promote upcoming events} so that \textbf{my fans know when and where to see my shows}. \textit{(Maps to UC: Create Event)}
-  
+
   \item \textbf{[US-08]} As an \textbf{Artist}, I want to \textbf{edit and update my existing event information} so that \textbf{my fans have the most accurate and current details if plans change}. \textit{(Maps to UC: Update Event)}
-  
+
   \item \textbf{[US-09]} As an \textbf{Administrator}, I want to \textbf{approve prospective artist verification applications} so that \textbf{I can ensure only legitimate, non-fake artists are granted the Artist role}. \textit{(Maps to UC: Approve Artist Verification Application)}
-  
+
   \item \textbf{[US-10]} As an \textbf{Administrator}, I want to \textbf{review conduct reports submitted by users} so that \textbf{I can make fair moderation decisions regarding inappropriate content}. \textit{(Maps to UC: Review Report)}
-  
+
   \item \textbf{[US-11]} As an \textbf{Administrator}, I want to \textbf{suspend or ban user accounts that violate the terms of service} so that \textbf{the platform remains a safe environment for artists and fans}. \textit{(Maps to UC: Suspending Artist Account)}
-  
+
   \item \textbf{[US-12]} As an \textbf{Administrator}, I want to \textbf{review and process ban appeals from fans} so that \textbf{I can reverse unfair or incorrect bans made by the system or other admins}. \textit{(Maps to UC: Unban Fan)}
 \end{itemize}
 
@@ -174,7 +174,7 @@ Small independent artists need a platform to host their art and foster deeper co
 \begin{itemize}
   \item \textbf{AI Feature Integration:} Integrating machine learning for moderation and recommendations poses performance and privacy challenges. \\
   \textbf{\textit{Approach:}} Decouple AI processing from core traffic using scalable REST APIs and implement heuristic fallbacks to ensure uptime if models fail.
-  
+
   \item \textbf{3-Tier Cloud Deployment:} Managing a frontend, backend, database, and strict CI/CD pipeline requires significant DevOps overhead. \\
   \textbf{\textit{Approach:}} Establish automated testing and mandatory pull requests early, utilizing managed cloud services (GCP, AWS, or Azure) to minimize infrastructure management.
 \end{itemize}
@@ -183,18 +183,18 @@ Small independent artists need a platform to host their art and foster deeper co
 \begin{itemize}
   \item \textbf{Scope Creep:} The extensive feature set (hybrid media, messaging, AI) risks exceeding the semester timeframe. \\
   \textbf{\textit{Mitigation:}} Strictly prioritize core workflows (authentication, media, messaging) over optional AI features using agile sprints.
-  
+
   \item \textbf{Content Moderation:} User-generated media and messaging introduce risks of Terms of Service violations. \\
   \textbf{\textit{Mitigation:}} Implement robust user-reporting systems, Admin review workflows, and automated moderation filters.
 \end{itemize}
 
 \section*{Competition}
 \begin{itemize}
-  \item \textbf{SoundCloud:} 
+  \item \textbf{SoundCloud:}
   \textit{What it does well:} Excellent audio hosting, discovery, and timestamped comments. \\
   \textit{Where it falls short:} Lacks visual art hosting, video interactions, and proximity-based local discovery.
-  
-  \item \textbf{Instagram:} 
+
+  \item \textbf{Instagram:}
   \textit{What it does well:} Massive reach for visual art, short-form videos, and messaging. \\
   \textit{Where it falls short:} Not tailored to independent artists, lacks high-quality audio hosting, and prioritizes viral content over local community connections.
 \end{itemize}
@@ -202,7 +202,7 @@ Small independent artists need a platform to host their art and foster deeper co
 % ============================================================
 \chapter{What's New?}
 
-Existing platforms generally focus on a single medium (e.g., SoundCloud) or cater to broad audiences (e.g., Instagram). Our project introduces a \textbf{hybrid platform tailored explicitly for small, independent, multi-disciplinary artists}. 
+Existing platforms generally focus on a single medium (e.g., SoundCloud) or cater to broad audiences (e.g., Instagram). Our project introduces a \textbf{hybrid platform tailored explicitly for small, independent, multi-disciplinary artists}.
 
 \textbf{Key Differentiators:}
 \begin{itemize}
@@ -578,10 +578,10 @@ None
       \item[6a.] Artist fails to acknowledge
         \item The system displays an error message stating the artist must acknowledge they have reviewed the details of their submission before submitting.
         \item The artist acknowledges their review.
-        \item The artist submits their event.  
+        \item The artist submits their event.
 
     \end{itemize}
-  \item[Frequency of Occurrence] Mdderate -- It is expected for artists to make mistakes uploading event information. 
+  \item[Frequency of Occurrence] Mdderate -- It is expected for artists to make mistakes uploading event information.
 \end{description}
 
 
@@ -593,7 +593,7 @@ None
   \item[Level] System goal
   \item[Stakeholders \& Interests]
     \begin{itemize}
-      \item \textbf{Admin:} As an admin I want to do my job and process appeals 
+      \item \textbf{Admin:} As an admin I want to do my job and process appeals
       \item \textbf{Fan:} As a fan I want to be appealed to access the site.
     \end{itemize}
   \item[Preconditions]
@@ -606,7 +606,7 @@ None
     \begin{itemize}
       \item A different admin than the banning admin has reviewed the appeal.
       \item Fans are either unbanned or the ban is upheld.
-      
+
     \end{itemize}
   \item[Main Success Scenario]
     \begin{enumerate}
@@ -617,14 +617,14 @@ None
       \item The admin selects an option to proceed with unbanning the user.
       \item The system removes the user's ban.
       \item The system grants the user the ability to log into the website.
-    
+
     \end{enumerate}
   \item[Extensions]
     \begin{itemize}
       \item[1a.]No appeals
         \item The system shows no open appeals.
         \item The admin closes the reports tab.
-      \item[5a. Appeal is invalid] 
+      \item[5a. Appeal is invalid]
         \item The admin selects an option to mark the appeal as invalid.
         \item The system logs the appeal as invalid and removes it from the open appeals list.
     \end{itemize}
@@ -657,7 +657,7 @@ None
     \begin{enumerate}
       \item A fan selects the option to display artists they might like.
       \item The system retrieves the artists a fan has previously interacted with (e.g. viewed profiles, liking posts, commenting on posts, etc.).
-      \item The system constructs a numerical score for each of the types and genres of content the user interacts with.  
+      \item The system constructs a numerical score for each of the types and genres of content the user interacts with.
       \item The system uses an AI process to find artists with similar content to the user’s most interacted with types.
       \item The system displays a list of artists to the user.
 
@@ -963,17 +963,17 @@ None
 \begin{minipage}{\textwidth}
     {\bfseries Administrator - Suspending Artist Account}
     \bigskip
-    
+
     \begin{sequencediagram}
         \newthread{a}{Administrator}
         \newinst[2]{c}{AdminController}
         \newinst[2]{s}{AccountService}
-        
+
         \begin{call}{a}{viewReportedAccounts()}{c}{reportsList}
             \begin{call}{c}{getPendingReports()}{s}{reportsList}
             \end{call}
         \end{call}
-        
+
         \begin{call}{a}{suspendUser(userId)}{c}{success}
             \begin{call}{c}{updateAccountStatus(userId, 'suspended')}{s}{statusUpdated}
             \end{call}
@@ -988,20 +988,20 @@ None
 \begin{minipage}{\textwidth}
     {\bfseries Fan - Comment on Artwork}
     \bigskip
-    
+
     \begin{sequencediagram}
         \newthread{f}{Fan}
         \newinst[1]{c}{CommentController}
         \newinst[1]{s}{CommentService}
         \newinst[1]{r}{CommentRepository}
-        
+
         \begin{call}{f}{requestAddComment(mediaId)}{c}{promptForContent}
         \end{call}
-        
+
         \begin{call}{f}{submitComment(mediaId, content)}{c}{success}
             \begin{call}{c}{validateComment(content)}{s}{isValid}
             \end{call}
-            
+
             \begin{call}{c}{saveAndPublish(mediaId, content)}{s}{commentSaved}
                 \begin{call}{s}{save(comment)}{r}{newComment}
                 \end{call}
@@ -1017,18 +1017,18 @@ None
 \begin{minipage}{\textwidth}
     {\bfseries Administrator - Approve Artist Verification Application}
     \bigskip
-    
+
     \begin{sequencediagram}
         \newthread{a}{Administrator}
         \newinst[1]{c}{ApplicationController}
         \newinst[1]{s}{ApplicationService}
         \newinst[1]{r}{UserRepository}
-        
+
         \begin{call}{a}{requestPendingApplications()}{c}{applicationMaterials}
             \begin{call}{c}{fetchApplications()}{s}{applicationMaterials}
             \end{call}
         \end{call}
-        
+
         \begin{call}{a}{approveApplication(applicationId)}{c}{success}
             \begin{call}{c}{assignArtistRole(userId)}{s}{roleUpdated}
                 \begin{call}{s}{updatePermissions(userId, 'Artist')}{r}{userUpdated}
@@ -1041,119 +1041,119 @@ None
 
 \section{Nicholas Nolen -- Sequence Diagrams}
 \noindent\begin{minipage}{\textwidth}
-{\bfseries Admin - Unban Fan (Appeals)} 
-\bigskip 
+{\bfseries Admin - Unban Fan (Appeals)}
+\bigskip
 
 \resizebox{\textwidth}{!}{%
-\begin{sequencediagram} 
-    \newthread{a}{Admin} 
-    \newinst[1]{c}{AppealController} 
-    \newinst[1]{s}{AppealService} 
-    \newinst[1]{r}{BanRepository} 
-    
+\begin{sequencediagram}
+    \newthread{a}{Admin}
+    \newinst[1]{c}{AppealController}
+    \newinst[1]{s}{AppealService}
+    \newinst[1]{r}{BanRepository}
+
     % Aligned with Admin - Unban Fan flow[cite: 2]
-    \begin{call}{a}{getAppeals()}{c}{Display Open Appeals} 
-        \begin{call}{c}{listOpenAppeals()}{s}{Open Appeals} 
-        \end{call} 
-    \end{call} 
-    
-    \begin{call}{a}{selectAppeal}{c}{Appeal Details} 
-    \end{call} 
-    
+    \begin{call}{a}{getAppeals()}{c}{Display Open Appeals}
+        \begin{call}{c}{listOpenAppeals()}{s}{Open Appeals}
+        \end{call}
+    \end{call}
+
+    \begin{call}{a}{selectAppeal}{c}{Appeal Details}
+    \end{call}
+
     \begin{sdblock}{alt}{[remove ban]}
-        \begin{call}{a}{removeBan()}{c}{confirmation} 
-            \begin{call}{c}{removeBan(user)}{s}{} 
-                \begin{call}{s}{deleteBan()}{r}{} 
-                \end{call} 
-            \end{call} 
-        \end{call} 
+        \begin{call}{a}{removeBan()}{c}{confirmation}
+            \begin{call}{c}{removeBan(user)}{s}{}
+                \begin{call}{s}{deleteBan()}{r}{}
+                \end{call}
+            \end{call}
+        \end{call}
     \end{sdblock}
-    
+
     \begin{sdblock}{alt}{[keep ban]}
-        \begin{call}{a}{upholdBan()}{c}{confirmation} 
-            \begin{call}{c}{upholdBan(user)}{s}{} 
-                \begin{call}{s}{markUpheld()}{r}{} 
-                \end{call} 
-            \end{call} 
-        \end{call} 
+        \begin{call}{a}{upholdBan()}{c}{confirmation}
+            \begin{call}{c}{upholdBan(user)}{s}{}
+                \begin{call}{s}{markUpheld()}{r}{}
+                \end{call}
+            \end{call}
+        \end{call}
     \end{sdblock}
 \end{sequencediagram}%
 }
 \end{minipage}
 \vspace{1em}
-\hrule 
+\hrule
 \vspace{1em}
 
 \noindent\begin{minipage}{\textwidth}
-{\bfseries Fan - Receive Recommendation} 
-\bigskip 
+{\bfseries Fan - Receive Recommendation}
+\bigskip
 
 \resizebox{\textwidth}{!}{%
-\begin{sequencediagram} 
-    \newthread{f}{Fan} 
-    \newinst[1]{c}{RecommendationController} 
-    \newinst[1]{s}{RecommendationService} 
-    \newinst[1]{ui}{UserInteractionsRepo} 
-    \newinst[1]{am}{ArtMetadataRepo} 
-    
+\begin{sequencediagram}
+    \newthread{f}{Fan}
+    \newinst[1]{c}{RecommendationController}
+    \newinst[1]{s}{RecommendationService}
+    \newinst[1]{ui}{UserInteractionsRepo}
+    \newinst[1]{am}{ArtMetadataRepo}
+
     % Aligned with Fan - Receive Recommendation flow[cite: 3]
-    \begin{call}{f}{recieveRecommendation()}{c}{display content} 
-        \begin{call}{c}{makeRecommendation()}{s}{list of similar content} 
-            \begin{call}{s}{getUserInteractionData()}{ui}{interaction info} 
-            \end{call} 
-            
+    \begin{call}{f}{recieveRecommendation()}{c}{display content}
+        \begin{call}{c}{makeRecommendation()}{s}{list of similar content}
+            \begin{call}{s}{getUserInteractionData()}{ui}{interaction info}
+            \end{call}
+
             \begin{sdblock}{alt}{[has interactions]}
-                \begin{call}{s}{getSimilarContentToUserInteractions()}{am}{similar content} 
-                \end{call} 
+                \begin{call}{s}{getSimilarContentToUserInteractions()}{am}{similar content}
+                \end{call}
             \end{sdblock}
-            
+
             \begin{sdblock}{alt}{[no interactions]}
-                \begin{call}{s}{emptyList()}{c}{} 
-                \end{call} 
-                \begin{call}{c}{report no interactions yet}{f}{} 
-                \end{call} 
+                \begin{call}{s}{emptyList()}{c}{}
+                \end{call}
+                \begin{call}{c}{report no interactions yet}{f}{}
+                \end{call}
             \end{sdblock}
-        \end{call} 
-    \end{call} 
+        \end{call}
+    \end{call}
 \end{sequencediagram}%
 }
 \end{minipage}
 \vspace{1em}
-\hrule 
+\hrule
 \vspace{1em}
 
 \noindent\begin{minipage}{\textwidth}
-{\bfseries Artist - Update Event} 
-\bigskip 
+{\bfseries Artist - Update Event}
+\bigskip
 
 \resizebox{\textwidth}{!}{%
-\begin{sequencediagram} 
-    \newthread{a}{Artist} 
-    \newinst[1]{c}{EventController} 
-    \newinst[1]{s}{EventService} 
-    \newinst[1]{r}{EventRepository} 
-    
+\begin{sequencediagram}
+    \newthread{a}{Artist}
+    \newinst[1]{c}{EventController}
+    \newinst[1]{s}{EventService}
+    \newinst[1]{r}{EventRepository}
+
     % Aligned with Artist - Update Event flow[cite: 4]
-    \begin{call}{a}{updateEvent(info)}{c}{display confirmation} 
-        \begin{call}{c}{askConfirmation()}{a}{Confirmation()} 
-        \end{call} 
-        \begin{call}{c}{updatedEventInfo()}{s}{updateConfirmation} 
-            \begin{callself}{s}{checkInfo()}{} 
-            \end{callself} 
-            
+    \begin{call}{a}{updateEvent(info)}{c}{display confirmation}
+        \begin{call}{c}{askConfirmation()}{a}{Confirmation()}
+        \end{call}
+        \begin{call}{c}{updatedEventInfo()}{s}{updateConfirmation}
+            \begin{callself}{s}{checkInfo()}{}
+            \end{callself}
+
             \begin{sdblock}{alt}{[valid info]}
-                \begin{call}{s}{updateEvent(info)}{r}{} 
-                \end{call} 
+                \begin{call}{s}{updateEvent(info)}{r}{}
+                \end{call}
             \end{sdblock}
-            
+
             \begin{sdblock}{alt}{[invalid info]}
-                \begin{call}{s}{reportInvalidInfo()}{c}{} 
-                \end{call} 
-                \begin{call}{c}{reportErrorTryAgain()}{a}{} 
-                \end{call} 
+                \begin{call}{s}{reportInvalidInfo()}{c}{}
+                \end{call}
+                \begin{call}{c}{reportErrorTryAgain()}{a}{}
+                \end{call}
             \end{sdblock}
-        \end{call} 
-    \end{call} 
+        \end{call}
+    \end{call}
 \end{sequencediagram}%
 }
 \end{minipage}
@@ -1163,17 +1163,17 @@ None
 \begin{minipage}{\textwidth}
     {\bfseries Administrator - Suspending Artist Account}
     \bigskip
-    
+
     \begin{sequencediagram}
         \newthread{a}{Administrator}
         \newinst[2]{c}{AdminController}
         \newinst[2]{s}{AccountService}
-        
+
         \begin{call}{a}{viewReportedAccounts()}{c}{reportsList}
             \begin{call}{c}{getPendingReports()}{s}{reportsList}
             \end{call}
         \end{call}
-        
+
         \begin{call}{a}{suspendUser(userId)}{c}{success}
             \begin{call}{c}{updateAccountStatus(userId, 'suspended')}{s}{statusUpdated}
             \end{call}
@@ -1188,20 +1188,20 @@ None
 \begin{minipage}{\textwidth}
     {\bfseries Fan - Comment on Artwork}
     \bigskip
-    
+
     \begin{sequencediagram}
         \newthread{f}{Fan}
         \newinst[1]{c}{CommentController}
         \newinst[1]{s}{CommentService}
         \newinst[1]{r}{CommentRepository}
-        
+
         \begin{call}{f}{requestAddComment(mediaId)}{c}{promptForContent}
         \end{call}
-        
+
         \begin{call}{f}{submitComment(mediaId, content)}{c}{success}
             \begin{call}{c}{validateComment(content)}{s}{isValid}
             \end{call}
-            
+
             \begin{call}{c}{saveAndPublish(mediaId, content)}{s}{commentSaved}
                 \begin{call}{s}{save(comment)}{r}{newComment}
                 \end{call}
@@ -1217,18 +1217,18 @@ None
 \begin{minipage}{\textwidth}
     {\bfseries Administrator - Approve Artist Verification Application}
     \bigskip
-    
+
     \begin{sequencediagram}
         \newthread{a}{Administrator}
         \newinst[1]{c}{ApplicationController}
         \newinst[1]{s}{ApplicationService}
         \newinst[1]{r}{UserRepository}
-        
+
         \begin{call}{a}{requestPendingApplications()}{c}{applicationMaterials}
             \begin{call}{c}{fetchApplications()}{s}{applicationMaterials}
             \end{call}
         \end{call}
-        
+
         \begin{call}{a}{approveApplication(applicationId)}{c}{success}
             \begin{call}{c}{assignArtistRole(userId)}{s}{roleUpdated}
                 \begin{call}{s}{updatePermissions(userId, 'Artist')}{r}{userUpdated}
@@ -1244,26 +1244,26 @@ None
 {\bfseries Artist - Create Event}
 \bigskip
 \begin{sequencediagram}
-	
+
 	\newthread{a}{Artist}
 	\newinst[1]{c}{EventController}
 	\newinst[1]{s}{EventService}
 	\newinst[1]{r}{EventRepository}
-	
+
 	\begin{call}{a}{createEvent(title, description, date, location)}{c}{newEventWrapper}
-		
+
 		\begin{call}{c}{saveEvent(eventData)}{s}{newEventWrapper}
-			
+
 			\begin{call}{s}{validateEvent(eventData)}{s}{eventValid}
 			\end{call}
-			
+
 			\begin{call}{s}{save(event)}{r}{newEvent}
 			\end{call}
-			
+
 		\end{call}
-		
+
 	\end{call}
-	
+
 \end{sequencediagram}
 \hrule
 \bigskip
@@ -1271,26 +1271,26 @@ None
 {\bfseries Fan - Search for Artist}
 \bigskip
 \begin{sequencediagram}
-	
+
 	\newthread{f}{Fan}
 	\newinst[1]{c}{ArtistController}
 	\newinst[1]{s}{ArtistService}
 	\newinst[1]{r}{ArtistRepository}
-	
+
 	\begin{call}{f}{searchArtists(name, genre, location)}{c}{artistList}
-		
+
 		\begin{call}{c}{searchArtists(name, genre, location)}{s}{artistList}
-			
+
 			\begin{call}{s}{blankToNull(name, genre, location)}{s}{filters}
 			\end{call}
-			
+
 			\begin{call}{s}{search(name, genre, location)}{r}{artistList}
 			\end{call}
-			
+
 		\end{call}
-		
+
 	\end{call}
-	
+
 \end{sequencediagram}
 \hrule
 \bigskip
@@ -1298,42 +1298,125 @@ None
 {\bfseries Admin - Review Report}
 \bigskip
 \begin{sequencediagram}
-	
+
 	\newthread{a}{Admin}
 	\newinst[1]{c}{ReportController}
 	\newinst[1]{s}{ReportService}
 	\newinst[1]{r}{ReportRepository}
-	
+
 	\begin{call}{a}{reviewReport(reportId, decision)}{c}{success}
-		
+
 		\begin{call}{c}{getReport(reportId)}{s}{report}
-			
+
 			\begin{call}{s}{findReportById(reportId)}{r}{report}
 			\end{call}
-			
+
 		\end{call}
-		
+
 		\begin{call}{c}{resolveReport(report, decision)}{s}{resolvedReport}
-			
+
 			\begin{call}{s}{[if decision.removeContent] hideContent(report.target)}{s}{}
 			\end{call}
-			
+
 			\begin{call}{s}{[if decision.banUser] banUser(report.target.poster)}{s}{}
 			\end{call}
-			
+
 			\begin{call}{s}{save(report)}{r}{updatedReport}
 			\end{call}
-			
+
 		\end{call}
-		
+
 	\end{call}
-	
+
 \end{sequencediagram}
 
 
 
 
 % ============================================================
+
+\section{William Waweru -- Sequence Diagrams}
+
+\subsection{Follow Artist -- Fan}
+\noindent\resizebox{\textwidth}{!}{%
+\begin{sequencediagram}
+    \newthread{fan}{Fan}
+    \newinst[2]{controller}{FollowController}
+    \newinst[2]{service}{FollowService}
+    \newinst[2]{repository}{AccountRepository}
+    \newinst[2]{follows}{FollowRepository}
+
+    \begin{call}{fan}{followArtist(artistId)}{controller}{result}
+        \begin{call}{controller}{followArtist(fanId, artistId)}{service}{result}
+            \begin{call}{service}{findArtist(artistId)}{repository}{artistStatus}
+            \end{call}
+            \begin{call}{service}{isFollowing(fanId, artistId)}{follows}{exists}
+            \end{call}
+            \begin{call}{service}{createFollow(fanId, artistId)}{follows}{saved}
+            \end{call}
+            \begin{call}{service}{updateFollowerInfo(artistId)}{repository}{updated}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+
+
+\subsection{Manage Fan Profile -- Fan}
+\noindent\resizebox{\textwidth}{!}{%
+\begin{sequencediagram}
+    \newthread{fan}{Fan}
+    \newinst[2]{controller}{ProfileController}
+    \newinst[2]{service}{ProfileService}
+    \newinst[2]{repository}{ProfileRepository}
+
+    \begin{call}{fan}{requestProfile()}{controller}{profile}
+        \begin{call}{controller}{getProfile(fanId)}{service}{profile}
+            \begin{call}{service}{findProfile(fanId)}{repository}{profile}
+            \end{call}
+        \end{call}
+    \end{call}
+    \begin{call}{fan}{submitProfile(changes, privacy)}{controller}{result}
+        \begin{call}{controller}{updateProfile(fanId, changes, privacy)}{service}{result}
+            \begin{call}{service}{validateProfile(changes)}{service}{valid}
+            \end{call}
+            \begin{call}{service}{saveProfile(fanId, changes, privacy)}{repository}{saved}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+
+
+\subsection{Report Inappropriate Content -- Fan}
+\noindent\resizebox{\textwidth}{!}{%
+\begin{sequencediagram}
+    \newthread{fan}{Fan}
+    \newinst[2]{controller}{ReportController}
+    \newinst[2]{service}{ReportService}
+    \newinst[2]{content}{ContentRepository}
+    \newinst[2]{reports}{ReportRepository}
+
+    \begin{call}{fan}{requestReport(targetId)}{controller}{reportForm}
+        \begin{call}{controller}{getReportTarget(targetId)}{service}{targetInfo}
+            \begin{call}{service}{findTarget(targetId)}{content}{targetInfo}
+            \end{call}
+        \end{call}
+    \end{call}
+    \begin{call}{fan}{submitReport(targetId, reason, details)}{controller}{result}
+        \begin{call}{controller}{submitReport(fanId, targetId, reason, details)}{service}{result}
+            \begin{call}{service}{validateReport(reason, details)}{service}{valid}
+            \end{call}
+            \begin{call}{service}{findPendingReport(fanId, targetId)}{reports}{existingReport}
+            \end{call}
+            \begin{call}{service}{savePendingReport(fanId, targetId, reason, details)}{reports}{saved}
+            \end{call}
+        \end{call}
+    \end{call}
+\end{sequencediagram}%
+}
+
+
 \chapter{Use Case Diagram}
 
 % \begin{guidance}[Every use case must appear here]
@@ -1465,7 +1548,7 @@ No test cases were produced during iteration one.
 \section{Test Cases for Iteration 2}
 \begin{itemize}
   \item Artist Search
-  \item Unban Fan 
+  \item Unban Fan
   \item Edit Event
 \end{itemize}
 
