@@ -1,0 +1,38 @@
+/* The api for creating, retrieving, and searching artists
+ */
+
+package com.indiedev.backend.artist;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@CrossOrigin(origins = "http://localhost:3000")
+@RestController
+@RequestMapping("/api/artists")
+public class ArtistController {
+
+    private final ArtistService artistService;
+
+    public ArtistController(ArtistService artistService) {
+        this.artistService = artistService;
+    }
+
+    @PostMapping
+    public Artist saveArtist(@RequestBody Artist artist) { return artistService.saveArtist(artist); }
+
+    @GetMapping
+    public List<Artist> getAllArtists() { return artistService.getAllArtists(); }
+
+    @GetMapping(path = "/{artistId}")
+    public Artist getArtistById(@PathVariable Long artistId) { return artistService.getArtistById(artistId); }
+
+    @GetMapping(path = "/search")
+    public List<Artist> searchArtists(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) String location) {
+        return artistService.searchArtists(name, genre, location);
+    }
+
+}
