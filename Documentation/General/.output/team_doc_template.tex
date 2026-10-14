@@ -10,6 +10,7 @@
 % final submission.
 % ============================================================
 
+\usepackage{pgf-umlsd}
 \usepackage[margin=1in]{geometry}
 \usepackage{titlesec}
 \usepackage{fancyhdr}
@@ -953,8 +954,387 @@ None
 \end{enumerate}
 
 
+
+\chapter{Sequence Diagrams}
+
+
+\section{Garrett DeYong -- Sequence Diagrams}
+
+\begin{minipage}{\textwidth}
+    {\bfseries Administrator - Suspending Artist Account}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{a}{Administrator}
+        \newinst[2]{c}{AdminController}
+        \newinst[2]{s}{AccountService}
+        
+        \begin{call}{a}{viewReportedAccounts()}{c}{reportsList}
+            \begin{call}{c}{getPendingReports()}{s}{reportsList}
+            \end{call}
+        \end{call}
+        
+        \begin{call}{a}{suspendUser(userId)}{c}{success}
+            \begin{call}{c}{updateAccountStatus(userId, 'suspended')}{s}{statusUpdated}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\begin{minipage}{\textwidth}
+    {\bfseries Fan - Comment on Artwork}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{f}{Fan}
+        \newinst[1]{c}{CommentController}
+        \newinst[1]{s}{CommentService}
+        \newinst[1]{r}{CommentRepository}
+        
+        \begin{call}{f}{requestAddComment(mediaId)}{c}{promptForContent}
+        \end{call}
+        
+        \begin{call}{f}{submitComment(mediaId, content)}{c}{success}
+            \begin{call}{c}{validateComment(content)}{s}{isValid}
+            \end{call}
+            
+            \begin{call}{c}{saveAndPublish(mediaId, content)}{s}{commentSaved}
+                \begin{call}{s}{save(comment)}{r}{newComment}
+                \end{call}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\begin{minipage}{\textwidth}
+    {\bfseries Administrator - Approve Artist Verification Application}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{a}{Administrator}
+        \newinst[1]{c}{ApplicationController}
+        \newinst[1]{s}{ApplicationService}
+        \newinst[1]{r}{UserRepository}
+        
+        \begin{call}{a}{requestPendingApplications()}{c}{applicationMaterials}
+            \begin{call}{c}{fetchApplications()}{s}{applicationMaterials}
+            \end{call}
+        \end{call}
+        
+        \begin{call}{a}{approveApplication(applicationId)}{c}{success}
+            \begin{call}{c}{assignArtistRole(userId)}{s}{roleUpdated}
+                \begin{call}{s}{updatePermissions(userId, 'Artist')}{r}{userUpdated}
+                \end{call}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+
+\section{Nicholas Nolen -- Sequence Diagrams}
+\noindent\begin{minipage}{\textwidth}
+{\bfseries Admin - Unban Fan (Appeals)} 
+\bigskip 
+
+\resizebox{\textwidth}{!}{%
+\begin{sequencediagram} 
+    \newthread{a}{Admin} 
+    \newinst[1]{c}{AppealController} 
+    \newinst[1]{s}{AppealService} 
+    \newinst[1]{r}{BanRepository} 
+    
+    % Aligned with Admin - Unban Fan flow[cite: 2]
+    \begin{call}{a}{getAppeals()}{c}{Display Open Appeals} 
+        \begin{call}{c}{listOpenAppeals()}{s}{Open Appeals} 
+        \end{call} 
+    \end{call} 
+    
+    \begin{call}{a}{selectAppeal}{c}{Appeal Details} 
+    \end{call} 
+    
+    \begin{sdblock}{alt}{[remove ban]}
+        \begin{call}{a}{removeBan()}{c}{confirmation} 
+            \begin{call}{c}{removeBan(user)}{s}{} 
+                \begin{call}{s}{deleteBan()}{r}{} 
+                \end{call} 
+            \end{call} 
+        \end{call} 
+    \end{sdblock}
+    
+    \begin{sdblock}{alt}{[keep ban]}
+        \begin{call}{a}{upholdBan()}{c}{confirmation} 
+            \begin{call}{c}{upholdBan(user)}{s}{} 
+                \begin{call}{s}{markUpheld()}{r}{} 
+                \end{call} 
+            \end{call} 
+        \end{call} 
+    \end{sdblock}
+\end{sequencediagram}%
+}
+\end{minipage}
+\vspace{1em}
+\hrule 
+\vspace{1em}
+
+\noindent\begin{minipage}{\textwidth}
+{\bfseries Fan - Receive Recommendation} 
+\bigskip 
+
+\resizebox{\textwidth}{!}{%
+\begin{sequencediagram} 
+    \newthread{f}{Fan} 
+    \newinst[1]{c}{RecommendationController} 
+    \newinst[1]{s}{RecommendationService} 
+    \newinst[1]{ui}{UserInteractionsRepo} 
+    \newinst[1]{am}{ArtMetadataRepo} 
+    
+    % Aligned with Fan - Receive Recommendation flow[cite: 3]
+    \begin{call}{f}{recieveRecommendation()}{c}{display content} 
+        \begin{call}{c}{makeRecommendation()}{s}{list of similar content} 
+            \begin{call}{s}{getUserInteractionData()}{ui}{interaction info} 
+            \end{call} 
+            
+            \begin{sdblock}{alt}{[has interactions]}
+                \begin{call}{s}{getSimilarContentToUserInteractions()}{am}{similar content} 
+                \end{call} 
+            \end{sdblock}
+            
+            \begin{sdblock}{alt}{[no interactions]}
+                \begin{call}{s}{emptyList()}{c}{} 
+                \end{call} 
+                \begin{call}{c}{report no interactions yet}{f}{} 
+                \end{call} 
+            \end{sdblock}
+        \end{call} 
+    \end{call} 
+\end{sequencediagram}%
+}
+\end{minipage}
+\vspace{1em}
+\hrule 
+\vspace{1em}
+
+\noindent\begin{minipage}{\textwidth}
+{\bfseries Artist - Update Event} 
+\bigskip 
+
+\resizebox{\textwidth}{!}{%
+\begin{sequencediagram} 
+    \newthread{a}{Artist} 
+    \newinst[1]{c}{EventController} 
+    \newinst[1]{s}{EventService} 
+    \newinst[1]{r}{EventRepository} 
+    
+    % Aligned with Artist - Update Event flow[cite: 4]
+    \begin{call}{a}{updateEvent(info)}{c}{display confirmation} 
+        \begin{call}{c}{askConfirmation()}{a}{Confirmation()} 
+        \end{call} 
+        \begin{call}{c}{updatedEventInfo()}{s}{updateConfirmation} 
+            \begin{callself}{s}{checkInfo()}{} 
+            \end{callself} 
+            
+            \begin{sdblock}{alt}{[valid info]}
+                \begin{call}{s}{updateEvent(info)}{r}{} 
+                \end{call} 
+            \end{sdblock}
+            
+            \begin{sdblock}{alt}{[invalid info]}
+                \begin{call}{s}{reportInvalidInfo()}{c}{} 
+                \end{call} 
+                \begin{call}{c}{reportErrorTryAgain()}{a}{} 
+                \end{call} 
+            \end{sdblock}
+        \end{call} 
+    \end{call} 
+\end{sequencediagram}%
+}
+\end{minipage}
+
+
+\section{Gan Orgil -- Sequence Diagrams}
+\begin{minipage}{\textwidth}
+    {\bfseries Administrator - Suspending Artist Account}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{a}{Administrator}
+        \newinst[2]{c}{AdminController}
+        \newinst[2]{s}{AccountService}
+        
+        \begin{call}{a}{viewReportedAccounts()}{c}{reportsList}
+            \begin{call}{c}{getPendingReports()}{s}{reportsList}
+            \end{call}
+        \end{call}
+        
+        \begin{call}{a}{suspendUser(userId)}{c}{success}
+            \begin{call}{c}{updateAccountStatus(userId, 'suspended')}{s}{statusUpdated}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\begin{minipage}{\textwidth}
+    {\bfseries Fan - Comment on Artwork}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{f}{Fan}
+        \newinst[1]{c}{CommentController}
+        \newinst[1]{s}{CommentService}
+        \newinst[1]{r}{CommentRepository}
+        
+        \begin{call}{f}{requestAddComment(mediaId)}{c}{promptForContent}
+        \end{call}
+        
+        \begin{call}{f}{submitComment(mediaId, content)}{c}{success}
+            \begin{call}{c}{validateComment(content)}{s}{isValid}
+            \end{call}
+            
+            \begin{call}{c}{saveAndPublish(mediaId, content)}{s}{commentSaved}
+                \begin{call}{s}{save(comment)}{r}{newComment}
+                \end{call}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+\begin{minipage}{\textwidth}
+    {\bfseries Administrator - Approve Artist Verification Application}
+    \bigskip
+    
+    \begin{sequencediagram}
+        \newthread{a}{Administrator}
+        \newinst[1]{c}{ApplicationController}
+        \newinst[1]{s}{ApplicationService}
+        \newinst[1]{r}{UserRepository}
+        
+        \begin{call}{a}{requestPendingApplications()}{c}{applicationMaterials}
+            \begin{call}{c}{fetchApplications()}{s}{applicationMaterials}
+            \end{call}
+        \end{call}
+        
+        \begin{call}{a}{approveApplication(applicationId)}{c}{success}
+            \begin{call}{c}{assignArtistRole(userId)}{s}{roleUpdated}
+                \begin{call}{s}{updatePermissions(userId, 'Artist')}{r}{userUpdated}
+                \end{call}
+            \end{call}
+        \end{call}
+    \end{sequencediagram}
+\end{minipage}
+
+\section{Alex Garcia -- Sequence Diagrams}
+
+
+{\bfseries Artist - Create Event}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{a}{Artist}
+	\newinst[1]{c}{EventController}
+	\newinst[1]{s}{EventService}
+	\newinst[1]{r}{EventRepository}
+	
+	\begin{call}{a}{createEvent(title, description, date, location)}{c}{newEventWrapper}
+		
+		\begin{call}{c}{saveEvent(eventData)}{s}{newEventWrapper}
+			
+			\begin{call}{s}{validateEvent(eventData)}{s}{eventValid}
+			\end{call}
+			
+			\begin{call}{s}{save(event)}{r}{newEvent}
+			\end{call}
+			
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+\hrule
+\bigskip
+
+{\bfseries Fan - Search for Artist}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{f}{Fan}
+	\newinst[1]{c}{ArtistController}
+	\newinst[1]{s}{ArtistService}
+	\newinst[1]{r}{ArtistRepository}
+	
+	\begin{call}{f}{searchArtists(name, genre, location)}{c}{artistList}
+		
+		\begin{call}{c}{searchArtists(name, genre, location)}{s}{artistList}
+			
+			\begin{call}{s}{blankToNull(name, genre, location)}{s}{filters}
+			\end{call}
+			
+			\begin{call}{s}{search(name, genre, location)}{r}{artistList}
+			\end{call}
+			
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+\hrule
+\bigskip
+
+{\bfseries Admin - Review Report}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{a}{Admin}
+	\newinst[1]{c}{ReportController}
+	\newinst[1]{s}{ReportService}
+	\newinst[1]{r}{ReportRepository}
+	
+	\begin{call}{a}{reviewReport(reportId, decision)}{c}{success}
+		
+		\begin{call}{c}{getReport(reportId)}{s}{report}
+			
+			\begin{call}{s}{findReportById(reportId)}{r}{report}
+			\end{call}
+			
+		\end{call}
+		
+		\begin{call}{c}{resolveReport(report, decision)}{s}{resolvedReport}
+			
+			\begin{call}{s}{[if decision.removeContent] hideContent(report.target)}{s}{}
+			\end{call}
+			
+			\begin{call}{s}{[if decision.banUser] banUser(report.target.poster)}{s}{}
+			\end{call}
+			
+			\begin{call}{s}{save(report)}{r}{updatedReport}
+			\end{call}
+			
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+
+
+
+
 % ============================================================
-\chapter{Use Case Diagrams}
+\chapter{Use Case Diagram}
 
 % \begin{guidance}[Every use case must appear here]
 % Every fully-dressed use case in the previous chapter -- from every team
@@ -964,9 +1344,11 @@ None
 % will look for.
 % \end{guidance}
 
-\begin{center}
-\includegraphics[width=\textwidth]{../../UseCaseDiagram/UseCaseDiagram.png}
-\end{center}
+\begin{figure}[htpb]
+    \centering
+    \includegraphics[width=\textwidth]{../../UseCaseDiagram/UseCaseDiagram-PUML.pdf}
+    \caption{System Use Case Diagram}
+\end{figure}
 
 % ============================================================
 % \chapter{System Sequence Diagram}
@@ -1079,6 +1461,13 @@ None
 
 \section{Test Cases for Iteration 1}
 No test cases were produced during iteration one.
+
+\section{Test Cases for Iteration 2}
+\begin{itemize}
+  \item Artist Search
+  \item Unban Fan 
+  \item Edit Event
+\end{itemize}
 
 % ============================================================
 \chapter{UI Mockups}
