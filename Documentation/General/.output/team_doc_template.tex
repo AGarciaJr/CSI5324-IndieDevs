@@ -90,6 +90,31 @@
 %  \item \fillin{What was created/changed in the Final Iteration}
 %\end{itemize}
 
+
+% ============================================================
+\chapter{Introduction}
+
+ArtistConnect is a web-based platform designed to help independent artists share their creative work and build meaningful relationships with their audiences. Artists often rely on several separate services to publish media, announce events, and communicate with supporters. Fans, meanwhile, may find it difficult to discover emerging artists in their own communities.
+
+ArtistConnect brings these activities together in one place. Artists can maintain profiles, publish multimedia posts, create events, and interact with fans. Fans can search for artists by name, style, or location, follow creators, and engage with their content. Administrators support a safe community by reviewing reports and managing accounts. The project aims to make independent creative communities easier to discover, participate in, and sustain.
+
+% ============================================================
+\chapter{Project Overview}
+
+ArtistConnect provides a shared online environment for independent artists, fans, and platform administrators. Its core capabilities include artist discovery, multimedia publishing, event promotion, community interaction, direct messaging, and content moderation. Rather than focusing on a single medium, the platform accommodates different kinds of creative work and emphasizes connections between artists and their local audiences.
+
+\section{Product Perspective}
+
+ArtistConnect is intended to operate as a standalone web application accessible through a browser. The user interface provides distinct workflows for artists, fans, and administrators. The envisioned system uses an application layer to handle business rules and a database to store user accounts, artist profiles, posts, events, and relationships between users. The project also anticipates deployment through a cloud hosting service.
+
+The current user-interface previews demonstrate representative workflows, including creating a post, searching for artists, and creating an event. These previews illustrate the intended user experience; browser-local demonstration data should not be mistaken for completed backend persistence, live notifications, or deployed production functionality.
+
+\section{Assumptions and Dependencies}
+
+The project assumes that users can access a modern web browser and that registered accounts will be associated with appropriate roles and permissions. Artist discovery depends on artists providing searchable profile information, such as their name, creative style, and location. Event creation depends on artists supplying sufficient event details, and publication of ticket pricing may require administrative approval.
+
+The full system depends on the availability of backend services, persistent data storage, and hosting infrastructure. Multimedia uploads will also require suitable file validation and storage. Features involving live messaging, notifications, recommendations, or automated moderation may depend on additional services and must be distinguished from functionality demonstrated only in the interface prototype.
+
 % ============================================================
 \chapter{Requirements Analysis}
 
@@ -1558,5 +1583,35 @@ No test cases were produced during iteration one.
 \begin{center}
 	\includegraphics[width=\textwidth]{updated-ui-initial-draft.png}
 \end{center}
+
+
+\section{Make a Post -- Artist}
+Figure~\ref{fig:make-a-post} shows the artist's post creation interface, including the story field, media upload control, visibility settings, comment preferences, and a live preview.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth,height=0.76\textheight,keepaspectratio]{MakeAPost-screenshot.png}
+  \caption{ArtistConnect UI preview for the Make a Post use case.}
+  \label{fig:make-a-post}
+\end{figure}
+
+\clearpage
+\section{Search for Artist -- Fan}
+Figure~\ref{fig:search-for-artist} shows the artist discovery interface, where a fan can search using artist name, genre or style, and location, then view matching artist profiles.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth,height=0.76\textheight,keepaspectratio]{SearchforArtist-screenshot.png}
+  \caption{ArtistConnect UI preview for the Search for Artist use case.}
+  \label{fig:search-for-artist}
+\end{figure}
+
+\clearpage
+\section{Create Event -- Artist}
+Figure~\ref{fig:create-event} shows the event creation interface, including event details, venue, capacity, description, ticket tiers, and draft or review submission actions.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth,height=0.76\textheight,keepaspectratio]{CreateEvent-screenshot.jpeg}
+  \caption{ArtistConnect UI preview for the Create Event use case.}
+  \label{fig:create-event}
+\end{figure}
 
 \end{document}
