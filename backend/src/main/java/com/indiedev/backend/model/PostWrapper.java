@@ -1,4 +1,4 @@
-package com.indiedev.backend.posts;
+package com.indiedev.backend.model;
 
 import lombok.Getter;
 import lombok.Setter;

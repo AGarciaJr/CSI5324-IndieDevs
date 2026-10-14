@@ -1,5 +1,6 @@
-package com.indiedev.backend.posts;
+package com.indiedev.backend.repository;
 
+import com.indiedev.backend.model.PostFile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

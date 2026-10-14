@@ -1,8 +1,13 @@
 /* The service that sits between the api and the actual post repository
  */
 
-package com.indiedev.backend.posts;
+package com.indiedev.backend.service;
 
+import com.indiedev.backend.model.Post;
+import com.indiedev.backend.model.PostFile;
+import com.indiedev.backend.model.PostWrapper;
+import com.indiedev.backend.repository.FileRepository;
+import com.indiedev.backend.repository.PostRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

@@ -7,8 +7,12 @@
  * "files" : [ {"type":"#", "content":"#"}, {"type":"#", "content":"#"}, {etc.} ] }'
  */
 
-package com.indiedev.backend.posts;
+package com.indiedev.backend.controller;
 
+import com.indiedev.backend.model.Post;
+import com.indiedev.backend.model.PostFile;
+import com.indiedev.backend.service.PostService;
+import com.indiedev.backend.model.PostWrapper;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
