@@ -1,8 +1,10 @@
 /* The service that sits between the api and the actual artist repository
  */
 
-package com.indiedev.backend.artist;
+package com.indiedev.backend.service;
 
+import com.indiedev.backend.model.Artist;
+import com.indiedev.backend.repository.ArtistRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

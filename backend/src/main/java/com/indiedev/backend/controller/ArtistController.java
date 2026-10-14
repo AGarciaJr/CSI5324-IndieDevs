@@ -1,8 +1,10 @@
 /* The api for creating, retrieving, and searching artists
  */
 
-package com.indiedev.backend.artist;
+package com.indiedev.backend.controller;
 
+import com.indiedev.backend.model.Artist;
+import com.indiedev.backend.service.ArtistService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

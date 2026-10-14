@@ -1,4 +1,4 @@
-package com.indiedev.backend.posts;
+package com.indiedev.backend.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
