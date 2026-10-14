@@ -1,0 +1,97 @@
+\documentclass[a4paper]{article}
+
+\usepackage{pgf-umlsd}
+
+\begin{document}
+
+{\bfseries Artist - Create Event}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{a}{Artist}
+	\newinst[1]{c}{EventController}
+	\newinst[1]{s}{EventService}
+	\newinst[1]{r}{EventRepository}
+	
+	\begin{call}{a}{createEvent(title, description, date, location)}{c}{newEventWrapper}
+		
+		\begin{call}{c}{saveEvent(eventData)}{s}{newEventWrapper}
+			
+			\begin{call}{s}{validateEvent(eventData)}{s}{eventValid}
+			\end{call}
+			
+			\begin{call}{s}{save(event)}{r}{newEvent}
+			\end{call}
+			
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+\hrule
+\bigskip
+
+{\bfseries Fan - Search for Artist}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{f}{Fan}
+	\newinst[1]{c}{ArtistController}
+	\newinst[1]{s}{ArtistService}
+	\newinst[1]{r}{ArtistRepository}
+	
+	\begin{call}{f}{searchArtists(name, genre, location)}{c}{artistList}
+		
+		\begin{call}{c}{searchArtists(name, genre, location)}{s}{artistList}
+			
+			\begin{call}{s}{blankToNull(name, genre, location)}{s}{filters}
+			\end{call}
+			
+			\begin{call}{s}{search(name, genre, location)}{r}{artistList}
+			\end{call}
+			
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+\hrule
+\bigskip
+
+{\bfseries Admin - Review Report}
+\bigskip
+\begin{sequencediagram}
+	
+	\newthread{a}{Admin}
+	\newinst[1]{c}{ReportController}
+	\newinst[1]{s}{ReportService}
+	\newinst[1]{r}{ReportRepository}
+	
+	\begin{call}{a}{reviewReport(reportId, decision)}{c}{success}
+		
+		\begin{call}{c}{getReport(reportId)}{s}{report}
+			
+			\begin{call}{s}{findReportById(reportId)}{r}{report}
+			\end{call}
+			
+		\end{call}
+		
+		\begin{call}{c}{resolveReport(report, decision)}{s}{resolvedReport}
+			
+			\begin{call}{s}{[if decision.removeContent] hideContent(report.target)}{s}{}
+			\end{call}
+			
+			\begin{call}{s}{[if decision.banUser] banUser(report.target.poster)}{s}{}
+			\end{call}
+			
+			\begin{call}{s}{save(report)}{r}{updatedReport}
+			\end{call}
+			
+		\end{call}
+		
+	\end{call}
+	
+\end{sequencediagram}
+
+
+\end{document}
