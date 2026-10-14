@@ -159,7 +159,7 @@ Small independent artists need a platform to host their art and foster deeper co
   
   \item \textbf{[US-08]} As an \textbf{Artist}, I want to \textbf{edit and update my existing event information} so that \textbf{my fans have the most accurate and current details if plans change}. \textit{(Maps to UC: Update Event)}
   
-  \item \textbf{[US-09]} As an \textbf{Administrator}, I want to \textbf{review prospective artist verification applications} so that \textbf{I can ensure only legitimate, non-fake artists are granted the Artist role}. \textit{(Maps to UC: Review Artist Verification Application)}
+  \item \textbf{[US-09]} As an \textbf{Administrator}, I want to \textbf{approve prospective artist verification applications} so that \textbf{I can ensure only legitimate, non-fake artists are granted the Artist role}. \textit{(Maps to UC: Approve Artist Verification Application)}
   
   \item \textbf{[US-10]} As an \textbf{Administrator}, I want to \textbf{review conduct reports submitted by users} so that \textbf{I can make fair moderation decisions regarding inappropriate content}. \textit{(Maps to UC: Review Report)}
   
@@ -688,7 +688,7 @@ None
 
 {\bfseries Postconditions:}
 \begin{enumerate}
-	\item The user's account is suspended or banned.
+	\item The user's account is successfully suspended.
 	\item The system revokes the user's access and permissions.
 \end{enumerate}
 
@@ -697,8 +697,8 @@ None
 	\item The Administrator requests to view reported user accounts.
 	\item The system provides the pending reports and associated user activity.
 	\item The Administrator determines the user's actions violate the ToS.
-	\item The Administrator submits a request to ban the user.
-	\item The system updates the account status to banned and revokes the user's permissions.
+	\item The Administrator submits a request to suspend the user.
+	\item The system updates the account status to suspended and revokes the user's permissions.
 \end{enumerate}
 
 {\bfseries Extensions:}
@@ -725,7 +725,7 @@ None
 
 {\bfseries Postconditions:}
 \begin{enumerate}
-	\item The Fan's comment is saved in the database and published on the Artist's post.
+	\item The Fan's comment is saved and published on the Artist's post.
 \end{enumerate}
 
 {\bfseries Main flow:}
@@ -751,9 +751,9 @@ None
 	\end{enumerate}
 \end{enumerate}
 
-\subsection{UC: Review Artist Verification Application -- Admin}
+\subsection{UC: Approve Artist Verification Application -- Admin}
 
-{\bfseries Use case:} Review Artist Verification Application
+{\bfseries Use case:} Approve Artist Verification Application
 
 {\bfseries Actor:} Administrator
 
@@ -1159,7 +1159,7 @@ None
 \end{minipage}
 
 
-\section{Gan Orgil -- Sequence Diagrams}
+\section{Gan-Orgil Gantumur -- Sequence Diagrams}
 \begin{minipage}{\textwidth}
     {\bfseries Administrator - Suspending Artist Account}
     \bigskip
