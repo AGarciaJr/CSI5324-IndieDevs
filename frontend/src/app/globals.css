@@ -453,3 +453,246 @@ font-size:11px}
 .source{max-width:160px;
 flex-wrap:wrap}
 }
+
+/* Complementary styles for Nicholas Nolen's Use Cases: Update Event, Unban Fan, Receive Recommendation */
+.account-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfcf8;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  margin-top: 24px;
+}
+.account-btn:hover {
+  background: #f0f4ea;
+  border-color: #c7d2c0;
+}
+.account-menu {
+  position: absolute;
+  bottom: 85px;
+  left: 20px;
+  right: 20px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  padding: 12px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.account-menu-item:hover {
+  background: #f5f8f0;
+}
+.account-menu-item.active {
+  background: #edf3e7;
+  border-color: #d1ded0;
+}
+.role-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 3px 7px;
+  border-radius: 12px;
+  margin-left: auto;
+}
+.role-badge.fan { background: #e3edf2; color: #1e566e; }
+.role-badge.artist { background: #edf3e7; color: #2c604c; }
+.role-badge.admin { background: #fbeee8; color: #9c3b24; }
+
+.match-pill {
+  background: #edf5ea;
+  color: #2b614c;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 14px;
+  border: 1px solid #cce0c8;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-box {
+  background: #fbfdf8;
+  border: 1px solid #d4dfcc;
+  border-left: 4px solid #6c9965;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin: 16px 0;
+}
+.ai-box h4 {
+  margin: 0 0 6px;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  color: #233d36;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-box p {
+  font-size: 13px;
+  color: #43534b;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.review-box {
+  background: #f8faf4;
+  border: 1px solid #dbe2d4;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+}
+.review-box h3 {
+  font-family: Georgia, serif;
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+.review-grid div b {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ack-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #cbd6c5;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #244238;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.ack-label input {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.affinity-widget {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.affinity-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.affinity-label {
+  width: 130px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.affinity-track {
+  flex: 1;
+  height: 10px;
+  background: #edf0e9;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.affinity-fill {
+  height: 100%;
+  background: #396d59;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+.affinity-pct {
+  width: 48px;
+  text-align: right;
+  font-weight: 700;
+  color: #55675c;
+}
+
+.appeal-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.appeal-card.selected {
+  border-color: #2c604c;
+  box-shadow: 0 4px 14px rgba(44,96,76,0.1);
+}
+.appeal-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.btn-secondary {
+  background: #fbfcf9;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 10px 16px;
+  border-radius: 7px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: #f0f4ec;
+}
+.btn-danger {
+  background: #fff3f0;
+  border: 1px solid #f1cfc6;
+  color: #9e3926;
+  padding: 10px 16px;
+  border-radius: 7px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-danger:hover {
+  background: #fae4df;
+}
+
+.conflict-warning {
+  background: #fff8eb;
+  border: 1px solid #f2dbb3;
+  color: #8c6014;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin: 12px 0;
+  line-height: 1.5;
+}

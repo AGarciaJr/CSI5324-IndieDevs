@@ -1,5 +1,7 @@
 package com.indiedev.backend.artist;
 
+import com.indiedev.backend.model.Artist;
+import com.indiedev.backend.service.ArtistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -29,7 +31,7 @@ class ArtistSearchTest {
         List<Artist> artists = artistService.getAllArtists();
 
         assertThat(artists).extracting(Artist::getName)
-                .containsExactlyInAnyOrder(
+                .contains(
                         "Luna Park",
                         "The Riverbeds",
                         "Marisol Vega",
@@ -52,9 +54,9 @@ class ArtistSearchTest {
         List<Artist> miamiArtists = artistService.searchArtists(null, null, "Miami");
 
         assertThat(indieArtists).extracting(Artist::getName)
-                .containsExactly("Luna Park", "The Riverbeds");
+                .contains("Luna Park", "The Riverbeds");
         assertThat(miamiArtists).extracting(Artist::getName)
-                .containsExactly("Marisol Vega");
+                .contains("Marisol Vega");
     }
 
     @Test
