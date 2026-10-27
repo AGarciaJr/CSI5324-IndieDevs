@@ -583,6 +583,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 \begin{enumerate}
 	\item A given comment has been hidden from users.
 	\item Admins have been informed, if the artist so chooses.
+	\item The comment's author has been blocked, if the artist so chooses.
 \end{enumerate}
 
 {\bfseries Main flow:}
@@ -591,12 +592,19 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 	\item The system prompts the artist to select the desired action (delete/report/block user).
 	\item The artist provides this information.
 	\item The system hides the comment from users.
-	\item If reporting was selected, the system files a report.
-	\item If blocking the user was selected, the system makes a request for this.
 \end{enumerate}
 
 {\bfseries Extensions:}
-None
+\begin{enumerate}
+	\item [4a.] Report option selected
+	\begin{enumerate}
+		\item [4a1.] The system files a report after hiding the comment, to be viewed by admins.
+	\end{enumerate}
+	\item[4b.] Block option selected
+	\begin{enumerate}
+		\item [4b1.] The system makes a request to prevent the user from interacting with the artist's posts in the future.
+	\end{enumerate}
+\end{enumerate}
 
 {\bfseries Special requirements:}
 \begin{itemize}

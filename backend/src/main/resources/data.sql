@@ -25,3 +25,8 @@ INSERT INTO reports (reporter_id, target_type, target_id, reported_user_id, reas
     (1, 'POST', 1000, 4, 'Spam link in post', 'PENDING', DATEADD('HOUR', -3, CURRENT_TIMESTAMP)),
     (5, 'EVENT', 1, 4, 'Event looks like a scam', 'PENDING', DATEADD('HOUR', -2, CURRENT_TIMESTAMP)),
     (1, 'USER', 4, 4, 'Harassing messages', 'PENDING', DATEADD('HOUR', -1, CURRENT_TIMESTAMP));
+
+-- Conversations between demo accounts (fan 1 <-> artist 2, admin 3 <-> artist 2)
+INSERT INTO conversations (user1_id, user2_id) VALUES
+    (1, 2),
+    (3, 2);
