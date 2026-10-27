@@ -24,8 +24,10 @@ public class ArtistController {
     public Artist saveArtist(@RequestBody Artist artist) { return artistService.saveArtist(artist); }
 
     @GetMapping
-    public List<Artist> getAllArtists() { return artistService.getAllArtists(); }
-
+    public List<Artist> getAllArtists(
+            @RequestParam(required = false, defaultValue = "false") boolean includeSuspended) {
+        return artistService.getAllArtists(includeSuspended);
+    }
     @GetMapping(path = "/{artistId}")
     public Artist getArtistById(@PathVariable Long artistId) { return artistService.getArtistById(artistId); }
 
@@ -33,8 +35,9 @@ public class ArtistController {
     public List<Artist> searchArtists(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String genre,
-            @RequestParam(required = false) String location) {
-        return artistService.searchArtists(name, genre, location);
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false, defaultValue = "false") boolean includeSuspended) { // <-- NEW
+        return artistService.searchArtists(name, genre, location, includeSuspended);
     }
 
 }

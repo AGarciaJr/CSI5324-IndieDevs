@@ -4,21 +4,27 @@ import com.indiedev.backend.model.BanAppeal;
 import com.indiedev.backend.model.Fan;
 import com.indiedev.backend.repository.BanAppealRepository;
 import com.indiedev.backend.repository.FanRepository;
+import com.indiedev.backend.model.Artist;
+import com.indiedev.backend.repository.ArtistRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
+@Transactional
 public class ModerationService {
 
     private final FanRepository fanRepository;
     private final BanAppealRepository banAppealRepository;
+    private final ArtistRepository artistRepository;
 
-    public ModerationService(FanRepository fanRepository, BanAppealRepository banAppealRepository) {
+    public ModerationService(FanRepository fanRepository, BanAppealRepository banAppealRepository, ArtistRepository artistRepository) {
         this.fanRepository = fanRepository;
         this.banAppealRepository = banAppealRepository;
+        this.artistRepository = artistRepository;
     }
 
     public Fan getFanById(Long fanId) {
@@ -114,6 +120,18 @@ public class ModerationService {
         });
 
         return savedAppeal;
+    }
+
+    /**
+     * Use Case: Admin - Suspend artist account
+     * Fetches the artist by ID, flips the suspension flag to true, and saves to the database.
+     */
+    public Artist suspendArtist(Long artistId) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new NoSuchElementException("Artist with ID " + artistId + " not found."));
+
+        artist.setSuspended(true);
+        return artistRepository.save(artist);
     }
 
     private void validateReviewer(BanAppeal appeal, Long reviewingAdminId) {

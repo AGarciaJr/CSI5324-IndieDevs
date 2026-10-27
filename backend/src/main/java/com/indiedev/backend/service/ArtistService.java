@@ -22,16 +22,24 @@ public class ArtistService {
         return artistRepository.save(artist);
     }
 
-    public List<Artist> getAllArtists() {
-        return artistRepository.findAll();
+    public List<Artist> getAllArtists(boolean includeSuspended) {
+        List<Artist> artists = artistRepository.findAll();
+        if (!includeSuspended) {
+            return artists.stream().filter(a -> !a.isSuspended()).toList();
+        }
+        return artists;
     }
 
     public Artist getArtistById(Long artistId) {
         return artistRepository.findArtistById(artistId);
     }
 
-    public List<Artist> searchArtists(String name, String genre, String location) {
-        return artistRepository.search(blankToNull(name), blankToNull(genre), blankToNull(location));
+    public List<Artist> searchArtists(String name, String genre, String location, boolean includeSuspended) {
+        List<Artist> artists = artistRepository.search(blankToNull(name), blankToNull(genre), blankToNull(location));
+        if (!includeSuspended) {
+            return artists.stream().filter(a -> !a.isSuspended()).toList();
+        }
+        return artists;
     }
 
     private String blankToNull(String value) {

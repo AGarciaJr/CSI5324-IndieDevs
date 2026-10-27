@@ -29,6 +29,7 @@ type Artist = {
     profileThumbnail?: string;
     bio?: string;
     tags?: string;
+    suspended?: boolean;
 };
 
 type EventItem = {
@@ -234,6 +235,13 @@ export default function Home() {
             loadAppeals();
         }
     }, [tab, currentUser, appealsViewMode]);
+
+    // Load secure community list when on Discover tab or persona changes
+    useEffect(() => {
+        if (tab === "Discover") {
+            loadDiscoverArtists();
+        }
+    }, [tab, currentUser, source]);
 
     function persistStore(next: LocalStore) {
         try {
@@ -592,6 +600,52 @@ export default function Home() {
         }
     }
 
+    async function handleSuspendArtist(artistId: number) {
+        setError("");
+        setNotice("");
+        if (!confirm("Are you sure you want to suspend this artist? This will hide their profile.")) return;
+        
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/artists/${artistId}/suspend`, {
+                method: "PUT"
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || "Could not suspend artist.");
+            }
+            
+            // Refresh the artist results so the UI shows them as suspended
+            setNotice(`Success! Artist ID ${artistId} has been suspended.`);
+            
+            // Re-fetch the artists list to reflect changes
+            const refreshRes = await fetch(`${API_BASE}/api/artists/search?`);
+            if (refreshRes.ok) {
+                setArtistResults(await refreshRes.json());
+            }
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setError(`Suspension failed: ${msg}`);
+        }
+    }
+
+    async function loadDiscoverArtists() {
+        if (source !== "api") return; // Only fetch if we are using the live backend
+        setBusySearch(true);
+        try {
+            // This hits the GET /api/artists endpoint. 
+            // Because we don't pass includeSuspended=true, it safely filters on the backend!
+            const res = await fetch(`${API_BASE}/api/artists`);
+            if (res.ok) {
+                setArtistResults(await res.json());
+                setSearched(false); // Reverts the UI title back to "Meet The Community"
+            }
+        } catch {
+            // Fail silently on network errors so it doesn't interrupt the demo
+        } finally {
+            setBusySearch(false);
+        }
+    }
+
     // ----------------------------------------------------
     // Artist Search (Discover Tab)
     // ----------------------------------------------------
@@ -659,6 +713,7 @@ export default function Home() {
             ]
             : [
                 { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
+                { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" }, // <-- NEW
             ];
 
     return (
@@ -1401,6 +1456,50 @@ export default function Home() {
                                     ) : null}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* ========================================================================= */}
+                    {/* TAB: ARTIST DIRECTORY (USE CASE: SUSPEND ARTIST - ADMIN)                  */}
+                    {/* ========================================================================= */}
+                    {tab === "Artist Directory" && currentUser.role === "Admin" && (
+                        <div className="panel">
+                            <div className="section-title">
+                                <div>
+                                    <span className="eyebrow">MODERATOR CONTROLS</span>
+                                    <h2>Platform Artists</h2>
+                                </div>
+                                <button className="btn-secondary" onClick={async () => {
+                                    const res = await fetch(`${API_BASE}/api/artists/search?includeSuspended=true`);
+                                    if (res.ok) setArtistResults(await res.json());
+                                }}>
+                                    Refresh Directory ↻
+                                </button>
+                            </div>
+
+                            <div className="artist-grid" style={{ marginTop: "20px" }}>
+                                {artistResults.map((a, i) => (
+                                    <div className="artist-card" key={a.id} style={{ display: "flex", flexDirection: "column", opacity: a.suspended ? 0.6 : 1 }}>
+                                        <div className={`art-cover art-${i % 6}`}>
+                                            <span>{["◒", "〰", "◐", "✳", "◬", "◎"][i % 6]}</span>
+                                        </div>
+                                        <div className="artist-info" style={{ flex: 1 }}>
+                                            <h3>{a.name}</h3>
+                                            <p>{a.genre} · {a.location}</p>
+                                            {a.suspended && <span className="error pill" style={{ display: "inline-block", marginTop: "8px" }}>SUSPENDED</span>}
+                                        </div>
+                                        <div className="card-footer" style={{ borderTop: "1px solid var(--line)", paddingTop: "12px" }}>
+                                            <button 
+                                                className="btn-danger full" 
+                                                disabled={a.suspended}
+                                                onClick={() => handleSuspendArtist(a.id)}
+                                            >
+                                                {a.suspended ? "Account Suspended ✕" : "Suspend Artist ⚠"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
