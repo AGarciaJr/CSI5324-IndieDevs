@@ -13,6 +13,7 @@ import com.indiedev.backend.model.Post;
 import com.indiedev.backend.model.PostFile;
 import com.indiedev.backend.service.PostService;
 import com.indiedev.backend.model.PostWrapper;
+import com.indiedev.backend.model.UserInteraction;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,4 +54,14 @@ public class PostController {
     @GetMapping(path = "/files/byfileid/{fileId}")
     public PostFile getFileById(@PathVariable Long fileId) { return postService.getFileById(fileId); }
 
+    @PostMapping("/{postId}/comments")
+    public UserInteraction commentOnArtwork(
+            @PathVariable Long postId,
+            @RequestParam Long fanId,
+            @RequestParam Long artistId,
+            @RequestParam(required = false, defaultValue = "General") String genre,
+            @RequestBody String content) {
+
+        return postService.addComment(postId, fanId, artistId, genre, content);
+    }
 }

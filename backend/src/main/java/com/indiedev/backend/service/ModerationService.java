@@ -4,21 +4,38 @@ import com.indiedev.backend.model.BanAppeal;
 import com.indiedev.backend.model.Fan;
 import com.indiedev.backend.repository.BanAppealRepository;
 import com.indiedev.backend.repository.FanRepository;
+import com.indiedev.backend.model.Artist;
+import com.indiedev.backend.repository.ArtistRepository;
+import com.indiedev.backend.model.ArtistApplication;
+import com.indiedev.backend.repository.ArtistApplicationRepository;
+
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
+@Transactional
 public class ModerationService {
 
     private final FanRepository fanRepository;
     private final BanAppealRepository banAppealRepository;
+    private final ArtistRepository artistRepository;
+    private final ArtistApplicationRepository applicationRepository;
 
-    public ModerationService(FanRepository fanRepository, BanAppealRepository banAppealRepository) {
+    public List<ArtistApplication> getPendingApplications() {
+        return applicationRepository.findByStatus("PENDING");
+    }
+
+    public ModerationService(FanRepository fanRepository, BanAppealRepository banAppealRepository,
+                             ArtistRepository artistRepository, ArtistApplicationRepository applicationRepository) {
         this.fanRepository = fanRepository;
         this.banAppealRepository = banAppealRepository;
+        this.artistRepository = artistRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     public Fan getFanById(Long fanId) {
@@ -114,6 +131,48 @@ public class ModerationService {
         });
 
         return savedAppeal;
+    }
+
+    /**
+     * Use Case: Admin - Suspend artist account
+     * Fetches the artist by ID, flips the suspension flag to true, and saves to the database.
+     */
+    public Artist suspendArtist(Long artistId) {
+        Artist artist = artistRepository.findById(artistId)
+                .orElseThrow(() -> new NoSuchElementException("Artist with ID " + artistId + " not found."));
+
+        artist.setSuspended(true);
+        return artistRepository.save(artist);
+    }
+
+    /**
+     * Use Case: Approve and provision Artist application
+     */
+    public ArtistApplication approveApplication(Long applicationId) {
+        ArtistApplication app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new NoSuchElementException("Application not found."));
+
+        app.setStatus("APPROVED");
+
+        // Main Flow Step 5: Provision the new Artist record
+        Artist newArtist = new Artist();
+        newArtist.setName(app.getApplicantName());
+        newArtist.setGenre(app.getProposedGenre());
+        newArtist.setSuspended(false);
+
+        artistRepository.save(newArtist);
+        return applicationRepository.save(app);
+    }
+
+    /**
+     * Use Case: Reject application
+     */
+    public ArtistApplication rejectApplication(Long applicationId) {
+        ArtistApplication app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new NoSuchElementException("Application not found."));
+
+        app.setStatus("REJECTED");
+        return applicationRepository.save(app);
     }
 
     private void validateReviewer(BanAppeal appeal, Long reviewingAdminId) {

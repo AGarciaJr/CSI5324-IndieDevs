@@ -70,7 +70,9 @@ public class RecommendationService {
      */
     public RecommendationDTO getRecommendations(Long fanId) {
         List<UserInteraction> interactions = userInteractionRepository.findByFanId(fanId);
-        List<Artist> allArtists = artistRepository.findAll();
+        List<Artist> allArtists = artistRepository.findAll().stream()
+                .filter(artist -> !artist.isSuspended())
+                .collect(Collectors.toList());
 
         // Extension 1a: New Fan check
         if (interactions.isEmpty()) {

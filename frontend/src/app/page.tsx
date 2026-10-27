@@ -29,6 +29,17 @@ type Artist = {
     profileThumbnail?: string;
     bio?: string;
     tags?: string;
+    suspended?: boolean;
+};
+
+type ArtistApplication = {
+    id: number;
+    fanId: number;
+    applicantName: string;
+    proposedGenre: string;
+    portfolioLinks: string;
+    status: string;
+    submittedAt?: string;
 };
 
 type EventItem = {
@@ -154,6 +165,10 @@ export default function Home() {
     const [isPublic, setPublic] = useState(true);
     const [commentsAllowed, setCommentsAllowed] = useState(true);
 
+    // Use Case 3: Admin Verifications State
+    const [applicationsList, setApplicationsList] = useState<ArtistApplication[]>([]);
+    const [loadingApps, setLoadingApps] = useState(false);
+
     // Use Case 1: Update Event State (Artist)
     const [eventsList, setEventsList] = useState<EventItem[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
@@ -234,6 +249,20 @@ export default function Home() {
             loadAppeals();
         }
     }, [tab, currentUser, appealsViewMode]);
+
+    // Load secure community list when on Discover tab or persona changes
+    useEffect(() => {
+        if (tab === "Discover") {
+            loadDiscoverArtists();
+        }
+    }, [tab, currentUser, source]);
+
+    // Load pending applications when on Verifications tab (Admin)
+    useEffect(() => {
+        if (tab === "Verifications" && currentUser.role === "Admin") {
+            loadApplications();
+        }
+    }, [tab, currentUser]);
 
     function persistStore(next: LocalStore) {
         try {
@@ -592,6 +621,93 @@ export default function Home() {
         }
     }
 
+    async function handleSuspendArtist(artistId: number) {
+        setError("");
+        setNotice("");
+        if (!confirm("Are you sure you want to suspend this artist? This will hide their profile.")) return;
+        
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/artists/${artistId}/suspend`, {
+                method: "PUT"
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || "Could not suspend artist.");
+            }
+            
+            // Refresh the artist results so the UI shows them as suspended
+            setNotice(`Success! Artist ID ${artistId} has been suspended.`);
+            
+            // Re-fetch the artists list to reflect changes
+            const refreshRes = await fetch(`${API_BASE}/api/artists/search?`);
+            if (refreshRes.ok) {
+                setArtistResults(await refreshRes.json());
+            }
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setError(`Suspension failed: ${msg}`);
+        }
+    }
+
+    async function loadApplications() {
+        setLoadingApps(true);
+        setError("");
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/applications/pending`);
+            if (!res.ok) throw new Error("Failed to load applications");
+            setApplicationsList(await res.json());
+        } catch {
+            setApplicationsList([]); // Fails silently to empty queue if backend is missing
+        } finally {
+            setLoadingApps(false);
+        }
+    }
+
+    async function handleApproveApplication(appId: number, applicantName: string) {
+        setError("");
+        setNotice("");
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/applications/${appId}/approve`, { method: "PUT" });
+            if (!res.ok) throw new Error("Failed to approve application");
+            setNotice(`Success! ${applicantName} has been verified and their Artist profile is provisioned.`);
+            loadApplications();
+        } catch (err: unknown) {
+            setError(`Approval failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+    }
+
+    async function handleRejectApplication(appId: number, applicantName: string) {
+        setError("");
+        setNotice("");
+        if (!confirm(`Are you sure you want to reject ${applicantName}'s application?`)) return;
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/applications/${appId}/reject`, { method: "PUT" });
+            if (!res.ok) throw new Error("Failed to reject application");
+            setNotice(`Application for ${applicantName} marked as REJECTED.`);
+            loadApplications();
+        } catch (err: unknown) {
+            setError(`Rejection failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+    }
+
+    async function loadDiscoverArtists() {
+        if (source !== "api") return; // Only fetch if we are using the live backend
+        setBusySearch(true);
+        try {
+            // This hits the GET /api/artists endpoint. 
+            // Because we don't pass includeSuspended=true, it safely filters on the backend!
+            const res = await fetch(`${API_BASE}/api/artists`);
+            if (res.ok) {
+                setArtistResults(await res.json());
+                setSearched(false); // Reverts the UI title back to "Meet The Community"
+            }
+        } catch {
+            // Fail silently on network errors so it doesn't interrupt the demo
+        } finally {
+            setBusySearch(false);
+        }
+    }
+
     // ----------------------------------------------------
     // Artist Search (Discover Tab)
     // ----------------------------------------------------
@@ -659,6 +775,8 @@ export default function Home() {
             ]
             : [
                 { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
+                { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" },
+                { label: "Verifications", icon: "✓", tabName: "Verifications" },
             ];
 
     return (
@@ -1405,6 +1523,50 @@ export default function Home() {
                     )}
 
                     {/* ========================================================================= */}
+                    {/* TAB: ARTIST DIRECTORY (USE CASE: SUSPEND ARTIST - ADMIN)                  */}
+                    {/* ========================================================================= */}
+                    {tab === "Artist Directory" && currentUser.role === "Admin" && (
+                        <div className="panel">
+                            <div className="section-title">
+                                <div>
+                                    <span className="eyebrow">MODERATOR CONTROLS</span>
+                                    <h2>Platform Artists</h2>
+                                </div>
+                                <button className="btn-secondary" onClick={async () => {
+                                    const res = await fetch(`${API_BASE}/api/artists/search?includeSuspended=true`);
+                                    if (res.ok) setArtistResults(await res.json());
+                                }}>
+                                    Refresh Directory ↻
+                                </button>
+                            </div>
+
+                            <div className="artist-grid" style={{ marginTop: "20px" }}>
+                                {artistResults.map((a, i) => (
+                                    <div className="artist-card" key={a.id} style={{ display: "flex", flexDirection: "column", opacity: a.suspended ? 0.6 : 1 }}>
+                                        <div className={`art-cover art-${i % 6}`}>
+                                            <span>{["◒", "〰", "◐", "✳", "◬", "◎"][i % 6]}</span>
+                                        </div>
+                                        <div className="artist-info" style={{ flex: 1 }}>
+                                            <h3>{a.name}</h3>
+                                            <p>{a.genre} · {a.location}</p>
+                                            {a.suspended && <span className="error pill" style={{ display: "inline-block", marginTop: "8px" }}>SUSPENDED</span>}
+                                        </div>
+                                        <div className="card-footer" style={{ borderTop: "1px solid var(--line)", paddingTop: "12px" }}>
+                                            <button 
+                                                className="btn-danger full" 
+                                                disabled={a.suspended}
+                                                onClick={() => handleSuspendArtist(a.id)}
+                                            >
+                                                {a.suspended ? "Account Suspended ✕" : "Suspend Artist ⚠"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ========================================================================= */}
                     {/* TAB: DISCOVER                                                             */}
                     {/* ========================================================================= */}
                     {tab === "Discover" && currentUser.role !== "Admin" && (
@@ -1580,6 +1742,75 @@ export default function Home() {
                             </section>
                         </div>
                     )}
+
+                    {/* ========================================================================= */}
+                    {/* TAB: VERIFICATIONS */}
+                    {/* ========================================================================= */}
+                    {tab === "Verifications" && currentUser.role === "Admin" && (
+                        <div className="panel">
+                            <div className="section-title">
+                                <div>
+                                    <span className="eyebrow">MODERATOR QUEUE</span>
+                                    <h2>Artist Verifications</h2>
+                                    <p style={{ fontSize: "13px", color: "var(--muted)", margin: "4px 0 0" }}>
+                                        Review portfolio links and approve or reject platform upgrades for fans.
+                                    </p>
+                                </div>
+                                <button className="btn-secondary" onClick={loadApplications}>
+                                    Refresh Queue ↻
+                                </button>
+                            </div>
+
+                            {loadingApps ? (
+                                <div className="empty"><p>Loading pending applications…</p></div>
+                            ) : applicationsList.length === 0 ? (
+                                <div className="empty">
+                                    <h3>No pending applications</h3>
+                                    <p>The verification queue is fully cleared.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: "grid", gap: "20px", marginTop: "20px" }}>
+                                    {applicationsList.map(app => (
+                                        <div key={app.id} style={{ background: "#fcfaf7", border: "1px solid var(--line)", borderRadius: "12px", padding: "20px" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                                                <div>
+                                                    <h3 style={{ margin: "0 0 4px" }}>{app.applicantName}</h3>
+                                                    <span className="pill">Proposed Genre: {app.proposedGenre}</span>
+                                                    <span className="pill" style={{ marginLeft: "8px", background: "#f5f5ea" }}>App ID: {app.id}</span>
+                                                </div>
+                                                <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                                                    Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "Unknown"}
+                                                </span>
+                                            </div>
+
+                                            <div style={{ background: "white", border: "1px solid #e1eadc", padding: "16px", borderRadius: "8px", marginBottom: "20px" }}>
+                                                <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Portfolio & Identity Links:</b>
+                                                <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "8px 0 0", color: "#2c4538" }}>
+                                                    {app.portfolioLinks}
+                                                </p>
+                                            </div>
+
+                                            <div style={{ display: "flex", gap: "12px", borderTop: "1px solid var(--line)", paddingTop: "16px" }}>
+                                                <button 
+                                                    className="primary" 
+                                                    onClick={() => handleApproveApplication(app.id, app.applicantName)}
+                                                >
+                                                    Approve & Provision Artist Profile ✓
+                                                </button>
+                                                <button 
+                                                    className="btn-secondary" 
+                                                    onClick={() => handleRejectApplication(app.id, app.applicantName)}
+                                                    style={{ color: "#9e3926", borderColor: "#eccdc6" }}
+                                                >
+                                                    Reject Application ✕
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </main>
 
                 <footer>
@@ -1627,6 +1858,16 @@ export default function Home() {
                         </button>
                         <button onClick={() => { setModalAction("chat"); setModalMessage(""); }}>Start chat</button>
                         <button className="primary" onClick={() => { setModalAction("book"); setModalMessage(""); }}>Book artist ↗</button>
+
+                        {currentUser.role === "Fan" && (
+                            <button 
+                                className="primary" 
+                                style={{ background: "#4a5b66", borderColor: "#4a5b66" }} 
+                                onClick={() => { setModalAction("comment"); setModalMessage(""); }}
+                            >
+                                Comment on Artwork 💬
+                            </button>
+                        )}
                     </div>
 
                     {modalAction && (
@@ -1640,18 +1881,44 @@ export default function Home() {
                                         [selectedArtist.id]: [...(store.chats[selectedArtist.id] || []), modalMessage.trim()]
                                     };
                                     persistStore({ ...store, chats: nextChats });
-                                } else {
+                                } else if (modalAction === "book") {
                                     const nextBookings = [...store.bookings, { artistId: selectedArtist.id, details: modalMessage.trim() }];
                                     persistStore({ ...store, bookings: nextBookings });
                                     await recordFanInteraction(selectedArtist.id, "BOOKING");
+                                } else if (modalAction === "comment") {
+                                    try {
+                                        const dummyPostId = 101; // Targeting a featured artwork post
+                                        const res = await fetch(`${API_BASE}/api/posts/${dummyPostId}/comments?fanId=${currentUser.id}&artistId=${selectedArtist.id}&genre=${encodeURIComponent(selectedArtist.genre)}`, {
+                                            method: "POST",
+                                            headers: { "Content-Type": "text/plain" }, // Matches backend @RequestBody String
+                                            body: modalMessage.trim()
+                                        });
+                                        
+                                        if (!res.ok) throw new Error("Failed to post comment.");
+                                        
+                                        // Refresh the Fan's recommendations so the 3.0 weight immediately updates their taste profile
+                                        loadRecommendations(currentUser.id);
+                                        setModalMessage("");
+                                        setModalAction("");
+                                        setNotice(`Comment posted on ${selectedArtist.name}'s artwork! Your taste profile affinity for ${selectedArtist.genre} has increased.`);
+                                    } catch (err: unknown) {
+                                        const msg = err instanceof Error ? err.message : String(err);
+                                        setError(`Could not post comment: ${msg}`);
+                                    }
                                 }
                                 setModalMessage("");
                                 setNotice(modalAction === "chat" ? "Message saved." : "Booking request recorded!");
                             }}
                         >
-                            <h3>{modalAction === "chat" ? "Your conversation" : "Booking request"}</h3>
+                            <h3>
+                                {modalAction === "chat" ? "Your conversation" : 
+                                modalAction === "book" ? "Booking request" : 
+                                "Comment on featured artwork"}
+                            </h3>
                             <label>
-                                {modalAction === "chat" ? "Message" : "Event details, date, and contact information"}
+                                {modalAction === "chat" ? "Message" : 
+                                modalAction === "book" ? "Event details, date, and contact information" : 
+                                "Leave a comment on this artist's recent post"}
                                 <textarea
                                     required
                                     value={modalMessage}
@@ -1660,7 +1927,9 @@ export default function Home() {
                                 />
                             </label>
                             <button className="primary">
-                                {modalAction === "chat" ? "Send message" : "Submit booking request"}
+                                {modalAction === "chat" ? "Send message" : 
+                                modalAction === "book" ? "Submit booking request" : 
+                                "Post comment ↗"}
                             </button>
                         </form>
                     )}

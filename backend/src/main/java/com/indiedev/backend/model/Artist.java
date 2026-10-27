@@ -24,15 +24,19 @@ public class Artist {
 
     private String tags;
 
+    @Column(name = "is_suspended")
+    private boolean isSuspended = false;
+
     public Artist() {
     }
 
-    public Artist(String name, String genre, String location, String profileThumbnail, String bio, String tags) {
+    public Artist(String name, String genre, String location, String profileThumbnail, String bio, String tags, Boolean isSuspended) {
         this.name = name;
         this.genre = genre;
         this.location = location;
         this.profileThumbnail = profileThumbnail;
         this.bio = bio;
         this.tags = tags;
+        this.isSuspended = isSuspended;
     }
 }

@@ -1,7 +1,9 @@
 package com.indiedev.backend.controller;
 
+import com.indiedev.backend.model.ArtistApplication;
 import com.indiedev.backend.model.BanAppeal;
 import com.indiedev.backend.model.Fan;
+import com.indiedev.backend.model.Artist;
 import com.indiedev.backend.service.ModerationService;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,5 +76,29 @@ public class ModerationController {
             @RequestParam Long adminId,
             @RequestParam(required = false) String notes) {
         return moderationService.markAppealInvalid(id, adminId, notes);
+    }
+
+    /**
+     * Use Case: Admin - Suspend artist account
+     * Toggles the isSuspended flag to true for a given artist ID.
+     */
+    @PutMapping("/artists/{artistId}/suspend")
+    public Artist suspendArtist(@PathVariable Long artistId) {
+        return moderationService.suspendArtist(artistId);
+    }
+
+    @GetMapping("/applications/pending")
+    public List<ArtistApplication> getPendingApplications() {
+        return moderationService.getPendingApplications();
+    }
+
+    @PutMapping("/applications/{applicationId}/approve")
+    public ArtistApplication approveApplication(@PathVariable Long applicationId) {
+        return moderationService.approveApplication(applicationId);
+    }
+
+    @PutMapping("/applications/{applicationId}/reject")
+    public ArtistApplication rejectApplication(@PathVariable Long applicationId) {
+        return moderationService.rejectApplication(applicationId);
     }
 }
