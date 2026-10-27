@@ -37,7 +37,15 @@ public class ArtistService {
     }
 
     public List<Artist> getAllArtists() {
-        return artistRepository.findAll();
+        return getAllArtists(false);
+    }
+
+    public List<Artist> getAllArtists(boolean includeSuspended) {
+        List<Artist> artists = artistRepository.findAll();
+        if (!includeSuspended) {
+            return artists.stream().filter(a -> !a.isSuspended()).toList();
+        }
+        return artists;
     }
 
     public Artist getArtistById(Long artistId) {
@@ -45,6 +53,10 @@ public class ArtistService {
     }
 
     public List<ArtistSearchResult> searchArtists(Long fanId, ArtistSearchCriteria criteria) {
+        return searchArtists(fanId, criteria, false);
+    }
+
+    public List<ArtistSearchResult> searchArtists(Long fanId, ArtistSearchCriteria criteria, boolean includeSuspended) {
         UserAccount fan = accessControlService.requireRole(fanId, Role.FAN);
 
         String name = blankToNull(criteria.name());
@@ -56,6 +68,7 @@ public class ArtistService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter at least one search criterion");
             }
             return artistRepository.search(name, genre, location).stream()
+                    .filter(artist -> includeSuspended || !artist.isSuspended())
                     .map(artist -> ArtistSearchResult.of(artist, null))
                     .toList();
         }
@@ -66,7 +79,7 @@ public class ArtistService {
                     "Search radius must be between 0 and " + (int) MAX_RADIUS_KM + " km");
         }
         double[] origin = resolveOrigin(fan, criteria);
-        return searchNearby(name, genre, location, origin[0], origin[1], radiusKm);
+        return searchNearby(name, genre, location, origin[0], origin[1], radiusKm, includeSuspended);
     }
 
     // Use the coordinates sent with the search, or fall back to the fan's saved home location
@@ -92,13 +105,15 @@ public class ArtistService {
 
     // Narrow down with a cheap box query in the database, then keep only artists inside the exact radius
     private List<ArtistSearchResult> searchNearby(String name, String genre, String location,
-                                                  double latitude, double longitude, double radiusKm) {
+                                                  double latitude, double longitude, double radiusKm,
+                                                  boolean includeSuspended) {
         double latitudeDelta = radiusKm / KM_PER_DEGREE_LATITUDE;
         double longitudeDelta = radiusKm / (KM_PER_DEGREE_LATITUDE * Math.max(Math.cos(Math.toRadians(latitude)), 0.01));
 
         return artistRepository.searchWithinBounds(name, genre, location,
                         latitude - latitudeDelta, latitude + latitudeDelta,
                         longitude - longitudeDelta, longitude + longitudeDelta).stream()
+                .filter(artist -> includeSuspended || !artist.isSuspended())
                 .map(artist -> ArtistSearchResult.of(artist,
                         distanceKm(latitude, longitude, artist.getLatitude(), artist.getLongitude())))
                 .filter(result -> result.distanceKm() <= radiusKm)
@@ -121,5 +136,4 @@ public class ArtistService {
     private String blankToNull(String value) {
         return (value == null || value.isBlank()) ? null : value.trim();
     }
-
 }

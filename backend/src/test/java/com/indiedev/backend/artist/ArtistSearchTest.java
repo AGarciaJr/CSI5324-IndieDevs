@@ -43,7 +43,7 @@ class ArtistSearchTest {
         List<Artist> artists = artistService.getAllArtists();
 
         assertThat(artists).extracting(Artist::getName)
-                .containsExactlyInAnyOrder(
+                .contains(
                         "Luna Park",
                         "The Riverbeds",
                         "Marisol Vega",

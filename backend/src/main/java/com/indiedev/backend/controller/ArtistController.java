@@ -1,5 +1,4 @@
-/* The api for creating, retrieving, and searching artists
- */
+/* The api for creating, retrieving, and searching artists */
 
 package com.indiedev.backend.controller;
 
@@ -23,13 +22,20 @@ public class ArtistController {
     }
 
     @PostMapping
-    public Artist saveArtist(@RequestBody Artist artist) { return artistService.saveArtist(artist); }
+    public Artist saveArtist(@RequestBody Artist artist) {
+        return artistService.saveArtist(artist);
+    }
 
     @GetMapping
-    public List<Artist> getAllArtists() { return artistService.getAllArtists(); }
+    public List<Artist> getAllArtists(
+            @RequestParam(required = false, defaultValue = "false") boolean includeSuspended) {
+        return artistService.getAllArtists(includeSuspended);
+    }
 
     @GetMapping(path = "/{artistId}")
-    public Artist getArtistById(@PathVariable Long artistId) { return artistService.getArtistById(artistId); }
+    public Artist getArtistById(@PathVariable Long artistId) {
+        return artistService.getArtistById(artistId);
+    }
 
     // Search for Artist (fans only). Add radiusKm for a nearby search around lat/lng,
     // or around the fan's saved home location when lat/lng are left out.
@@ -41,9 +47,9 @@ public class ArtistController {
             @RequestParam(required = false) String location,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
-            @RequestParam(required = false) Double radiusKm) {
+            @RequestParam(required = false) Double radiusKm,
+            @RequestParam(required = false, defaultValue = "false") boolean includeSuspended) {
         return artistService.searchArtists(fanId,
-                new ArtistSearchCriteria(name, genre, location, lat, lng, radiusKm));
+                new ArtistSearchCriteria(name, genre, location, lat, lng, radiusKm), includeSuspended);
     }
-
 }
