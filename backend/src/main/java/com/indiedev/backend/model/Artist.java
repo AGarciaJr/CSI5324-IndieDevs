@@ -19,6 +19,10 @@ public class Artist {
     private String location;
     private String profileThumbnail;
 
+    // Coordinates of the artist's home base, used for nearby searches
+    private Double latitude;
+    private Double longitude;
+
     public Artist() {
     }
 
