@@ -8,6 +8,8 @@ import com.indiedev.backend.model.PostFile;
 import com.indiedev.backend.model.PostWrapper;
 import com.indiedev.backend.repository.FileRepository;
 import com.indiedev.backend.repository.PostRepository;
+import com.indiedev.backend.model.UserInteraction;
+import com.indiedev.backend.repository.UserInteractionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,10 +20,12 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final FileRepository fileRepository;
+    private final UserInteractionRepository interactionRepository;
 
-    public PostService(PostRepository postRepository, FileRepository fileRepository) {
+    public PostService(PostRepository postRepository, FileRepository fileRepository, UserInteractionRepository interactionRepository) {
         this.postRepository = postRepository;
         this.fileRepository = fileRepository;
+        this.interactionRepository = interactionRepository;
     }
 
     // Save a Post and a PostFile (stored together in a wrapper) to their respective repositories
@@ -56,4 +60,16 @@ public class PostService {
 
     public PostFile getFileById(Long fileId) { return fileRepository.findFileById(fileId); }
 
+    public UserInteraction addComment(Long postId, Long fanId, Long artistId, String genre, String content) {
+        UserInteraction comment = new UserInteraction();
+        comment.setPostId(postId);
+        comment.setFanId(fanId);
+        comment.setArtistId(artistId);
+        comment.setInteractionType("COMMENT");
+        comment.setGenre(genre);
+        comment.setContent(content);
+        // Timestamp and weight are automatically set by your @PrePersist method in the entity
+
+        return interactionRepository.save(comment);
+    }
 }

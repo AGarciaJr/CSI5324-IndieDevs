@@ -28,6 +28,12 @@ public class UserInteraction {
 
     private LocalDateTime timestamp;
 
+    @Column(name = "post_id")
+    private Long postId;
+
+    @Column(length = 2000)
+    private String content;
+
     @PrePersist
     public void prePersist() {
         if (timestamp == null) {
