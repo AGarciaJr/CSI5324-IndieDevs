@@ -32,6 +32,16 @@ type Artist = {
     suspended?: boolean;
 };
 
+type ArtistApplication = {
+    id: number;
+    fanId: number;
+    applicantName: string;
+    proposedGenre: string;
+    portfolioLinks: string;
+    status: string;
+    submittedAt?: string;
+};
+
 type EventItem = {
     id: number;
     artistId: number;
@@ -155,6 +165,10 @@ export default function Home() {
     const [isPublic, setPublic] = useState(true);
     const [commentsAllowed, setCommentsAllowed] = useState(true);
 
+    // Use Case 3: Admin Verifications State
+    const [applicationsList, setApplicationsList] = useState<ArtistApplication[]>([]);
+    const [loadingApps, setLoadingApps] = useState(false);
+
     // Use Case 1: Update Event State (Artist)
     const [eventsList, setEventsList] = useState<EventItem[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
@@ -242,6 +256,13 @@ export default function Home() {
             loadDiscoverArtists();
         }
     }, [tab, currentUser, source]);
+
+    // Load pending applications when on Verifications tab (Admin)
+    useEffect(() => {
+        if (tab === "Verifications" && currentUser.role === "Admin") {
+            loadApplications();
+        }
+    }, [tab, currentUser]);
 
     function persistStore(next: LocalStore) {
         try {
@@ -628,6 +649,47 @@ export default function Home() {
         }
     }
 
+    async function loadApplications() {
+        setLoadingApps(true);
+        setError("");
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/applications/pending`);
+            if (!res.ok) throw new Error("Failed to load applications");
+            setApplicationsList(await res.json());
+        } catch {
+            setApplicationsList([]); // Fails silently to empty queue if backend is missing
+        } finally {
+            setLoadingApps(false);
+        }
+    }
+
+    async function handleApproveApplication(appId: number, applicantName: string) {
+        setError("");
+        setNotice("");
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/applications/${appId}/approve`, { method: "PUT" });
+            if (!res.ok) throw new Error("Failed to approve application");
+            setNotice(`Success! ${applicantName} has been verified and their Artist profile is provisioned.`);
+            loadApplications();
+        } catch (err: unknown) {
+            setError(`Approval failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+    }
+
+    async function handleRejectApplication(appId: number, applicantName: string) {
+        setError("");
+        setNotice("");
+        if (!confirm(`Are you sure you want to reject ${applicantName}'s application?`)) return;
+        try {
+            const res = await fetch(`${API_BASE}/api/moderation/applications/${appId}/reject`, { method: "PUT" });
+            if (!res.ok) throw new Error("Failed to reject application");
+            setNotice(`Application for ${applicantName} marked as REJECTED.`);
+            loadApplications();
+        } catch (err: unknown) {
+            setError(`Rejection failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+    }
+
     async function loadDiscoverArtists() {
         if (source !== "api") return; // Only fetch if we are using the live backend
         setBusySearch(true);
@@ -713,7 +775,8 @@ export default function Home() {
             ]
             : [
                 { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
-                { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" }, // <-- NEW
+                { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" },
+                { label: "Verifications", icon: "✓", tabName: "Verifications" },
             ];
 
     return (
@@ -1677,6 +1740,75 @@ export default function Home() {
                                     ))
                                 )}
                             </section>
+                        </div>
+                    )}
+
+                    {/* ========================================================================= */}
+                    {/* TAB: VERIFICATIONS */}
+                    {/* ========================================================================= */}
+                    {tab === "Verifications" && currentUser.role === "Admin" && (
+                        <div className="panel">
+                            <div className="section-title">
+                                <div>
+                                    <span className="eyebrow">MODERATOR QUEUE</span>
+                                    <h2>Artist Verifications</h2>
+                                    <p style={{ fontSize: "13px", color: "var(--muted)", margin: "4px 0 0" }}>
+                                        Review portfolio links and approve or reject platform upgrades for fans.
+                                    </p>
+                                </div>
+                                <button className="btn-secondary" onClick={loadApplications}>
+                                    Refresh Queue ↻
+                                </button>
+                            </div>
+
+                            {loadingApps ? (
+                                <div className="empty"><p>Loading pending applications…</p></div>
+                            ) : applicationsList.length === 0 ? (
+                                <div className="empty">
+                                    <h3>No pending applications</h3>
+                                    <p>The verification queue is fully cleared.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: "grid", gap: "20px", marginTop: "20px" }}>
+                                    {applicationsList.map(app => (
+                                        <div key={app.id} style={{ background: "#fcfaf7", border: "1px solid var(--line)", borderRadius: "12px", padding: "20px" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                                                <div>
+                                                    <h3 style={{ margin: "0 0 4px" }}>{app.applicantName}</h3>
+                                                    <span className="pill">Proposed Genre: {app.proposedGenre}</span>
+                                                    <span className="pill" style={{ marginLeft: "8px", background: "#f5f5ea" }}>App ID: {app.id}</span>
+                                                </div>
+                                                <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                                                    Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "Unknown"}
+                                                </span>
+                                            </div>
+
+                                            <div style={{ background: "white", border: "1px solid #e1eadc", padding: "16px", borderRadius: "8px", marginBottom: "20px" }}>
+                                                <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Portfolio & Identity Links:</b>
+                                                <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "8px 0 0", color: "#2c4538" }}>
+                                                    {app.portfolioLinks}
+                                                </p>
+                                            </div>
+
+                                            <div style={{ display: "flex", gap: "12px", borderTop: "1px solid var(--line)", paddingTop: "16px" }}>
+                                                <button 
+                                                    className="primary" 
+                                                    onClick={() => handleApproveApplication(app.id, app.applicantName)}
+                                                >
+                                                    Approve & Provision Artist Profile ✓
+                                                </button>
+                                                <button 
+                                                    className="btn-secondary" 
+                                                    onClick={() => handleRejectApplication(app.id, app.applicantName)}
+                                                    style={{ color: "#9e3926", borderColor: "#eccdc6" }}
+                                                >
+                                                    Reject Application ✕
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </main>

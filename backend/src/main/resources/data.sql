@@ -46,3 +46,11 @@ INSERT INTO user_interactions (id, fan_id, artist_id, interaction_type, genre, w
     (2, 1, 5, 'LIKE', 'Indie Folk', 3.0, CURRENT_TIMESTAMP),
     (3, 1, 9, 'BOOKING', 'Indie Folk', 5.0, CURRENT_TIMESTAMP),
     (4, 1, 4, 'VIEW', 'Jazz', 1.0, CURRENT_TIMESTAMP);
+
+INSERT INTO artist_applications (fan_id, applicant_name, proposed_genre, portfolio_links, status, submitted_at) VALUES
+    (5, 'Elena Rodriguez', 'Synth-Pop', 'https://soundcloud.com/elena-synth, https://instagram.com/elenacreates', 'PENDING', CURRENT_TIMESTAMP),
+    (6, 'Marcus Thorne', 'Indie Rock', 'https://youtube.com/@marcusthorne', 'PENDING', CURRENT_TIMESTAMP);
+
+-- Fast-forward the auto-increment sequences to prevent Primary Key collisions with seeded data
+ALTER TABLE artists ALTER COLUMN id RESTART WITH 100;
+ALTER TABLE artist_applications ALTER COLUMN id RESTART WITH 100;

@@ -1,5 +1,6 @@
 package com.indiedev.backend.controller;
 
+import com.indiedev.backend.model.ArtistApplication;
 import com.indiedev.backend.model.BanAppeal;
 import com.indiedev.backend.model.Fan;
 import com.indiedev.backend.model.Artist;
@@ -84,5 +85,20 @@ public class ModerationController {
     @PutMapping("/artists/{artistId}/suspend")
     public Artist suspendArtist(@PathVariable Long artistId) {
         return moderationService.suspendArtist(artistId);
+    }
+
+    @GetMapping("/applications/pending")
+    public List<ArtistApplication> getPendingApplications() {
+        return moderationService.getPendingApplications();
+    }
+
+    @PutMapping("/applications/{applicationId}/approve")
+    public ArtistApplication approveApplication(@PathVariable Long applicationId) {
+        return moderationService.approveApplication(applicationId);
+    }
+
+    @PutMapping("/applications/{applicationId}/reject")
+    public ArtistApplication rejectApplication(@PathVariable Long applicationId) {
+        return moderationService.rejectApplication(applicationId);
     }
 }
