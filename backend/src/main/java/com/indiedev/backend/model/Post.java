@@ -24,6 +24,9 @@ public class Post {
 
     private String postText;
 
+    // Set when an admin removes the post after a report
+    private boolean hidden;
+
     public Post() {
         postDate = LocalDateTime.now();
     }

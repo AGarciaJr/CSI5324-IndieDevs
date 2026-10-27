@@ -37,6 +37,51 @@
   left=6pt, right=6pt, top=4pt, bottom=4pt
 }
 
+% ------------------------------------------------------------
+% UML helpers for pgf-umlsd
+% ------------------------------------------------------------
+% \newactor{var}{name}: an actor drawn as a stick figure (UML notation)
+% instead of the rectangle that \newthread draws.
+\newcommand{\newactor}[3][gray!30]{
+  \stepcounter{instnum}
+  \path (inst\thepreinst.east)+(0.2,0) node[anchor=west, minimum height=0.8cm,
+    minimum width=1.6cm, fill=white] (inst\theinstnum) {#3};
+  \begin{scope}[shift={(inst\theinstnum.north)}, line width=0.6pt]
+    \draw (0,1.05) circle (0.15);
+    \draw (0,0.9) -- (0,0.45);
+    \draw (-0.28,0.75) -- (0.28,0.75);
+    \draw (0,0.45) -- (-0.22,0.05);
+    \draw (0,0.45) -- (0.22,0.05);
+  \end{scope}
+  \path (inst\theinstnum)+(0,-0.5*\unitfactor) node (#2) {};
+  \stepcounter{preinst}
+  \stepcounter{threadnum}
+  \node[below of=inst\theinstnum,node distance=0.8cm] (thread\thethreadnum) {};
+  \tikzstyle{threadcolor\thethreadnum}=[fill=#1]
+  \tikzstyle{instcolor#2}=[fill=#1]
+}
+% \retmess{from}{label}{to}: a dashed reply arrow (used for error replies)
+\newcommand{\retmess}[3]{
+  \stepcounter{seqlevel}
+  \path (#1)+(0,-\theseqlevel*\unitfactor-0.7*\unitfactor) node (rmess from) {}
+        (#3)+(0,-\theseqlevel*\unitfactor-0.7*\unitfactor) node (rmess to) {};
+  \draw[dashed,->,>=angle 60] (rmess from) -- (rmess to) node[midway, above] {#2};
+}
+% sdalt environment with an optional \sdelse{[guard]} divider
+\gdef\sdelseguard{}
+\newcommand{\sdelse}[1]{
+  \stepcounter{seqlevel}
+  \coordinate (sdelse) at (0,-\theseqlevel*\unitfactor-\unitfactor);
+  \gdef\sdelseguard{#1}
+  \stepcounter{seqlevel}
+}
+\newenvironment{sdalt}[1]{\begin{sdblock}{alt}{#1}}{\end{sdblock}
+  \ifx\sdelseguard\empty\else
+    \draw[dashed] (nw |- sdelse) -- (se |- sdelse);
+    \node[anchor=north west, font=\small, xshift=3pt] at (nw |- sdelse) {\sdelseguard};
+    \gdef\sdelseguard{}
+  \fi}
+
 % ---------- Fill-in placeholder ----------
 \newcommand{\fillin}[1]{\textcolor{gray!70}{\emph{[#1]}}}
 
@@ -288,44 +333,43 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
   \item[Level] User goal
   \item[Stakeholders \& Interests]
     \begin{itemize}
-      \item \textbf{Fan:} wants to quickly find artists matching their interests.
-      \item \textbf{Artist:} wants to be discoverable by relevant fans.
+      \item \textbf{Fan:} wants to quickly find artists matching their interests, including artists close by.
+      \item \textbf{Artist:} wants to be discoverable by relevant fans in their area.
     \end{itemize}
   \item[Preconditions]
     \begin{itemize}
-      \item The Fan is authenticated and logged into the system.
+      \item The Fan is authenticated with a Fan account in good standing. Artists and Admins cannot perform this use case.
     \end{itemize}
   \item[Postconditions (Success Guarantee)]
     \begin{itemize}
-      \item A list of artists matching the Fan's search criteria was displayed.
-      \item If the Fan selected a result, the corresponding action (profile view, chat, follow, or booking request) was recorded by the system.
+      \item A list of artists matching every criterion the Fan entered was displayed.
+      \item If the Fan chose a distance, only artists within that distance were listed, nearest first, each with its distance.
+      \item No system data was created or changed.
     \end{itemize}
   \item[Main Success Scenario]
     \begin{enumerate}
       \item The Fan selects the search feature.
-      \item The system prompts the Fan for search criteria (name, genre/style, location).
+      \item The system prompts the Fan for search criteria: name, genre/style, location, and an optional distance (e.g., ``within 25 km of me'').
       \item The Fan enters one or more criteria and submits the search.
-      \item The system queries registered artists matching the given criteria.
-      \item The system displays a list of matching artists, each showing name, genre, location, and profile thumbnail.
-      \item The Fan selects an artist from the results list.
-      \item The system displays the selected artist's full profile.
-      \item The Fan chooses a follow-up action: start a direct chat, follow the artist, or book the artist.
-      \item The system performs the selected action and confirms it to the Fan.
+      \item The system finds registered artists matching all of the given criteria.
+      \item The system displays the matching artists, each showing name, genre, location, profile thumbnail, and distance when a distance was chosen.
     \end{enumerate}
   \item[Extensions]
     \begin{itemize}
-      \item[2a.] The Fan submits the search with no criteria entered: the system prompts the Fan to enter at least one search criterion.
-      \item[4a.] No artists match the given criteria: the system displays a "no results found" message and suggests broadening the search.
-      \item[6a.] The Fan exits without selecting a result: the use case ends with no further action taken.
-      \item[8a.] The Fan chooses "Start Chat" and a conversation already exists with that artist: the system opens the existing conversation instead of creating a new one.
-      \item[8b.] The Fan chooses "Book": the system starts the booking-request flow (a separate use case) and, on submission, notifies the Artist that a booking request is pending.
+      \item[*a.] The user is not signed in with an active Fan account: the system denies the search.
+      \item[3a.] The Fan submits the search with no criteria entered: the system prompts the Fan to enter at least one criterion.
+      \item[3b.] The Fan chooses a distance and shares their current location: the system searches around the shared location instead of the Fan's saved home location.
+      \item[3c.] The Fan chooses a distance but has neither shared a location nor saved a home location: the system asks the Fan to share their location or save a home location.
+      \item[4a.] No artists match the given criteria: the system displays a ``no results found'' message and suggests broadening the search (e.g., a larger distance).
     \end{itemize}
   \item[Special Requirements]
     \begin{itemize}
       \item Search results should be returned in under 2 seconds for typical query loads.
       \item Result lists longer than 20 artists are paginated.
+      \item A Fan's location is used only to run the search and is never shown to other users.
     \end{itemize}
   \item[Frequency of Occurrence] High -- expected to be one of the most common Fan actions.
+  \item[Notes] Viewing an artist's profile, following, messaging, or booking an artist from the results are separate use cases.
 \end{description}
 
 \subsection{UC: Review Report -- Admin}
@@ -364,9 +408,11 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
     \end{enumerate}
   \item[Extensions]
     \begin{itemize}
+      \item[*a.] The user is not signed in with an active Admin account: the system denies access to the reports queue.
       \item[3a.] The selected report was already resolved by another Admin: the system informs the Admin and returns to the queue.
       \item[5a.] The Admin dismisses the report as unfounded: the system records the dismissal and notifies only the reporting user.
-      \item[5b.] The Admin suspends or bans the reported user's account: the system also terminates any active sessions for that account.
+      \item[5b.] The Admin suspends or bans the reported user's account: the account can no longer perform any Fan or Artist actions until it is restored.
+      \item[5c.] The Admin chooses to delete content on a report against a user profile: the system explains that only warn, suspend, or ban apply to user reports.
       \item[6a.] The reported content was already removed (e.g., deleted by its owner): the system notes this and proceeds directly to logging the resolution.
     \end{itemize}
   \item[Special Requirements]
@@ -386,43 +432,41 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
   \item[Stakeholders \& Interests]
     \begin{itemize}
       \item \textbf{Artist:} wants to promote and sell tickets to an upcoming event.
-      \item \textbf{Admin:} needs to approve proposed pricing before the event is publicly visible.
+      \item \textbf{Admin:} wants submitted events to be complete and valid before reviewing their pricing.
       \item \textbf{Fan:} wants accurate, trustworthy event listings.
     \end{itemize}
   \item[Preconditions]
     \begin{itemize}
-      \item The Artist is authenticated and has an account in good standing.
+      \item The Artist is authenticated with an Artist account in good standing (not suspended or banned) and has an artist profile. Fans and Admins cannot perform this use case.
     \end{itemize}
   \item[Postconditions (Success Guarantee)]
     \begin{itemize}
-      \item A new event was created with status "Pending Approval" and routed to the Admin queue.
-      \item Once approved, the event's status was updated to "Published" and it became visible/searchable to Fans, who were notified if they follow the Artist.
+      \item A new event was created, linked to the Artist, with status ``Pending Approval'' (or ``Draft'' if the Artist saved it as a draft).
+      \item The event appears in the Artist's list of events.
     \end{itemize}
   \item[Main Success Scenario]
     \begin{enumerate}
-      \item The Artist selects "Create Event."
+      \item The Artist selects ``Create Event.''
       \item The system displays the event creation form.
-      \item The Artist enters the event details: title, date/time, location (physical or virtual link), description, capacity, and one or more proposed ticket prices/tiers.
+      \item The Artist enters the event details: title, date/time, location (physical address or virtual link), description, capacity, and one or more ticket tiers with prices.
       \item The Artist submits the event.
       \item The system validates the submitted data.
-      \item The system creates the event with status "Pending Approval" and adds it to the Admin approval queue.
+      \item The system creates the event with status ``Pending Approval.''
       \item The system confirms to the Artist that the event was submitted for review.
-      \item The Admin reviews and approves the proposed pricing (see UC: Review Event Pricing).
-      \item The system updates the event's status to "Published," notifies the Artist of the approval, and makes the event visible/searchable to Fans, notifying the Artist's followers.
     \end{enumerate}
   \item[Extensions]
     \begin{itemize}
-      \item[3a.] The Artist saves the event as a draft instead of submitting: the system stores it with status "Draft" and does not route it for approval.
-      \item[5a.] The submitted data is missing required fields or contains an invalid date/price: the system flags the offending fields and asks the Artist to correct them before resubmitting.
-      \item[8a.] The Admin rejects the proposed pricing: the system notifies the Artist with the rejection reason(s); the Artist may revise and resubmit, returning to step 3.
-      \item[9a.] The Artist edits event details after publication: the system flags the event for Admin re-approval if the change affects pricing, otherwise the update is applied immediately.
+      \item[*a.] The user is not signed in with an active Artist account: the system denies the request.
+      \item[4a.] The Artist saves the event as a draft instead of submitting: the system stores it with status ``Draft'' and confirms the draft was saved.
+      \item[5a.] Required fields are missing, the date is not in the future, the capacity is not positive, or a price is negative: the system flags the offending fields and asks the Artist to correct them, returning to step 3.
+      \item[5b.] The event is marked virtual but the location is not a valid web link: the system asks for a valid link, returning to step 3.
     \end{itemize}
   \item[Special Requirements]
     \begin{itemize}
       \item Ticket pricing must support multiple tiers (e.g., general admission, VIP).
-      \item Artists should be notified promptly (e.g., push/email) of an approval or rejection decision.
     \end{itemize}
   \item[Frequency of Occurrence] Moderate -- expected whenever an Artist plans a new event.
+  \item[Notes] An Admin reviewing and publishing the event is a separate use case (Review Event Pricing).
 \end{description}
 
 \bigskip
@@ -999,7 +1043,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 	\bigskip
 	\begin{sequencediagram}
 		
-		\newthread{a}{Artist}
+		\newactor{a}{Artist}
 		\newinst[1]{c}{PostController}
 		\newinst[1]{s}{PostService}
 		\newinst[1]{r}{PostRepository}
@@ -1031,7 +1075,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
     \bigskip
     \begin{sequencediagram}
     	
-    	\newthread{u}{User}
+    	\newactor{u}{User}
     	\newinst[2]{c}{MessageController}
     	
     	\begin{call}{u}{sendNewMessage(recipient)}{c}{success}
@@ -1065,7 +1109,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 	\bigskip
 	\begin{sequencediagram}
 		
-		\newthread{a}{Artist}
+		\newactor{a}{Artist}
 		\newinst[2]{c}{CommentController}
 		\newinst[2]{r}{ReportController}
 		
@@ -1093,7 +1137,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 
 \resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-    \newthread{a}{Admin}
+    \newactor{a}{Admin}
     \newinst[1]{c}{AppealController}
     \newinst[1]{s}{AppealService}
     \newinst[1]{r}{BanRepository}
@@ -1137,7 +1181,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 
 \resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-    \newthread{f}{Fan}
+    \newactor{f}{Fan}
     \newinst[1]{c}{RecommendationController}
     \newinst[1]{s}{RecommendationService}
     \newinst[1]{ui}{UserInteractionsRepo}
@@ -1175,7 +1219,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 
 \resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-    \newthread{a}{Artist}
+    \newactor{a}{Artist}
     \newinst[1]{c}{EventController}
     \newinst[1]{s}{EventService}
     \newinst[1]{r}{EventRepository}
@@ -1212,7 +1256,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
     \bigskip
 
     \begin{sequencediagram}
-        \newthread{a}{Administrator}
+        \newactor{a}{Administrator}
         \newinst[2]{c}{AdminController}
         \newinst[2]{s}{AccountService}
 
@@ -1237,7 +1281,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
     \bigskip
 
     \begin{sequencediagram}
-        \newthread{f}{Fan}
+        \newactor{f}{Fan}
         \newinst[1]{c}{CommentController}
         \newinst[1]{s}{CommentService}
         \newinst[1]{r}{CommentRepository}
@@ -1266,7 +1310,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
     \bigskip
 
     \begin{sequencediagram}
-        \newthread{a}{Administrator}
+        \newactor{a}{Administrator}
         \newinst[1]{c}{ApplicationController}
         \newinst[1]{s}{ApplicationService}
         \newinst[1]{r}{UserRepository}
@@ -1285,99 +1329,154 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
     \end{sequencediagram}
 \end{minipage}
 
+\clearpage
 \section{Alex Garcia -- Sequence Diagrams}
 
-
-{\bfseries Artist - Create Event}
+{\bfseries Artist -- Create Event}
 \bigskip
+
+\noindent\resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
+	\newactor{a}{:Artist}
+	\newinst[3.2]{c}{:EventController}
+	\newinst[3]{s}{:EventService}
+	\newinst[2.2]{ac}{:AccessControlService}
+	\newinst[1]{u}{:UserAccountRepository}
+	\newinst[1.5]{r}{:EventRepository}
 
-	\newthread{a}{Artist}
-	\newinst[1]{c}{EventController}
-	\newinst[1]{s}{EventService}
-	\newinst[1]{r}{EventRepository}
-
-	\begin{call}{a}{createEvent(title, description, date, location)}{c}{newEventWrapper}
-
-		\begin{call}{c}{saveEvent(eventData)}{s}{newEventWrapper}
-
-			\begin{call}{s}{validateEvent(eventData)}{s}{eventValid}
+	\begin{call}{a}{createEvent(userId, request)}{c}{201 Created (event)}
+		\begin{call}{c}{createEvent(userId, request)}{s}{event}
+			\begin{call}{s}{requireRole(userId, ARTIST)}{ac}{artist}
+				\begin{call}{ac}{findById(userId)}{u}{account}
+				\end{call}
 			\end{call}
-
-			\begin{call}{s}{save(event)}{r}{newEvent}
+			\begin{sdblock}{break}{[account missing, not active, or not an Artist]}
+				\retmess{c}{401 / 403}{a}
+			\end{sdblock}
+			\begin{call}{s}{validateEvent(request)}{s}{}
 			\end{call}
-
+			\begin{sdblock}{break}{[missing fields, past date, bad price or link]}
+				\retmess{c}{400 Bad Request}{a}
+			\end{sdblock}
+			\begin{sdalt}{[request.saveAsDraft]}
+				\begin{call}{s}{setStatus(DRAFT)}{s}{}
+				\end{call}
+				\sdelse{[else]}
+				\begin{call}{s}{setStatus(PENDING\_APPROVAL)}{s}{}
+				\end{call}
+			\end{sdalt}
+			\begin{call}{s}{save(event)}{r}{savedEvent}
+			\end{call}
 		\end{call}
+	\end{call}
+\end{sequencediagram}}
 
+\clearpage
+{\bfseries Fan -- Search for Artist}
+\bigskip
+
+\noindent\resizebox{\textwidth}{!}{%
+\begin{sequencediagram}
+	\newactor{f}{:Fan}
+	\newinst[3.2]{c}{:ArtistController}
+	\newinst[3]{s}{:ArtistService}
+	\newinst[2.2]{ac}{:AccessControlService}
+	\newinst[1]{u}{:UserAccountRepository}
+	\newinst[3]{r}{:ArtistRepository}
+
+	\begin{call}{f}{searchArtists(fanId, criteria)}{c}{results}
+		\begin{call}{c}{searchArtists(fanId, criteria)}{s}{results}
+			\begin{call}{s}{requireRole(fanId, FAN)}{ac}{fan}
+				\begin{call}{ac}{findById(fanId)}{u}{account}
+				\end{call}
+			\end{call}
+			\begin{sdblock}{break}{[account missing, not active, or not a Fan]}
+				\retmess{c}{401 / 403}{f}
+			\end{sdblock}
+			\begin{sdalt}{[criteria.radiusKm = null]}
+				\begin{call}{s}{search(name, genre, location)}{r}{artists}
+				\end{call}
+				\sdelse{[radiusKm given: nearby search]}
+				\begin{call}{s}{resolveOrigin(fan, criteria)}{s}{origin}
+				\end{call}
+				\begin{call}{s}{searchNearby(filters, origin, radiusKm)}{s}{nearest first}
+					\begin{call}{s}{searchWithinBounds(filters, box)}{r}{candidates}
+					\end{call}
+					\begin{sdblock}{loop}{[each candidate]}
+						\begin{call}{s}{distanceKm(origin, artist)}{s}{km}
+						\end{call}
+					\end{sdblock}
+				\end{call}
+			\end{sdalt}
+		\end{call}
+	\end{call}
+\end{sequencediagram}}
+
+\clearpage
+{\bfseries Admin -- Review Report}
+\bigskip
+
+\noindent\resizebox{\textwidth}{!}{%
+\begin{sequencediagram}
+	\newactor{a}{:Admin}
+	\newinst[5]{c}{:ReportController}
+	\newinst[4.2]{s}{:ReportService}
+	\newinst[2.2]{ac}{:AccessControlService}
+	\newinst[1]{u}{:UserAccountRepository}
+	\newinst[2.5]{r}{:ReportRepository}
+	\newinst[1.5]{n}{:NotificationService}
+
+	\begin{call}{a}{getPendingReports(adminId, type)}{c}{reports}
+		\begin{call}{c}{getPendingReports(adminId, type)}{s}{reports}
+			\begin{call}{s}{requireRole(adminId, ADMIN)}{ac}{admin}
+				\begin{call}{ac}{findById(adminId)}{u}{account}
+				\end{call}
+			\end{call}
+			\begin{call}{s}{findQueue(PENDING, type)}{r}{reports}
+			\end{call}
+		\end{call}
 	\end{call}
 
-\end{sequencediagram}
-\hrule
-\bigskip
-
-{\bfseries Fan - Search for Artist}
-\bigskip
-\begin{sequencediagram}
-
-	\newthread{f}{Fan}
-	\newinst[1]{c}{ArtistController}
-	\newinst[1]{s}{ArtistService}
-	\newinst[1]{r}{ArtistRepository}
-
-	\begin{call}{f}{searchArtists(name, genre, location)}{c}{artistList}
-
-		\begin{call}{c}{searchArtists(name, genre, location)}{s}{artistList}
-
-			\begin{call}{s}{blankToNull(name, genre, location)}{s}{filters}
+	\begin{call}{a}{getReport(adminId, reportId)}{c}{report}
+		\begin{call}{c}{getReport(adminId, reportId)}{s}{report}
+			\begin{call}{s}{requireRole(adminId, ADMIN)}{ac}{admin}
 			\end{call}
-
-			\begin{call}{s}{search(name, genre, location)}{r}{artistList}
+			\begin{call}{s}{findById(reportId)}{r}{report}
 			\end{call}
-
 		\end{call}
-
 	\end{call}
 
-\end{sequencediagram}
-\hrule
-\bigskip
-
-{\bfseries Admin - Review Report}
-\bigskip
-\begin{sequencediagram}
-
-	\newthread{a}{Admin}
-	\newinst[1]{c}{ReportController}
-	\newinst[1]{s}{ReportService}
-	\newinst[1]{r}{ReportRepository}
-
-	\begin{call}{a}{reviewReport(reportId, decision)}{c}{success}
-
-		\begin{call}{c}{getReport(reportId)}{s}{report}
-
-			\begin{call}{s}{findReportById(reportId)}{r}{report}
+	\begin{call}{a}{resolveReport(adminId, reportId, request)}{c}{resolved report}
+		\begin{call}{c}{resolveReport(adminId, reportId, request)}{s}{report}
+			\begin{call}{s}{requireRole(adminId, ADMIN)}{ac}{admin}
 			\end{call}
-
+			\begin{call}{s}{findById(reportId)}{r}{report}
+			\end{call}
+			\begin{sdblock}{break}{[report already RESOLVED]}
+				\retmess{c}{409 Conflict}{a}
+			\end{sdblock}
+			\begin{call}{s}{applyAction(report, action)}{s}{}
+				\begin{sdalt}{[action = REMOVE\_CONTENT]}
+					\begin{call}{s}{removeContent(report)}{s}{}
+					\end{call}
+					\sdelse{[action = SUSPEND\_USER or BAN\_USER]}
+					\begin{call}{s}{setAccountStatus(reportedUserId, status)}{s}{}
+						\begin{call}{s}{save(account)}{u}{}
+						\end{call}
+					\end{call}
+				\end{sdalt}
+			\end{call}
+			\begin{call}{s}{save(report: RESOLVED, action, admin, time)}{r}{saved}
+			\end{call}
+			\begin{call}{s}{notify(reporterId, outcome)}{n}{}
+			\end{call}
+			\begin{sdblock}{opt}{[action $\neq$ DISMISS]}
+				\begin{call}{s}{notify(reportedUserId, outcome)}{n}{}
+				\end{call}
+			\end{sdblock}
 		\end{call}
-
-		\begin{call}{c}{resolveReport(report, decision)}{s}{resolvedReport}
-
-			\begin{call}{s}{[if decision.removeContent] hideContent(report.target)}{s}{}
-			\end{call}
-
-			\begin{call}{s}{[if decision.banUser] banUser(report.target.poster)}{s}{}
-			\end{call}
-
-			\begin{call}{s}{save(report)}{r}{updatedReport}
-			\end{call}
-
-		\end{call}
-
 	\end{call}
-
-\end{sequencediagram}
-
-
+\end{sequencediagram}}
 
 
 % ============================================================
@@ -1387,7 +1486,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 \subsection{Follow Artist -- Fan}
 \noindent\resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-    \newthread{fan}{Fan}
+    \newactor{fan}{Fan}
     \newinst[2]{controller}{FollowController}
     \newinst[2]{service}{FollowService}
     \newinst[2]{repository}{AccountRepository}
@@ -1412,7 +1511,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 \subsection{Manage Fan Profile -- Fan}
 \noindent\resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-    \newthread{fan}{Fan}
+    \newactor{fan}{Fan}
     \newinst[2]{controller}{ProfileController}
     \newinst[2]{service}{ProfileService}
     \newinst[2]{repository}{ProfileRepository}
@@ -1438,7 +1537,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 \subsection{Report Inappropriate Content -- Fan}
 \noindent\resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-    \newthread{fan}{Fan}
+    \newactor{fan}{Fan}
     \newinst[2]{controller}{ReportController}
     \newinst[2]{service}{ReportService}
     \newinst[2]{content}{ContentRepository}
@@ -1672,6 +1771,13 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
   \includegraphics[width=\textwidth, totalheight=15cm, keepaspectratio=false]{designClassDiagram.png}
 \end{center}
 
+\clearpage
+\section{Design Classes -- Search for Artist, Create Event, Review Report}
+The classes below are the ones used in Alex Garcia's sequence diagrams, with the operations and types from the implementation.
+Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService.requireRole}, which only lets an active account with the required role continue.
+
+\input{alex_design_classes.tex}
+
 % ============================================================
 \chapter{Operation Contracts}
 
@@ -1684,52 +1790,52 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 % one system operation in the main success scenario that changes state).
 % \end{guidance}
 
-\section*{Operation: searchArtists(criteria: SearchCriteria): List\textlangle ArtistSummary\textrangle}
+\section*{Operation: searchArtists(fanId: Long, criteria: ArtistSearchCriteria): List\textlangle ArtistSearchResult\textrangle}
 \begin{description}[leftmargin=2.8cm, style=nextline]
   \item[Cross Reference] UC: Search for Artist -- Fan
   \item[Preconditions]
     \begin{itemize}
-      \item The Fan is logged into the system.
+      \item A UserAccount instance identified by \texttt{fanId} exists with \texttt{role} = FAN and \texttt{status} = ACTIVE.
     \end{itemize}
   \item[Postconditions]
     \begin{itemize}
-      \item A collection of Artist instances matching the given criteria (name, genre, location) was retrieved.
-      \item No system state was created, modified, or deleted (read-only operation).
+      \item A collection of Artist instances matching every given criterion (name, genre, location) was retrieved.
+      \item If \texttt{criteria.radiusKm} was given, only Artist instances within that distance of the search origin (the given coordinates, or else the Fan's saved \texttt{latitude}/\texttt{longitude}) were retrieved, ordered by distance.
+      \item No instances were created, deleted, or modified (read-only operation).
     \end{itemize}
 \end{description}
 
-\section*{Operation: resolveReport(reportId: ReportID, action: ActionType): void}
+\section*{Operation: resolveReport(adminId: Long, reportId: Long, request: ResolveReportRequest): Report}
 \begin{description}[leftmargin=2.8cm, style=nextline]
   \item[Cross Reference] UC: Review Report -- Admin
   \item[Preconditions]
     \begin{itemize}
-      \item The Admin is logged in with administrative privileges.
-      \item A Report instance identified by \texttt{reportId} exists with status = "Pending."
+      \item A UserAccount instance identified by \texttt{adminId} exists with \texttt{role} = ADMIN and \texttt{status} = ACTIVE.
+      \item A Report instance identified by \texttt{reportId} exists with \texttt{status} = PENDING.
     \end{itemize}
   \item[Postconditions]
     \begin{itemize}
-      \item The Report instance's \texttt{status} attribute was changed to "Resolved."
-      \item A new Resolution instance was created and associated with the Report, recording the acting Admin, the action taken, and a timestamp.
-      \item If \texttt{action} = DeleteContent, the associated Message, Profile, or Event instance's \texttt{status} attribute was changed to "Removed."
-      \item If \texttt{action} = Suspend or Ban, the reported User instance's \texttt{status} attribute was changed to "Suspended" or "Banned" respectively.
-      \item A new Notification instance was created and associated with the reporting User.
-      \item A new Notification instance was created and associated with the reported User, if \texttt{action} $\neq$ Dismiss.
+      \item The Report instance's \texttt{status} was changed to RESOLVED, and its \texttt{action}, \texttt{resolvedBy} (the Admin), \texttt{resolvedAt}, and \texttt{resolutionNotes} were set.
+      \item If \texttt{action} = REMOVE\_CONTENT, the reported Post's \texttt{hidden} was set to true, or the reported Event's \texttt{status} was changed to REMOVED.
+      \item If \texttt{action} = SUSPEND\_USER or BAN\_USER, the reported UserAccount's \texttt{status} was changed to SUSPENDED or BANNED respectively.
+      \item A new Notification instance was created for the reporting user.
+      \item If \texttt{action} $\neq$ DISMISS, a new Notification instance was created for the reported user.
     \end{itemize}
 \end{description}
 
-\section*{Operation: submitEvent(eventData: EventForm): Event}
+\section*{Operation: createEvent(userId: Long, request: CreateEventRequest): Event}
 \begin{description}[leftmargin=2.8cm, style=nextline]
   \item[Cross Reference] UC: Create Event -- Artist
   \item[Preconditions]
     \begin{itemize}
-      \item The Artist is logged in and owns an account in good standing.
+      \item A UserAccount instance identified by \texttt{userId} exists with \texttt{role} = ARTIST, \texttt{status} = ACTIVE, and a linked Artist profile.
     \end{itemize}
   \item[Postconditions]
     \begin{itemize}
-      \item A new Event instance was created with \texttt{title}, \texttt{dateTime}, \texttt{location}, \texttt{description}, \texttt{capacity}, and \texttt{proposedPrices} set from \texttt{eventData}.
-      \item The new Event instance's \texttt{status} attribute was set to "Pending Approval."
-      \item An association was formed between the new Event instance and the Artist who created it.
-      \item The new Event instance was added to the Admin approval queue.
+      \item A new Event instance was created with \texttt{title}, \texttt{description}, \texttt{startsAt}, \texttt{location}, \texttt{virtual}, and \texttt{capacity} set from \texttt{request}.
+      \item One TicketTier instance was created for each tier in \texttt{request} and associated with the new Event.
+      \item The new Event was associated with the Artist profile of the requesting account.
+      \item The new Event's \texttt{status} was set to DRAFT if \texttt{request.saveAsDraft} is true, otherwise to PENDING\_APPROVAL.
     \end{itemize}
 \end{description}
 
@@ -1751,6 +1857,32 @@ No test cases were produced during iteration one.
   \item Unban Fan
   \item Edit Event
 \end{itemize}
+
+\subsection*{Search for Artist, Create Event, Review Report (automated, \texttt{backend/src/test})}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{1.4cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}p{6.2cm}|>{\raggedright\arraybackslash}p{4cm}|}
+\hline
+\textbf{ID} & \textbf{Use case} & \textbf{Scenario} & \textbf{Expected result} \\ \hline
+\endhead
+SA-1 & Search for Artist & Fan searches by name, genre, or location & Only matching artists returned \\ \hline
+SA-2 & Search for Artist (3a) & Fan submits no criteria & 400, asks for a criterion \\ \hline
+SA-3 & Search for Artist & Fan searches within 100 km / 200 km of saved home (Waco) & Nearby artists only, nearest first, with distance \\ \hline
+SA-4 & Search for Artist (3b) & Fan shares coordinates in Austin and filters by genre & Matching artist under 1 km away \\ \hline
+SA-5 & Search for Artist (3c) & Nearby search with no shared or saved location & 400, asks for a location \\ \hline
+SA-6 & Search for Artist & Radius of 0 or over 500 km & 400 \\ \hline
+SA-7 & Search for Artist (*a) & No account, Artist, or Admin tries to search & 401 / 403 \\ \hline
+CE-1 & Create Event & Artist submits a valid event with two tiers & 201, status PENDING\_APPROVAL \\ \hline
+CE-2 & Create Event (4a) & Artist saves a draft & 201, status DRAFT, listed in artist's events \\ \hline
+CE-3 & Create Event (5a, 5b) & Missing title, past date, no tiers, negative price, zero capacity, virtual without link & 400, nothing saved \\ \hline
+CE-4 & Create Event (*a) & No account, unknown account, Fan, or Admin tries to create & 401 / 403, nothing saved \\ \hline
+CE-5 & Create Event (*a) & Suspended Artist tries to create & 403 \\ \hline
+RR-1 & Review Report & Admin opens the queue, filters by type & Pending reports, oldest first \\ \hline
+RR-2 & Review Report (*a) & Fan or Artist opens queue or resolves & 401 / 403, nothing changed \\ \hline
+RR-3 & Review Report & Admin removes a reported post / event & Post hidden / event REMOVED, both users notified \\ \hline
+RR-4 & Review Report (5a) & Admin dismisses a report & Only reporter notified \\ \hline
+RR-5 & Review Report (5b) & Admin bans the reported user & Account BANNED and blocked from artist actions \\ \hline
+RR-6 & Review Report (3a) & Admin resolves an already resolved report & 409 \\ \hline
+RR-7 & Review Report (5c) & Remove content on a user report; unknown report; missing action & 400 / 404 / 400 \\ \hline
+\end{longtable}
 
 % ============================================================
 \chapter{UI Mockups}

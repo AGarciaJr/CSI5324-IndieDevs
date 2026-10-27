@@ -1,97 +1,206 @@
 \documentclass[a4paper]{article}
 
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
 \usepackage{pgf-umlsd}
+
+% ------------------------------------------------------------
+% UML helpers for pgf-umlsd
+% ------------------------------------------------------------
+% \newactor{var}{name}: an actor drawn as a stick figure (UML notation)
+% instead of the rectangle that \newthread draws.
+\newcommand{\newactor}[3][gray!30]{
+  \stepcounter{instnum}
+  \path (inst\thepreinst.east)+(0.2,0) node[anchor=west, minimum height=0.8cm,
+    minimum width=1.6cm, fill=white] (inst\theinstnum) {#3};
+  \begin{scope}[shift={(inst\theinstnum.north)}, line width=0.6pt]
+    \draw (0,1.05) circle (0.15);
+    \draw (0,0.9) -- (0,0.45);
+    \draw (-0.28,0.75) -- (0.28,0.75);
+    \draw (0,0.45) -- (-0.22,0.05);
+    \draw (0,0.45) -- (0.22,0.05);
+  \end{scope}
+  \path (inst\theinstnum)+(0,-0.5*\unitfactor) node (#2) {};
+  \stepcounter{preinst}
+  \stepcounter{threadnum}
+  \node[below of=inst\theinstnum,node distance=0.8cm] (thread\thethreadnum) {};
+  \tikzstyle{threadcolor\thethreadnum}=[fill=#1]
+  \tikzstyle{instcolor#2}=[fill=#1]
+}
+% \retmess{from}{label}{to}: a dashed reply arrow (used for error replies)
+\newcommand{\retmess}[3]{
+  \stepcounter{seqlevel}
+  \path (#1)+(0,-\theseqlevel*\unitfactor-0.7*\unitfactor) node (rmess from) {}
+        (#3)+(0,-\theseqlevel*\unitfactor-0.7*\unitfactor) node (rmess to) {};
+  \draw[dashed,->,>=angle 60] (rmess from) -- (rmess to) node[midway, above] {#2};
+}
+% sdalt environment with an optional \sdelse{[guard]} divider
+\gdef\sdelseguard{}
+\newcommand{\sdelse}[1]{
+  \stepcounter{seqlevel}
+  \coordinate (sdelse) at (0,-\theseqlevel*\unitfactor-\unitfactor);
+  \gdef\sdelseguard{#1}
+  \stepcounter{seqlevel}
+}
+\newenvironment{sdalt}[1]{\begin{sdblock}{alt}{#1}}{\end{sdblock}
+  \ifx\sdelseguard\empty\else
+    \draw[dashed] (nw |- sdelse) -- (se |- sdelse);
+    \node[anchor=north west, font=\small, xshift=3pt] at (nw |- sdelse) {\sdelseguard};
+    \gdef\sdelseguard{}
+  \fi}
 
 \begin{document}
 
-{\bfseries Artist - Create Event}
+{\bfseries Artist -- Create Event}
 \bigskip
+
+\noindent\resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-	
-	\newthread{a}{Artist}
-	\newinst[1]{c}{EventController}
-	\newinst[1]{s}{EventService}
-	\newinst[1]{r}{EventRepository}
-	
-	\begin{call}{a}{createEvent(title, description, date, location)}{c}{newEventWrapper}
-		
-		\begin{call}{c}{saveEvent(eventData)}{s}{newEventWrapper}
-			
-			\begin{call}{s}{validateEvent(eventData)}{s}{eventValid}
+	\newactor{a}{:Artist}
+	\newinst[3.2]{c}{:EventController}
+	\newinst[3]{s}{:EventService}
+	\newinst[2.2]{ac}{:AccessControlService}
+	\newinst[1]{u}{:UserAccountRepository}
+	\newinst[1.5]{r}{:EventRepository}
+
+	\begin{call}{a}{createEvent(userId, request)}{c}{201 Created (event)}
+		\begin{call}{c}{createEvent(userId, request)}{s}{event}
+			\begin{call}{s}{requireRole(userId, ARTIST)}{ac}{artist}
+				\begin{call}{ac}{findById(userId)}{u}{account}
+				\end{call}
 			\end{call}
-			
-			\begin{call}{s}{save(event)}{r}{newEvent}
+			\begin{sdblock}{break}{[account missing, not active, or not an Artist]}
+				\retmess{c}{401 / 403}{a}
+			\end{sdblock}
+			\begin{call}{s}{validateEvent(request)}{s}{}
 			\end{call}
-			
+			\begin{sdblock}{break}{[missing fields, past date, bad price or link]}
+				\retmess{c}{400 Bad Request}{a}
+			\end{sdblock}
+			\begin{sdalt}{[request.saveAsDraft]}
+				\begin{call}{s}{setStatus(DRAFT)}{s}{}
+				\end{call}
+				\sdelse{[else]}
+				\begin{call}{s}{setStatus(PENDING\_APPROVAL)}{s}{}
+				\end{call}
+			\end{sdalt}
+			\begin{call}{s}{save(event)}{r}{savedEvent}
+			\end{call}
 		\end{call}
-		
 	\end{call}
-	
-\end{sequencediagram}
+\end{sequencediagram}}
+
+\bigskip
 \hrule
 \bigskip
 
-{\bfseries Fan - Search for Artist}
+{\bfseries Fan -- Search for Artist}
 \bigskip
+
+\noindent\resizebox{\textwidth}{!}{%
 \begin{sequencediagram}
-	
-	\newthread{f}{Fan}
-	\newinst[1]{c}{ArtistController}
-	\newinst[1]{s}{ArtistService}
-	\newinst[1]{r}{ArtistRepository}
-	
-	\begin{call}{f}{searchArtists(name, genre, location)}{c}{artistList}
-		
-		\begin{call}{c}{searchArtists(name, genre, location)}{s}{artistList}
-			
-			\begin{call}{s}{blankToNull(name, genre, location)}{s}{filters}
+	\newactor{f}{:Fan}
+	\newinst[3.2]{c}{:ArtistController}
+	\newinst[3]{s}{:ArtistService}
+	\newinst[2.2]{ac}{:AccessControlService}
+	\newinst[1]{u}{:UserAccountRepository}
+	\newinst[3]{r}{:ArtistRepository}
+
+	\begin{call}{f}{searchArtists(fanId, criteria)}{c}{results}
+		\begin{call}{c}{searchArtists(fanId, criteria)}{s}{results}
+			\begin{call}{s}{requireRole(fanId, FAN)}{ac}{fan}
+				\begin{call}{ac}{findById(fanId)}{u}{account}
+				\end{call}
 			\end{call}
-			
-			\begin{call}{s}{search(name, genre, location)}{r}{artistList}
-			\end{call}
-			
+			\begin{sdblock}{break}{[account missing, not active, or not a Fan]}
+				\retmess{c}{401 / 403}{f}
+			\end{sdblock}
+			\begin{sdalt}{[criteria.radiusKm = null]}
+				\begin{call}{s}{search(name, genre, location)}{r}{artists}
+				\end{call}
+				\sdelse{[radiusKm given: nearby search]}
+				\begin{call}{s}{resolveOrigin(fan, criteria)}{s}{origin}
+				\end{call}
+				\begin{call}{s}{searchNearby(filters, origin, radiusKm)}{s}{nearest first}
+					\begin{call}{s}{searchWithinBounds(filters, box)}{r}{candidates}
+					\end{call}
+					\begin{sdblock}{loop}{[each candidate]}
+						\begin{call}{s}{distanceKm(origin, artist)}{s}{km}
+						\end{call}
+					\end{sdblock}
+				\end{call}
+			\end{sdalt}
 		\end{call}
-		
 	\end{call}
-	
-\end{sequencediagram}
+\end{sequencediagram}}
+
+\bigskip
 \hrule
 \bigskip
 
-{\bfseries Admin - Review Report}
+{\bfseries Admin -- Review Report}
 \bigskip
-\begin{sequencediagram}
-	
-	\newthread{a}{Admin}
-	\newinst[1]{c}{ReportController}
-	\newinst[1]{s}{ReportService}
-	\newinst[1]{r}{ReportRepository}
-	
-	\begin{call}{a}{reviewReport(reportId, decision)}{c}{success}
-		
-		\begin{call}{c}{getReport(reportId)}{s}{report}
-			
-			\begin{call}{s}{findReportById(reportId)}{r}{report}
-			\end{call}
-			
-		\end{call}
-		
-		\begin{call}{c}{resolveReport(report, decision)}{s}{resolvedReport}
-			
-			\begin{call}{s}{[if decision.removeContent] hideContent(report.target)}{s}{}
-			\end{call}
-			
-			\begin{call}{s}{[if decision.banUser] banUser(report.target.poster)}{s}{}
-			\end{call}
-			
-			\begin{call}{s}{save(report)}{r}{updatedReport}
-			\end{call}
-			
-		\end{call}
-		
-	\end{call}
-	
-\end{sequencediagram}
 
+\noindent\resizebox{\textwidth}{!}{%
+\begin{sequencediagram}
+	\newactor{a}{:Admin}
+	\newinst[5]{c}{:ReportController}
+	\newinst[4.2]{s}{:ReportService}
+	\newinst[2.2]{ac}{:AccessControlService}
+	\newinst[1]{u}{:UserAccountRepository}
+	\newinst[2.5]{r}{:ReportRepository}
+	\newinst[1.5]{n}{:NotificationService}
+
+	\begin{call}{a}{getPendingReports(adminId, type)}{c}{reports}
+		\begin{call}{c}{getPendingReports(adminId, type)}{s}{reports}
+			\begin{call}{s}{requireRole(adminId, ADMIN)}{ac}{admin}
+				\begin{call}{ac}{findById(adminId)}{u}{account}
+				\end{call}
+			\end{call}
+			\begin{call}{s}{findQueue(PENDING, type)}{r}{reports}
+			\end{call}
+		\end{call}
+	\end{call}
+
+	\begin{call}{a}{getReport(adminId, reportId)}{c}{report}
+		\begin{call}{c}{getReport(adminId, reportId)}{s}{report}
+			\begin{call}{s}{requireRole(adminId, ADMIN)}{ac}{admin}
+			\end{call}
+			\begin{call}{s}{findById(reportId)}{r}{report}
+			\end{call}
+		\end{call}
+	\end{call}
+
+	\begin{call}{a}{resolveReport(adminId, reportId, request)}{c}{resolved report}
+		\begin{call}{c}{resolveReport(adminId, reportId, request)}{s}{report}
+			\begin{call}{s}{requireRole(adminId, ADMIN)}{ac}{admin}
+			\end{call}
+			\begin{call}{s}{findById(reportId)}{r}{report}
+			\end{call}
+			\begin{sdblock}{break}{[report already RESOLVED]}
+				\retmess{c}{409 Conflict}{a}
+			\end{sdblock}
+			\begin{call}{s}{applyAction(report, action)}{s}{}
+				\begin{sdalt}{[action = REMOVE\_CONTENT]}
+					\begin{call}{s}{removeContent(report)}{s}{}
+					\end{call}
+					\sdelse{[action = SUSPEND\_USER or BAN\_USER]}
+					\begin{call}{s}{setAccountStatus(reportedUserId, status)}{s}{}
+						\begin{call}{s}{save(account)}{u}{}
+						\end{call}
+					\end{call}
+				\end{sdalt}
+			\end{call}
+			\begin{call}{s}{save(report: RESOLVED, action, admin, time)}{r}{saved}
+			\end{call}
+			\begin{call}{s}{notify(reporterId, outcome)}{n}{}
+			\end{call}
+			\begin{sdblock}{opt}{[action $\neq$ DISMISS]}
+				\begin{call}{s}{notify(reportedUserId, outcome)}{n}{}
+				\end{call}
+			\end{sdblock}
+		\end{call}
+	\end{call}
+\end{sequencediagram}}
 
 \end{document}
