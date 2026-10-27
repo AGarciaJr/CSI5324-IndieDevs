@@ -27,7 +27,21 @@ public class Artist {
     @Column(name = "is_suspended")
     private boolean isSuspended = false;
 
+    // Coordinates of the artist's home base, used for nearby searches
+    private Double latitude;
+    private Double longitude;
+
     public Artist() {
+    }
+
+    public Artist(String name, String genre, String location, String profileThumbnail, String bio, String tags) {
+        this.name = name;
+        this.genre = genre;
+        this.location = location;
+        this.profileThumbnail = profileThumbnail;
+        this.bio = bio;
+        this.tags = tags;
+        this.isSuspended = false;
     }
 
     public Artist(String name, String genre, String location, String profileThumbnail, String bio, String tags, Boolean isSuspended) {
@@ -37,6 +51,24 @@ public class Artist {
         this.profileThumbnail = profileThumbnail;
         this.bio = bio;
         this.tags = tags;
-        this.isSuspended = isSuspended;
+        this.isSuspended = isSuspended != null ? isSuspended : false;
+    }
+
+    public Artist(String name, String genre, String location, String profileThumbnail, Double latitude, Double longitude) {
+        this.name = name;
+        this.genre = genre;
+        this.location = location;
+        this.profileThumbnail = profileThumbnail;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.isSuspended = false;
+    }
+
+    public boolean isSuspended() {
+        return isSuspended;
+    }
+
+    public void setSuspended(boolean suspended) {
+        this.isSuspended = suspended;
     }
 }

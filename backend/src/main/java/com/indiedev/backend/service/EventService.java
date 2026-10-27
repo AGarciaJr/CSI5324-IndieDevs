@@ -1,10 +1,19 @@
+/* Handles the Create Event and Update Event use cases. Only active artist accounts can create/update events.
+ * A submitted event waits in PENDING_APPROVAL for an admin; approving it is a separate use case.
+ */
+
 package com.indiedev.backend.service;
 
-import com.indiedev.backend.model.Event;
+import com.indiedev.backend.dto.CreateEventRequest;
+import com.indiedev.backend.model.*;
 import com.indiedev.backend.repository.EventRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -12,9 +21,11 @@ import java.util.NoSuchElementException;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final AccessControlService accessControlService;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, AccessControlService accessControlService) {
         this.eventRepository = eventRepository;
+        this.accessControlService = accessControlService;
     }
 
     public List<Event> getAllEvents() {
@@ -33,14 +44,49 @@ public class EventService {
         return eventRepository.findByArtistId(artistId);
     }
 
+    @Transactional
+    public Event createEvent(Long userId, CreateEventRequest request) {
+        UserAccount artist = accessControlService.requireRole(userId, Role.ARTIST);
+        if (artist.getArtistId() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Create your artist profile before adding events");
+        }
+
+        validateEvent(request);
+
+        Event event = new Event();
+        event.setArtistId(artist.getArtistId());
+        event.setTitle(request.title().trim());
+        event.setDescription(request.description());
+        event.setStartsAt(request.startsAt());
+        event.setLocation(request.location().trim());
+        event.setVirtual(request.virtual());
+        event.setCapacity(request.capacity());
+        if (request.ticketTiers() != null) {
+            event.setTicketTiers(request.ticketTiers().stream()
+                    .map(t -> new TicketTier(t.name().trim(), t.price()))
+                    .toList());
+        }
+        event.setStatus(request.saveAsDraft() ? EventStatus.DRAFT : EventStatus.PENDING_APPROVAL);
+
+        return eventRepository.save(event);
+    }
+
     public Event createEvent(Event event) {
         validateEventInput(event);
-        if (event.getStatus() == null || event.getStatus().trim().isEmpty()) {
-            event.setStatus("Published");
+        if (event.getStatus() == null) {
+            event.setStatus(EventStatus.PUBLISHED);
         }
         event.setCreatedAt(LocalDateTime.now());
         event.setUpdatedAt(LocalDateTime.now());
         return eventRepository.save(event);
+    }
+
+    public List<Event> getEventsForArtist(Long userId) {
+        UserAccount artist = accessControlService.requireRole(userId, Role.ARTIST);
+        if (artist.getArtistId() == null) {
+            return List.of();
+        }
+        return eventRepository.findByArtistIdOrderByStartsAtAsc(artist.getArtistId());
     }
 
     /**
@@ -68,16 +114,22 @@ public class EventService {
         }
 
         // Write over the event information (Main flow steps 2 & 3)
-        existing.setEventType(updatedInfo.getEventType());
+        if (updatedInfo.getEventType() != null) {
+            existing.setEventType(updatedInfo.getEventType());
+        }
         existing.setTitle(updatedInfo.getTitle());
         existing.setDescription(updatedInfo.getDescription());
-        existing.setEventDate(updatedInfo.getEventDate());
+        if (updatedInfo.getStartsAt() != null) {
+            existing.setStartsAt(updatedInfo.getStartsAt());
+        }
         existing.setLocation(updatedInfo.getLocation());
         existing.setVirtual(updatedInfo.isVirtual());
         existing.setCapacity(updatedInfo.getCapacity());
-        existing.setImageUrl(updatedInfo.getImageUrl());
-        if (updatedInfo.getTicketTiers() != null) {
-            existing.setTicketTiers(updatedInfo.getTicketTiers());
+        if (updatedInfo.getImageUrl() != null) {
+            existing.setImageUrl(updatedInfo.getImageUrl());
+        }
+        if (updatedInfo.getTicketTiers() != null && !updatedInfo.getTicketTiers().isEmpty()) {
+            existing.setTicketTiers(new ArrayList<>(updatedInfo.getTicketTiers()));
         }
         if (updatedInfo.getStatus() != null) {
             existing.setStatus(updatedInfo.getStatus());
@@ -108,8 +160,18 @@ public class EventService {
         if (event.getDescription() == null || event.getDescription().trim().isEmpty()) {
             throw new IllegalArgumentException("Event description cannot be empty. Please correct the issue and resubmit.");
         }
-        if (event.getEventDate() == null) {
+        if (event.getStartsAt() == null) {
             throw new IllegalArgumentException("Event date and time cannot be empty. Please correct the issue and resubmit.");
+        }
+    }
+
+    // Rules that field annotations on the request cannot express
+    void validateEvent(CreateEventRequest request) {
+        if (!request.startsAt().isAfter(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Event date must be in the future");
+        }
+        if (request.virtual() && !request.location().trim().matches("(?i)^https?://\\S+$")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Virtual events need an http(s) link as the location");
         }
     }
 }

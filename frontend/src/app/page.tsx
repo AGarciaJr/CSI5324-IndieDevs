@@ -30,6 +30,7 @@ type Artist = {
     bio?: string;
     tags?: string;
     suspended?: boolean;
+    distanceKm?: number | null;
 };
 
 type ArtistApplication = {
@@ -104,7 +105,6 @@ type LocalStore = {
     chats: Record<string, string[]>;
     bookings: { artistId: number; details: string }[];
 };
-
 const initialStore: LocalStore = { posts: [], follows: [], chats: {}, bookings: [] };
 
 const sampleArtists: Artist[] = [
@@ -135,7 +135,6 @@ const emptyEventForm = (): Partial<EventItem> => ({
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const STORE_KEY = "artistconnect-ui-v2";
-
 export default function Home() {
     // Current Active Persona
     const [currentUser, setCurrentUser] = useState<UserPersona>(PERSONAS[0]); // Nicholas Nolen (Fan)
@@ -152,6 +151,7 @@ export default function Home() {
 
     // Discover Tab State
     const [criteria, setCriteria] = useState({ name: "", genre: "", location: "" });
+    const [radiusKm, setRadiusKm] = useState("");
     const [artistResults, setArtistResults] = useState<Artist[]>(sampleArtists);
     const [busySearch, setBusySearch] = useState(false);
     const [searched, setSearched] = useState(false);

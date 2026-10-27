@@ -162,6 +162,8 @@ max-width:160px}
 grid-template-columns:1fr 1fr 1fr auto;
 gap:14px;
 align-items:end}
+/* Extra column for the distance filter; :where keeps specificity low so the mobile rules still apply */
+.search-grid:where(.nearby){grid-template-columns:1fr 1fr 1fr .8fr auto}
 label{display:block;
 font-size:12px;
 font-weight:600}
