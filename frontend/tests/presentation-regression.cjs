@@ -1,0 +1,55 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Standalone CommonJS presentation regression test. */
+const assert = require('node:assert/strict');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const fs = require('node:fs');
+const path = require('node:path');
+const output = path.resolve(__dirname, '../test-results');
+const names = ['Nicholas Nolen','Jordan Smith','William Waweru','Admin Alex','Admin Garrett'];
+(async () => {
+ const browser = await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{})});
+ try {
+  const page = await browser.newPage({viewport:{width:1280,height:720}});
+  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(process.env.WEB_URL || 'http://localhost:3000');
+  const nav = name => page.locator('nav').getByRole('button',{name:new RegExp(name,'i')});
+  const switchTo = async name => { await page.locator('.account-btn').click(); for(const n of names) await page.locator('.account-menu').getByRole('button',{name:new RegExp(n)}).waitFor({state:'visible'}); await page.locator('.account-menu').getByRole('button',{name:new RegExp(name)}).click(); };
+  const accountBounds=await page.locator('.account-btn').boundingBox();
+  assert.ok(accountBounds.y>=0 && accountBounds.y+accountBounds.height<=720,'Account switcher must be on screen without scrolling');
+  await page.getByPlaceholder('Who are you looking for?').waitFor();
+  await page.getByPlaceholder('Who are you looking for?').fill('Luna');
+  await page.getByRole('button',{name:/Search artists/}).click();
+  await page.getByRole('heading',{name:'Luna Park',exact:true}).waitFor();
+  assert.equal(await page.locator('.artist-card').count(),1);
+  await nav('For You').click(); await page.getByRole('heading',{name:'Tailored for your sound.'}).waitFor();
+  await nav('Following').click(); await page.getByRole('heading',{name:'Artists you support'}).waitFor();
+  await nav('My profile').click(); await page.getByRole('heading',{name:'Manage fan profile'}).waitFor();
+  await nav('Report content').click(); await page.getByRole('heading',{name:'Report inappropriate content',exact:true}).waitFor();
+  await switchTo('Jordan Smith'); await page.getByPlaceholder('Who are you looking for?').waitFor();
+  await switchTo('William Waweru'); await page.getByRole('heading',{name:'Curate your live shows.'}).waitFor();
+  await page.getByRole('button',{name:/Edit \/ Update Event/}).first().click();
+  await page.getByPlaceholder('Tell fans what to expect, band lineups, and schedule...').waitFor();
+  await page.getByRole('button',{name:'Cancel',exact:true}).first().click();
+  await nav('Make a post').click(); await page.getByPlaceholder('What have you been creating?').waitFor();
+  await nav('Discover').click(); await page.getByPlaceholder('Who are you looking for?').fill('Luna');
+  await page.getByRole('button',{name:/Search artists/}).click();
+  await page.getByRole('heading',{name:'Luna Park',exact:true}).waitFor();
+  await switchTo('Admin Alex'); await page.getByRole('heading',{name:'Moderation & appeal reviews.'}).waitFor();
+  await nav('Artist Directory').click(); await page.getByRole('heading',{name:'Platform Artists'}).waitFor();
+  await page.getByRole('heading',{name:'Luna Park',exact:true}).waitFor();
+  await page.getByRole('button',{name:/Refresh Directory/}).click();
+  await page.getByRole('heading',{name:'Luna Park',exact:true}).waitFor();
+  await nav('Verifications').click(); await page.getByText('Elena Rodriguez',{exact:true}).waitFor();
+  await nav('Report queue').click(); await page.getByRole('heading',{name:'Pending reports',exact:true}).waitFor();
+  await switchTo('William Waweru'); await page.getByRole('heading',{name:'Curate your live shows.'}).waitFor();
+  await switchTo('Admin Garrett'); await page.getByRole('heading',{name:'Moderation & appeal reviews.'}).waitFor();
+  await switchTo('Nicholas Nolen'); await page.getByPlaceholder('Who are you looking for?').waitFor();
+  fs.mkdirSync(output,{recursive:true});
+  await page.screenshot({path:path.join(output,'presentation-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await switchTo('Jordan Smith'); await page.getByPlaceholder('Who are you looking for?').waitFor();
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Mobile layout must not overflow');
+  await page.screenshot({path:path.join(output,'presentation-mobile.png'),fullPage:true});
+  assert.deepEqual(errors,[]);
+  console.log('PASS: all five original personas, visible account switcher, initial search, fan/artist live search, recommendations, event edit, post composer, appeals, artist moderation directory, verifications, and all new fan/admin tabs; mobile and desktop.');
+ } finally { await browser.close(); }
+})().catch(e=>{console.error(e);process.exitCode=1});

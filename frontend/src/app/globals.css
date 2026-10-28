@@ -698,3 +698,37 @@ flex-wrap:wrap}
   margin: 12px 0;
   line-height: 1.5;
 }
+
+/* Fan community workflows share the existing ArtistConnect palette and form styles. */
+.community-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; align-items:start; margin:24px 0; }
+.community-section { margin-bottom:30px; }
+.community-form { display:grid; gap:18px; margin-top:22px; }
+.community-form label { display:block; }
+.community-form input:not([type=checkbox]), .community-form textarea, .community-form select { width:100%; max-width:100%; }
+.community-form fieldset { border:1px solid var(--line); border-radius:8px; padding:16px; }
+.community-check { display:flex !important; align-items:center; gap:10px; margin:14px 0; line-height:1.5; }
+.community-follow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.community-follow .error, .community-follow .notice { width:100%; margin:6px 0; font-size:12px; }
+.community-artist-report { margin:20px 0; }
+.community-artist-report > div { padding:18px; border:1px solid var(--line); border-radius:8px; margin-top:12px; }
+.community-report { padding:24px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+.community-evidence { padding:14px; background:#f1f4eb; white-space:pre-wrap; overflow-wrap:anywhere; margin:12px 0; max-height:250px; overflow:auto; }
+.community-help { font-size:12px; color:var(--muted); }
+.fan-photo { object-fit:cover; border-radius:50%; margin:14px 0; }
+@media(max-width:800px) { .community-grid { grid-template-columns:minmax(0,1fr); } }
+
+@media(max-width:650px) { nav { flex-wrap:wrap; } nav button { flex:1 1 95px; } .account-menu { top:calc(100% + 8px); bottom:auto; max-height:65vh; overflow-y:auto; } }
+
+/* Keep the original presentation accounts reachable as the navigation grows. */
+.account-switcher { position:relative; margin:18px 0 22px; flex-shrink:0; }
+.account-switcher .account-btn { margin-top:0; }
+.account-switcher .account-menu { top:calc(100% + 8px); bottom:auto; left:0; right:auto; width:100%; max-height:min(490px, calc(100dvh - 190px)); overflow-y:auto; }
+.account-switcher .account-btn small { white-space:normal; }
+aside .nav-label { margin-top:8px; }
+@media(min-width:651px) { aside { overflow-y:auto; } aside nav { flex-shrink:0; } .sidebar-note { margin-top:24px; flex-shrink:0; } }
+@media(max-width:650px) { .account-switcher { margin-bottom:10px; } .account-switcher .account-menu { width:100%; } }
+
+.account-switcher .account-menu-item { padding:8px 4px; }
+.account-switcher .account-menu-item > div:not(.avatar) { min-width:0; overflow-wrap:anywhere; }
+.account-switcher .account-menu-item .role-badge { display:none; }
+.account-switcher .account-menu-item small { font-size:10px; }

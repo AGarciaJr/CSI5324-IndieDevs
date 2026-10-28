@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
+import { FanCommunityProvider, FollowButton, FollowingPanel, FanProfilePanel, FanReportsPanel, ReportArtistButton, AdminReportsPanel } from "../components/fan-community";
 import { useEffect, useState, type FormEvent } from "react";
 
 type Role = "Fan" | "Artist" | "Admin";
@@ -135,13 +135,16 @@ const emptyEventForm = (): Partial<EventItem> => ({
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const STORE_KEY = "artistconnect-ui-v2";
+function userAccountId(user: UserPersona) {
+    return user.role === "Fan" ? (user.id === 1 ? 1 : 5) : user.role === "Artist" ? 2 : 3;
+}
 export default function Home() {
     // Current Active Persona
     const [currentUser, setCurrentUser] = useState<UserPersona>(PERSONAS[0]); // Nicholas Nolen (Fan)
     const [showAccountMenu, setShowAccountMenu] = useState(false);
 
     // Active Navigation Tab
-    const [tab, setTab] = useState("Recommendations");
+    const [tab, setTab] = useState("Discover");
 
     // General app state
     const [store, setStore] = useState<LocalStore>(initialStore);
@@ -151,7 +154,6 @@ export default function Home() {
 
     // Discover Tab State
     const [criteria, setCriteria] = useState({ name: "", genre: "", location: "" });
-    const [radiusKm, setRadiusKm] = useState("");
     const [artistResults, setArtistResults] = useState<Artist[]>(sampleArtists);
     const [busySearch, setBusySearch] = useState(false);
     const [searched, setSearched] = useState(false);
@@ -191,6 +193,7 @@ export default function Home() {
 
     // Initialize local demo data & verify backend connection
     useEffect(() => {
+        const timer = setTimeout(() => {
         try {
             const saved = localStorage.getItem(STORE_KEY);
             if (saved) {
@@ -210,31 +213,46 @@ export default function Home() {
                 else setBackendConnected(false);
             })
             .catch(() => setBackendConnected(false));
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // When active persona or tab changes, load appropriate data
     useEffect(() => {
+        const timer = setTimeout(() => {
         if (currentUser.role === "Fan") {
-            if (tab === "Manage Events" || tab === "Ban Appeals") {
+            if (["Manage Events", "Ban Appeals", "Report Queue", "Artist Directory", "Verifications", "Make a post"].includes(tab)) {
                 setTab("Recommendations");
             }
         } else if (currentUser.role === "Artist") {
-            if (tab === "Recommendations" || tab === "Ban Appeals") {
+            if (["Recommendations", "Ban Appeals", "Following", "Fan Profile", "Fan Reports", "Report Queue", "Artist Directory", "Verifications"].includes(tab)) {
                 setTab("Manage Events");
             }
         } else if (currentUser.role === "Admin") {
-            if (tab === "Recommendations" || tab === "Manage Events" || tab === "Make a post" || tab === "Discover") {
+            if (["Recommendations", "Manage Events", "Make a post", "Discover", "Following", "Fan Profile", "Fan Reports"].includes(tab)) {
                 setTab("Ban Appeals");
             }
         }
-    }, [currentUser]);
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [currentUser, tab]);
 
     // Load recommendations when on Recommendations tab or fan changes
     useEffect(() => {
         if (tab === "Recommendations" && currentUser.role === "Fan") {
-            loadRecommendations(currentUser.id);
+            loadRecommendations(userAccountId(currentUser));
         }
     }, [tab, currentUser]);
+
+    useEffect(() => {
+        const refresh = () => {
+            if (currentUser.role === "Fan" && tab === "Recommendations") {
+                void loadRecommendations(userAccountId(currentUser));
+            }
+        };
+        window.addEventListener("fan-community-changed", refresh);
+        return () => window.removeEventListener("fan-community-changed", refresh);
+    }, [currentUser, tab]);
 
     // Load events when on Manage Events tab
     useEffect(() => {
@@ -250,10 +268,16 @@ export default function Home() {
         }
     }, [tab, currentUser, appealsViewMode]);
 
-    // Load secure community list when on Discover tab or persona changes
+    // Keep both the fan/artist discovery page and the admin moderation directory populated.
     useEffect(() => {
         if (tab === "Discover") {
             loadDiscoverArtists();
+        } else if (tab === "Artist Directory" && currentUser.role === "Admin") {
+            const controller = new AbortController();
+            fetch(`${API_BASE}/api/artists?includeSuspended=true`, { signal: controller.signal })
+                .then(async response => { if (!response.ok) throw new Error(); setArtistResults(await response.json()); })
+                .catch(() => { if (!controller.signal.aborted) setError("Could not load the artist moderation directory. Please try again."); });
+            return () => controller.abort();
         }
     }, [tab, currentUser, source]);
 
@@ -307,12 +331,13 @@ export default function Home() {
     }
 
     async function recordFanInteraction(artistId: number, type: string) {
+        if (currentUser.role !== "Fan") return;
         try {
-            await fetch(`${API_BASE}/api/recommendations/interactions?fanId=${currentUser.id}&artistId=${artistId}&interactionType=${type}`, {
+            await fetch(`${API_BASE}/api/recommendations/interactions?fanId=${userAccountId(currentUser)}&artistId=${artistId}&interactionType=${type}`, {
                 method: "POST"
             });
             if (currentUser.role === "Fan") {
-                loadRecommendations(currentUser.id);
+                loadRecommendations(userAccountId(currentUser));
             }
         } catch {
             // ignore offline
@@ -321,11 +346,11 @@ export default function Home() {
 
     async function clearFanInteractions() {
         try {
-            await fetch(`${API_BASE}/api/recommendations/interactions/fan/${currentUser.id}`, {
+            await fetch(`${API_BASE}/api/recommendations/interactions/fan/${userAccountId(currentUser)}`, {
                 method: "DELETE"
             });
             setNotice("Interaction history cleared! You are now experiencing the New Fan (cold-start) view.");
-            loadRecommendations(currentUser.id);
+            loadRecommendations(userAccountId(currentUser));
         } catch {
             setError("Could not clear interactions on backend.");
         }
@@ -721,11 +746,15 @@ export default function Home() {
         setBusySearch(true);
         try {
             if (source === "api") {
-                const params = new URLSearchParams(Object.entries(criteria).filter(([_, v]) => v.trim()).map(([k, v]) => [k, v.trim()]));
-                const res = await fetch(`${API_BASE}/api/artists/search?${params}`);
+                const params = new URLSearchParams(Object.entries(criteria).filter(([, v]) => v.trim()).map(([k, v]) => [k, v.trim()]));
+                // Fan search retains its role-checked endpoint. Artist browsing filters the
+                // public directory without impersonating a fan.
+                const url = currentUser.role === "Fan" ? `${API_BASE}/api/artists/search?${params}` : `${API_BASE}/api/artists`;
+                const res = await fetch(url, { headers: { "X-User-Id": String(userAccountId(currentUser)) } });
                 if (!res.ok) throw new Error();
-                const found = await res.json();
-                setArtistResults(found);
+                const found: Artist[] = await res.json();
+                setArtistResults(currentUser.role === "Fan" ? found : found.filter(a =>
+                    Object.entries(criteria).every(([key, value]) => !value.trim() || String(a[key as keyof Artist]).toLowerCase().includes(value.trim().toLowerCase()))));
             } else {
                 const filtered = sampleArtists.filter(a =>
                     Object.entries(criteria).every(([k, v]) =>
@@ -761,11 +790,17 @@ export default function Home() {
         setNotice("Your post has been published to your profile!");
     }
 
+    // Map legacy UI personas to UserAccount ids for the header-based account mechanism.
+    const backendAccountId = userAccountId(currentUser);
+
     // Role-specific navigation items
     const navItems = currentUser.role === "Fan"
         ? [
             { label: "For You", icon: "✳", tabName: "Recommendations" },
             { label: "Discover", icon: "⌕", tabName: "Discover" },
+            { label: "Following", icon: "♡", tabName: "Following" },
+            { label: "My profile", icon: "◎", tabName: "Fan Profile" },
+            { label: "Report content", icon: "⚑", tabName: "Fan Reports" },
         ]
         : currentUser.role === "Artist"
             ? [
@@ -777,15 +812,68 @@ export default function Home() {
                 { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
                 { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" },
                 { label: "Verifications", icon: "✓", tabName: "Verifications" },
+                { label: "Report queue", icon: "⚑", tabName: "Report Queue" },
             ];
 
     return (
+        <FanCommunityProvider key={`${backendAccountId}-${currentUser.role}`} accountId={backendAccountId} role={currentUser.role}>
         <div className="app-shell">
             {/* SIDEBAR */}
             <aside>
                 <Link className="brand" href="/">
                     a<span>ArtistConnect</span><i>●</i>
                 </Link>
+
+                {/* ACCOUNT PROFILE BUTTON & SWITCHER */}
+                <div className="account-switcher">
+                    {showAccountMenu && (
+                        <div className="account-menu" id="demo-account-menu">
+                            <small style={{ fontWeight: 700, padding: "4px 8px", color: "var(--muted)" }}>
+                                PRESENTATION DEMO ACCOUNTS
+                            </small>
+                            {PERSONAS.map(p => (
+                                <button
+                                    key={p.id}
+                                    className={`account-menu-item ${currentUser.id === p.id ? "active" : ""}`}
+                                    onClick={() => {
+                                        setCurrentUser(p);
+                                        setTab(p.role === "Fan" ? "Discover" : p.role === "Artist" ? "Manage Events" : "Ban Appeals");
+                                        setError("");
+                                        setSelectedArtist(null);
+                                        setShowAccountMenu(false);
+                                        setNotice(`Switched active account to ${p.name} (${p.role})`);
+                                    }}
+                                >
+                                    <div className="avatar">{p.avatar}</div>
+                                    <div>
+                                        <b style={{ fontSize: "12px", display: "block" }}>{p.name}</b>
+                                        <small>{p.description}</small>
+                                    </div>
+                                    <span className={`role-badge ${p.role.toLowerCase()}`}>{p.role}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    <button
+                        className="account-btn"
+                        onClick={() => setShowAccountMenu(!showAccountMenu)}
+                        aria-expanded={showAccountMenu}
+                        aria-controls="demo-account-menu"
+                        title="Switch demo account"
+                    >
+                        <div className="avatar">{currentUser.avatar}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {currentUser.name}
+                            </b>
+                            <small>{currentUser.role} · switch demo account ▾</small>
+                        </div>
+                        <span className={`role-badge ${currentUser.role.toLowerCase()}`}>
+                            {currentUser.role}
+                        </span>
+                    </button>
+                </div>
 
                 <p className="nav-label">
                     {currentUser.role.toUpperCase()} WORKSPACE
@@ -809,51 +897,6 @@ export default function Home() {
                     <p>Designed for independent artists, fans, and administrators.</p>
                 </div>
 
-                {/* ACCOUNT PROFILE BUTTON & SWITCHER */}
-                <div style={{ position: "relative" }}>
-                    {showAccountMenu && (
-                        <div className="account-menu">
-                            <small style={{ fontWeight: 700, padding: "4px 8px", color: "var(--muted)" }}>
-                                SWITCH USER PERSONA
-                            </small>
-                            {PERSONAS.map(p => (
-                                <button
-                                    key={p.id}
-                                    className={`account-menu-item ${currentUser.id === p.id ? "active" : ""}`}
-                                    onClick={() => {
-                                        setCurrentUser(p);
-                                        setShowAccountMenu(false);
-                                        setNotice(`Switched active account to ${p.name} (${p.role})`);
-                                    }}
-                                >
-                                    <div className="avatar">{p.avatar}</div>
-                                    <div>
-                                        <b style={{ fontSize: "12px", display: "block" }}>{p.name}</b>
-                                        <small>{p.description}</small>
-                                    </div>
-                                    <span className={`role-badge ${p.role.toLowerCase()}`}>{p.role}</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    <button
-                        className="account-btn"
-                        onClick={() => setShowAccountMenu(!showAccountMenu)}
-                        title="Click to switch between Fan, Artist, and Admin personas"
-                    >
-                        <div className="avatar">{currentUser.avatar}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {currentUser.name}
-                            </b>
-                            <small>{currentUser.role} · switch ▾</small>
-                        </div>
-                        <span className={`role-badge ${currentUser.role.toLowerCase()}`}>
-                            {currentUser.role}
-                        </span>
-                    </button>
-                </div>
             </aside>
 
             {/* MAIN WORKSPACE */}
@@ -876,6 +919,10 @@ export default function Home() {
                     <div className="page-heading">
                         <div>
                             <h1>
+                                {tab === "Following" && "Your creative community."}
+                                {tab === "Fan Profile" && "Make yourself at home."}
+                                {tab === "Fan Reports" && "Help keep the community safe."}
+                                {tab === "Report Queue" && "Community report review."}
                                 {tab === "Recommendations" && "Tailored for your sound."}
                                 {tab === "Discover" && "Find your next inspiration."}
                                 {tab === "Make a post" && "Let your work speak."}
@@ -892,6 +939,8 @@ export default function Home() {
                         </div>
 
                         <span className="pill">
+                            {["Following", "Fan Profile", "Fan Reports"].includes(tab) && "FAN COMMUNITY"}
+                            {tab === "Report Queue" && "ADMIN REVIEW"}
                             {tab === "Recommendations" && "USE CASE: RECEIVE RECOMMENDATION"}
                             {tab === "Manage Events" && "USE CASE: UPDATE EVENT"}
                             {tab === "Ban Appeals" && "USE CASE: UNBAN FAN"}
@@ -902,6 +951,12 @@ export default function Home() {
 
                     {notice && <div className="notice" role="status">{notice}</div>}
                     {error && <div className="error" role="alert">{error}</div>}
+
+                    {currentUser.role === "Fan" && tab === "Following" && <FollowingPanel/>}
+                    {currentUser.role === "Fan" && tab === "Fan Profile" && <FanProfilePanel/>}
+                    {currentUser.role === "Fan" && tab === "Fan Reports" && <FanReportsPanel/>}
+                    {currentUser.role === "Admin" && tab === "Report Queue" && <AdminReportsPanel/>}
+
 
                     {/* ========================================================================= */}
                     {/* TAB: RECOMMENDATIONS (USE CASE: RECEIVE RECOMMENDATION - FAN)             */}
@@ -967,7 +1022,7 @@ export default function Home() {
                                                         await recordFanInteraction(1, "FOLLOW");
                                                         await recordFanInteraction(5, "LIKE");
                                                         setNotice("Sample interactions recorded! Recommendations generated.");
-                                                        loadRecommendations(currentUser.id);
+                                                        loadRecommendations(userAccountId(currentUser));
                                                     }}
                                                 >
                                                     Simulate Sample Fan Activity
@@ -986,7 +1041,7 @@ export default function Home() {
                                     </div>
 
                                     <div className="artist-grid">
-                                        {recommendationData.recommendations.map(({ artist, matchPercentage, matchingGenres, reason, latentFeatureSummary }, i) => (
+                                        {recommendationData.recommendations.map(({ artist, matchPercentage, reason, latentFeatureSummary }, i) => (
                                             <div className="artist-card" key={artist.id} style={{ display: "flex", flexDirection: "column" }}>
                                                 <div className={`art-cover art-${i % 6}`}>
                                                     <span className="match-pill" style={{ position: "absolute", top: "12px", right: "12px" }}>
@@ -1012,15 +1067,7 @@ export default function Home() {
                                                     </div>
 
                                                     <div className="card-footer" style={{ borderTop: "1px solid var(--line)", paddingTop: "12px", marginTop: "auto" }}>
-                                                        <button
-                                                            style={{ fontSize: "11px", padding: "6px 10px" }}
-                                                            onClick={async () => {
-                                                                await recordFanInteraction(artist.id, "FOLLOW");
-                                                                setNotice(`Followed ${artist.name}! Your recommendations have been updated.`);
-                                                            }}
-                                                        >
-                                                            {store.follows.includes(artist.id) ? "Following ✓" : "Follow +"}
-                                                        </button>
+                                                        <FollowButton artistId={artist.id}/>
                                                         <button
                                                             className="btn-secondary"
                                                             style={{ fontSize: "11px", padding: "6px 10px" }}
@@ -1455,7 +1502,7 @@ export default function Home() {
 
                                             {/* Fan Reasoning (Main Flow Step 3) */}
                                             <div style={{ marginTop: "16px" }}>
-                                                <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Fan's Submitted Reason for Appeal:</b>
+                                                <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Fan&apos;s Submitted Reason for Appeal:</b>
                                                 <p style={{ background: "#f8faf5", padding: "14px", borderRadius: "8px", border: "1px solid #dce5dc", margin: "6px 0 16px", fontSize: "13px" }}>
                                                     &ldquo;{selectedAppeal.reason}&rdquo;
                                                 </p>
@@ -1533,7 +1580,7 @@ export default function Home() {
                                     <h2>Platform Artists</h2>
                                 </div>
                                 <button className="btn-secondary" onClick={async () => {
-                                    const res = await fetch(`${API_BASE}/api/artists/search?includeSuspended=true`);
+                                    const res = await fetch(`${API_BASE}/api/artists?includeSuspended=true`);
                                     if (res.ok) setArtistResults(await res.json());
                                 }}>
                                     Refresh Directory ↻
@@ -1576,7 +1623,7 @@ export default function Home() {
                                     <h2>Discover artists</h2>
                                     <label className="source">
                                         Source:{" "}
-                                        <select value={source} onChange={e => { setSource(e.target.value); setArtistResults(sampleArtists); }}>
+                                        <select value={source} onChange={e => { setSource(e.target.value); setArtistResults(e.target.value === "demo" ? sampleArtists : []); setSearched(false); }}>
                                             <option value="api">Live Backend (H2)</option>
                                             <option value="demo">Demo Catalog</option>
                                         </select>
@@ -1841,21 +1888,7 @@ export default function Home() {
                     )}
 
                     <div className="profile-actions">
-                        <button
-                            onClick={async () => {
-                                const following = store.follows.includes(selectedArtist.id);
-                                const nextFollows = following
-                                    ? store.follows.filter(id => id !== selectedArtist.id)
-                                    : [...store.follows, selectedArtist.id];
-                                persistStore({ ...store, follows: nextFollows });
-                                if (!following) {
-                                    await recordFanInteraction(selectedArtist.id, "FOLLOW");
-                                }
-                                setNotice(following ? "Artist unfollowed." : `Following ${selectedArtist.name}! Recommendations updated.`);
-                            }}
-                        >
-                            {store.follows.includes(selectedArtist.id) ? "Following ✓" : "Follow artist +"}
-                        </button>
+                        <FollowButton artistId={selectedArtist.id}/>
                         <button onClick={() => { setModalAction("chat"); setModalMessage(""); }}>Start chat</button>
                         <button className="primary" onClick={() => { setModalAction("book"); setModalMessage(""); }}>Book artist ↗</button>
 
@@ -1869,6 +1902,8 @@ export default function Home() {
                             </button>
                         )}
                     </div>
+
+                    <ReportArtistButton artistId={selectedArtist.id}/>
 
                     {modalAction && (
                         <form
@@ -1888,7 +1923,7 @@ export default function Home() {
                                 } else if (modalAction === "comment") {
                                     try {
                                         const dummyPostId = 101; // Targeting a featured artwork post
-                                        const res = await fetch(`${API_BASE}/api/posts/${dummyPostId}/comments?fanId=${currentUser.id}&artistId=${selectedArtist.id}&genre=${encodeURIComponent(selectedArtist.genre)}`, {
+                                        const res = await fetch(`${API_BASE}/api/posts/${dummyPostId}/comments?fanId=${userAccountId(currentUser)}&artistId=${selectedArtist.id}&genre=${encodeURIComponent(selectedArtist.genre)}`, {
                                             method: "POST",
                                             headers: { "Content-Type": "text/plain" }, // Matches backend @RequestBody String
                                             body: modalMessage.trim()
@@ -1897,7 +1932,7 @@ export default function Home() {
                                         if (!res.ok) throw new Error("Failed to post comment.");
                                         
                                         // Refresh the Fan's recommendations so the 3.0 weight immediately updates their taste profile
-                                        loadRecommendations(currentUser.id);
+                                        loadRecommendations(userAccountId(currentUser));
                                         setModalMessage("");
                                         setModalAction("");
                                         setNotice(`Comment posted on ${selectedArtist.name}'s artwork! Your taste profile affinity for ${selectedArtist.genre} has increased.`);
@@ -1936,5 +1971,6 @@ export default function Home() {
                 </dialog>
             )}
         </div>
+        </FanCommunityProvider>
     );
 }

@@ -27,6 +27,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@org.springframework.transaction.annotation.Transactional
 public class H2DatabaseTest {
 
     @Autowired
