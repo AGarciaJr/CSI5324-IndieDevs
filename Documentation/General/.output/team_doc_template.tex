@@ -1839,7 +1839,138 @@ Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService
 \end{description}
 
 % ============================================================
-\chapter{Test Cases}
+\chapter{Testing}
+\section{JUnit Testing Summary}
+This section documents testing of each member's implemented use cases.
+
+JUnit integration tests use Spring Boot, MockMvc, and the H2 database to exercise the controller, service, repository, and existing administrator-report integration. The tests check HTTP responses and stored records, rather than relying only on interface messages. Mockito simulates a repository write failure to verify transaction rollback. Concurrent requests verify duplicate protection.
+
+Coverage includes valid workflows, role authorization, artist availability, independent fan accounts, privacy filtering, text and image validation, stale edits, storage failures, required report fields, duplicate pending reports, and evidence retained after content deletion. Browser checks additionally verified saved follows after reload, account switching, profile editing and privacy, reporting and administrator resolution, and mobile layout.
+
+\section{Test Cases Table}
+
+\newcommand{\williamtestcase}[6]{%
+\par\medskip\noindent\begin{minipage}{\textwidth}
+\small\renewcommand{\arraystretch}{1.18}%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}|>{\raggedright\arraybackslash}p{\dimexpr0.77\textwidth-4\tabcolsep-3\arrayrulewidth\relax}|}
+\hline
+\textbf{Test Case ID \#} & \textbf{#1} \\ \hline
+\textbf{Assigned Tester} & William Waweru \\ \hline
+\textbf{Scenario/Condition} & #2 \\ \hline
+\textbf{Test Inputs} & #3 \\ \hline
+\textbf{Expected Result} & #4 \\ \hline
+\textbf{Actual Result} & #5 \\ \hline
+\textbf{Test Status} & #6 \\ \hline
+\end{tabular}
+\end{minipage}\par\medskip
+}
+\clearpage
+\subsection*{Follow Artist -- Fan}
+\williamtestcase
+{WW-FA-01}
+{Follow an active artist and retrieve the relationship; then unfollow.}
+{Active fan account 1; active artist 1 (Luna Park). Send PUT to the follow endpoint, GET the following list and own profile, then DELETE the follow.}
+{PUT returns HTTP 200 with following=true and followerCount=1. Both lists contain artist 1. DELETE returns 204; the next follow-state read reports followerCount=0.}
+{Observed HTTP 200 and one follower; Luna Park appeared in both lists. Unfollow returned 204 and the count became 0.}
+{Passed}
+\williamtestcase
+{WW-FA-02}
+{Repeated and concurrent follow requests must not create duplicate relationships.}
+{Send the same follow request twice for fan 1 / artist 1. In a separate test, send four simultaneous PUT requests for fan 5 / artist 6.}
+{All requests return HTTP 200. Each fan/artist pair has exactly one follow row and one FOLLOW interaction. Repeated requests do not increase the follower count for the same fan.}
+{Both repeated requests and all four concurrent requests returned 200. Database assertions found one relationship and one FOLLOW interaction per tested pair.}
+{Passed}
+\clearpage
+\noindent\textbf{Follow Artist -- Fan (continued)}\par
+\williamtestcase
+{WW-FA-03}
+{Reject a suspended artist, a banned artist account, and an unknown artist.}
+{Fan 1 attempts to follow artist 1 with its suspension flag set; retries after clearing that flag and banning the linked artist account; also requests artist 9999.}
+{Suspended and banned cases each return HTTP 409. The unknown artist returns 404. No follow relationship is stored for any rejected request.}
+{Observed 409 for each unavailable-artist case and 404 for artist 9999. Follow repository count remained zero.}
+{Passed}
+\williamtestcase
+{WW-FA-04}
+{Enforce fan authorization and keep different fans' following lists independent.}
+{Follow artist 1 with no acting-account header and then artist account 2. Separately, fan 1 follows artist 1; inspect fan 5's list before fan 5 follows the same artist.}
+{Unauthenticated request returns HTTP 401; artist-role request returns 403. Fan 5 initially sees an empty list. After both fans follow, the shared artist count is exactly 2.}
+{Observed 401 and 403. Fan 5's list was initially empty; its own follow returned followerCount=2 without duplicating either fan's relationship.}
+{Passed}
+\clearpage
+\subsection*{Manage Fan Profile -- Fan}
+\williamtestcase
+{WW-MFP-01}
+{Save valid profile text and a valid uploaded profile image.}
+{Fan 1 saves display name New Fan Name, biography Love independent art, interests Jazz and art, and valid privacy values. A separate request uploads a generated 2-by-2-pixel PNG as a data URL.}
+{Each valid update returns HTTP 200. Subsequent profile reads return the saved text and exactly the uploaded PNG data URL. Publicly enabled interests and image are visible to fan 5.}
+{Observed 200 for valid updates. Saved text and image matched the submitted values; fan 5 retrieved the enabled public fields.}
+{Passed}
+\williamtestcase
+{WW-MFP-02}
+{Apply field-level and whole-profile privacy on the server.}
+{Fan 1 saves a public profile with showInterests=false and showFollowing=false. Fan 5 requests that profile. Fan 1 then sets publicProfile=false; repeat reads as fan 5 and as the owner.}
+{For the public profile, fan 5 receives HTTP 200 without interests or supportedArtists values. Once private, fan 5 receives 404 while the owner still receives 200 with their full profile.}
+{Public response omitted the hidden fields. After the privacy change, the other fan received 404 and the owner retained 200 access.}
+{Passed}
+\clearpage
+\noindent\textbf{Manage Fan Profile -- Fan (continued)}\par
+\williamtestcase
+{WW-MFP-03}
+{Reject invalid content, malformed images, and stale edits without replacing valid data.}
+{After saving Saved Name / Saved bio, submit a blank name and then a biography containing script markup. Separately submit a malformed PNG data URL and a profile update carrying an outdated version.}
+{Blank-name, prohibited-content, and malformed-image requests return HTTP 400. The blank-name response identifies displayName. A stale version returns 409. Rejected requests preserve the previous stored profile.}
+{Observed 400 with a displayName field error, 400 for script markup and malformed PNG data, and 409 for the stale edit. Stored Saved Name / Saved bio remained unchanged after the invalid text requests.}
+{Passed}
+\williamtestcase
+{WW-MFP-04}
+{Preserve both profile and account data when a database write fails.}
+{Save Persisted Name / Persisted biography for fan 1. Configure the profile repository spy to throw a database write exception, then attempt to save Must roll back / Must not persist.}
+{The update returns HTTP 503. The transaction rolls back: the profile biography remains Persisted biography and the account display name remains Persisted Name.}
+{Observed HTTP 503. Follow-up database reads confirmed the previous biography and account display name; neither attempted replacement was committed.}
+{Passed}
+\clearpage
+\subsection*{Report Inappropriate Content -- Fan}
+\williamtestcase
+{WW-RIC-01}
+{Submit a valid report and make it available to the existing administrator queue.}
+{Fan 1 reports published EVENT 2 with reason Spam and details Please review this context. Admin account 3 retrieves the pending report queue.}
+{Submission returns HTTP 201 with status=PENDING and reportedUserId=2. The saved snapshot includes Austin Acoustic Night. The seeded three-report admin queue increases to four.}
+{Observed 201, PENDING, owner account 2, and the expected event snapshot. The admin queue contained four reports, including the new submission.}
+{Passed}
+\williamtestcase
+{WW-RIC-02}
+{Reject missing reasons, unavailable content, and callers without the fan role.}
+{Submit a whitespace-only reason for EVENT 2; report nonexistent POST 9999; report unpublished EVENT 3; and attempt reporting as artist account 2.}
+{Missing reason returns HTTP 400. Missing post and unpublished event each return 404. The artist-role request returns 403. No rejected request adds a report; the seeded count stays at 3.}
+{Observed 400, 404, 404, and 403 respectively. Database report count remained three.}
+{Passed}
+\clearpage
+\noindent\textbf{Report Inappropriate Content -- Fan (continued)}\par
+\williamtestcase
+{WW-RIC-03}
+{Prevent duplicate pending reports, including simultaneous submissions.}
+{Fan 1 submits EVENT 2 twice. In a separate test, fan 5 sends four simultaneous reports for EVENT 2 with reason Spam.}
+{The first sequential request returns HTTP 201 and the duplicate returns 409. The concurrent set produces exactly one 201 and three 409 responses, leaving only one new pending report for that fan/target.}
+{Observed 201 then 409 for the sequential pair. Concurrent results were exactly 201, 409, 409, 409; duplicate pending reports were not created.}
+{Passed}
+\williamtestcase
+{WW-RIC-04}
+{Allow reporting deleted content only with evidence captured for the same fan and target.}
+{Fan 5 captures server evidence for POST 1000; delete that post. Submit without evidence, try the captured ID as fan 1 against EVENT 2, then submit as fan 5 for POST 1000 using the matching evidence.}
+{Without evidence the deleted-post request returns HTTP 404. Evidence with the wrong fan/target returns 404. Matching retained evidence returns 201 and preserves the snapshot text New single out Friday.}
+{Observed 404 for missing evidence and mismatched ownership/target. Matching evidence returned 201; the saved report retained the original post text.}
+{Passed}
+
+\clearpage
+\begingroup
+\color{blue!70!black}
+% REVISION COMMENT: The previous Section 13 should be modified because it does not align with the new testing format.
+\begin{tcolorbox}[colback=blue!4,colframe=blue!70!black,coltext=blue!70!black,title={Revision note: previous testing content},fonttitle=\bfseries]
+The previous Section 13 should be modified because it does not align with the new format. In particular, its existing cases need assigned testers, explicit test inputs, actual results, and Passed or Failed statuses, together with a JUnit testing summary. The earlier material below is preserved in blue for the responsible team members to revise; it is not deleted or replaced by William Waweru's test results.
+\end{tcolorbox}
+\setlength{\tabcolsep}{3pt}
+\small
+\subsection*{Previous Section 13: Test Cases (retained for revision)}
 
 % \begin{guidance}[Traceability of tests]
 % Each test case should reference the requirement or use case it
@@ -1847,10 +1978,10 @@ Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService
 % coverage are easy to spot.
 % \end{guidance}
 
-\section{Test Cases for Iteration 1}
+\subsubsection*{Test Cases for Iteration 1}
 No test cases were produced during iteration one.
 
-\section{Test Cases for Iteration 2}
+\subsubsection*{Test Cases for Iteration 2}
 \begin{itemize}
   \item Artist Search
   \item Unban Fan
@@ -1858,7 +1989,7 @@ No test cases were produced during iteration one.
 \end{itemize}
 
 \subsection*{Search for Artist, Create Event, Review Report (automated, \texttt{backend/src/test})}
-\begin{longtable}{|>{\raggedright\arraybackslash}p{1.4cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}p{6.2cm}|>{\raggedright\arraybackslash}p{4cm}|}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{0.08\textwidth}|>{\raggedright\arraybackslash}p{0.18\textwidth}|>{\raggedright\arraybackslash}p{0.40\textwidth}|>{\raggedright\arraybackslash}p{0.23\textwidth}|}
 \hline
 \textbf{ID} & \textbf{Use case} & \textbf{Scenario} & \textbf{Expected result} \\ \hline
 \endhead
@@ -1882,6 +2013,10 @@ RR-5 & Review Report (5b) & Admin bans the reported user & Account BANNED and bl
 RR-6 & Review Report (3a) & Admin resolves an already resolved report & 409 \\ \hline
 RR-7 & Review Report (5c) & Remove content on a user report; unknown report; missing action & 400 / 404 / 400 \\ \hline
 \end{longtable}
+
+% ============================================================
+
+\endgroup
 
 % ============================================================
 \chapter{UI Mockups}
