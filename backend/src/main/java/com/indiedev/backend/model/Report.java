@@ -36,6 +36,12 @@ public class Report {
 
     private String reason;
 
+    @Column(length = 2000)
+    private String details;
+
+    @Column(length = 4500)
+    private String targetSnapshot;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReportStatus status = ReportStatus.PENDING;

@@ -27,6 +27,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class CreateEventTest {
 
+    @org.junit.jupiter.api.BeforeEach
+    void isolateArtistEvents() {
+        // Event creation assertions start with an empty artist event list, independent of demo seeds.
+        eventRepository.deleteAll();
+    }
+
     private static final long FAN = 1L;
     private static final long ARTIST = 2L; // Luna Park, artist profile 1
     private static final long ADMIN = 3L;

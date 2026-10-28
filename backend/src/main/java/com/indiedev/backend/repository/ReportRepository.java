@@ -10,6 +10,10 @@ import java.util.List;
 
 public interface ReportRepository extends JpaRepository<Report, Long> {
 
+    boolean existsByReporterIdAndTargetTypeAndTargetIdAndStatus(Long reporterId, ReportTargetType targetType,
+                                                               Long targetId, ReportStatus status);
+    List<Report> findByReporterIdOrderByCreatedAtDesc(Long reporterId);
+
     // Oldest first so the queue is worked in the order reports came in
     @Query("""
             select r from Report r
