@@ -1,0 +1,215 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam roundcorner 5
+skinparam nodesep 50
+skinparam ranksep 55
+skinparam defaultFontName "Helvetica, Arial, sans-serif"
+skinparam defaultFontSize 11
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  ArrowColor #37474F
+  BorderThickness 1.2
+}
+
+' ==========================================
+' Core Entities (Preserving Original Layout)
+' ==========================================
+
+class Admin #E0F7FA {
+  - adminID : Long
+  - workEmail : String
+  - adminLevel : int
+  --
+  + banUser(u : User) : void
+  + resolveReport(r : Report) : void
+  + reviewBanAppeal(a : BanAppeal) : void
+  + reviewApplication(v : VerificationApplication) : void
+}
+
+class User #E0F2F1 {
+  - userID : Long
+  - username : String
+  - email : String
+  - accountStatus : AccountStatus
+  - joinDate : LocalDateTime
+  --
+  + login() : boolean
+  + updateProfile(p : Profile) : void
+  + sendMessage(msg : String) : DirectMessage
+}
+
+class Profile #FFE0B2 {
+  - profileID : Long
+  - avatarURL : String
+  - displayTheme : String
+  --
+  + updateTheme(theme : String) : void
+}
+
+class DirectMessage #FFCDD2 {
+  - messageID : Long
+  - content : String
+  - timestamp : LocalDateTime
+  - readStatus : boolean
+  --
+  + markAsRead() : void
+}
+
+class VerificationApplication #EDE7F6 {
+  - applicationID : Long
+  - submissionDate : LocalDateTime
+  - identityProofURL : String
+  - status : AppStatus
+  --
+  + getStatus() : AppStatus
+}
+
+class Report #C8E6C9 {
+  - reportID : Long
+  - target : IReportable
+  - reason : String
+  - timestamp : LocalDateTime
+  - resolutionStatus : ReportStatus
+  --
+  + updateStatus(status : ReportStatus) : void
+}
+
+class BanAppeal #FFE082 {
+  - appealID : Long
+  - reason : String
+  - offendingContent : String
+  - aiRecommendation : String
+  - status : AppealStatus
+  - reviewedAt : LocalDateTime
+  --
+  + canReview(adminId : Long) : boolean
+}
+
+class Fan #FFF9C4 {
+  - searchRadiusPref : float
+  - aboutBio : String
+  - banned : boolean
+  - canAppeal : boolean
+  --
+  + followArtist(a : Artist) : void
+  + rsvp(e : Event) : void
+  + submitBanAppeal(reason : String) : BanAppeal
+}
+
+class Artist #E8EAF6 {
+  - artistBio : String
+  - genre : String
+  - location : String
+  - isVerified : boolean
+  - isSuspended : boolean
+  --
+  + uploadMedia(m : MediaPost) : void
+  + createEvent(e : Event) : void
+}
+
+class UserInteraction #F3E5F5 {
+  - interactionID : Long
+  - interactionType : String
+  - genre : String
+  - weight : double
+  - timestamp : LocalDateTime
+  --
+  + getWeight() : double
+}
+
+class RecommendationDTO #F3E5F5 {
+  - hasInteractions : boolean
+  - recommendations : List<ArtistRecommendation>
+  --
+  + getRecommendations() : List<ArtistRecommendation>
+}
+
+class Event #DCEDC8 {
+  - eventID : Long
+  - title : String
+  - dateTime : LocalDateTime
+  - location : String
+  - capacity : int
+  - isApproved : boolean
+  - reviewedAcknowledgment : boolean
+  --
+  + addAttendee(f : Fan) : boolean
+  + updateEvent() : void
+  + cancelEvent() : void
+}
+
+class TicketTier #F1F8E9 {
+  - name : String
+  - price : BigDecimal
+  --
+  + getName() : String
+  + getPrice() : BigDecimal
+}
+
+class MediaPost #B3E5FC {
+  - postID : Long
+  - mediaType : String
+  - contentURL : String
+  - uploadTimestamp : LocalDateTime
+  --
+  + addComment(c : Comment) : void
+  + deletePost() : void
+}
+
+class Comment #F8BBD0 {
+  - commentID : Long
+  - textContent : String
+  - timestamp : LocalDateTime
+  - isVisible : boolean
+  --
+  + hideComment() : void
+}
+
+interface IReportable <<interface>> #FCE4EC {
+}
+
+' ==========================================
+' Relationships
+' ==========================================
+
+' 1. Top Section: Admin & Governance
+Admin "1" -right- "0..*" VerificationApplication : reviews >
+Admin "1" -down- "0..*" Report : resolves >
+Admin "1" -down- "0..*" BanAppeal : reviews >
+Admin "1" -left- "0..*" User : manages / bans >
+
+' 2. User & Core Identity
+Profile "1" -right- "1" User : owns <
+User "1" -down- "0..*" DirectMessage : sends / receives >
+User "1" -right- "0..*" VerificationApplication : submits >
+User "1" -down- "0..*" Report : authors >
+
+' 3. Inheritance
+User <|-- Fan
+User <|-- Artist
+
+' 4. Fan Actions, Interactions & Appeals
+Fan "0..*" -right- "0..*" Artist : follows >
+Fan "1" -right- "0..*" BanAppeal : submits >
+Fan "1" -down- "0..*" UserInteraction : generates >
+UserInteraction "0..*" -right- "1" Artist : targets >
+RecommendationDTO .up.> UserInteraction : computed from >
+
+' 5. Events & Media Content (Bottom)
+Artist "1" -down- "0..*" Event : hosts >
+Artist "1" -down- "0..*" MediaPost : creates >
+Event "1" *-- "1..*" TicketTier : tiers
+Fan "0..*" -down- "0..*" Event : attends >
+
+MediaPost "1" -down- "0..*" Comment : contains >
+Comment "0..*" -left- "1" MediaPost : belongs to >
+
+' 6. Moderation & Reporting
+Report "0..*" -down- "1" IReportable : targets >
+MediaPost .up.|> IReportable
+Comment .up.|> IReportable
+User .down.|> IReportable
+
+@enduml

@@ -1767,15 +1767,14 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 % ============================================================
 \chapter{Design Class Diagram}
 \begin{center}
-  \includegraphics[width=\textwidth, totalheight=15cm, keepaspectratio=false]{designClassDiagram.png}
+  \includegraphics[width=\textwidth, keepaspectratio]{designClassDiagram.png}
 \end{center}
 
 \clearpage
-\section{Design Classes -- Search for Artist, Create Event, Review Report}
-The classes below are the ones used in Alex Garcia's sequence diagrams, with the operations and types from the implementation.
-Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService.requireRole}, which only lets an active account with the required role continue.
+\section{Design Class Specifications}
+The design class model refines the conceptual domain model into concrete software components supporting all system use cases implemented across the platform to date (artist search and proximity discovery, event authoring and updating, personalized recommendations, content reporting, and fan ban appeals). All operations are secured via \texttt{AccessControlService.requireRole}, enforcing role-based permissions and active account verification across Fan, Artist, and Admin workflows.
 
-\input{alex_design_classes.tex}
+\input{design_classes.tex}
 
 % ============================================================
 \chapter{Operation Contracts}
