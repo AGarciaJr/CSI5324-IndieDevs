@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { UserPersona, EventItem, Post, LocalStore } from "../../types/index";
+import {UserPersona, EventItem, Post, PostFile, PostWrapper, LocalStore} from "../../types/index";
 import { API_BASE, emptyEventForm } from "../../constants/index";
 
 export default function ArtistWorkspace({ currentUser, tab, store, persistStore }: any) {
@@ -70,22 +70,38 @@ export default function ArtistWorkspace({ currentUser, tab, store, persistStore 
         }
     }
 
-    function handlePublishPost(e: FormEvent) {
+    async function handlePublishPost(e: FormEvent) {
         e.preventDefault();
         if (!postText.trim()) {
             setError("Please write some text before publishing.");
             return;
         }
         const newPost: Post = {
-            id: crypto.randomUUID(),
-            text: postText.trim(),
-            public: isPublic,
-            comments: commentsAllowed,
-            files: []
+            tempId: crypto.randomUUID(),
+            posterId: currentUser.id,
+            postText: postText.trim(),
+            isPublic: isPublic,
+            commentsAllowed: commentsAllowed,
         };
         persistStore({ ...store, posts: [newPost, ...store.posts] });
         setPostText("");
         setNotice("Your post has been published to your profile!");
+
+        const newPostWrapper: PostWrapper = {
+            post: newPost,
+            files: [],
+        }
+
+        const response = await fetch(
+            "http://localhost:8080/api/posts",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(newPostWrapper),
+            }
+        )
     }
 
     function startEditEvent(ev: EventItem) {
@@ -305,9 +321,9 @@ export default function ArtistWorkspace({ currentUser, tab, store, persistStore 
                             <div className="panel"><p>Your published posts will appear here.</p></div>
                         ) : (
                             store.posts.map((p: Post) => (
-                                <article key={p.id} className="panel saved-post">
-                                    <small>{currentUser.name} · {p.public ? "Public" : "Private"}</small>
-                                    <p className="post-text">{p.text}</p>
+                                <article key={p.tempId} className="panel saved-post">
+                                    <small>{currentUser.name} · {p.isPublic ? "Public" : "Private"}</small>
+                                    <p className="post-text">{p.postText}</p>
                                 </article>
                             ))
                         )}
