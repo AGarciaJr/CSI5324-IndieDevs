@@ -1,56 +1,177 @@
-% Consolidated Design Class Specifications for all implemented system use cases.
-% Requires pgf-umlcd and graphicx. Included from team_doc_template.tex.
+% =========================================================================
+% TEAM DESIGN CLASS SPECIFICATIONS
+% =========================================================================
+% This document provides detailed design class diagrams (DCDs) realized in 
+% code and architecture across the platform (controllers, services,
+% repositories, entities, DTOs, and enumerations).
+%
+% =========================================================================
+% COMPREHENSIVE USE CASE TRACEABILITY MATRIX:
+% =========================================================================
+% 1. Alejandro (Alex) Garcia Jr:
+%    - UC: Search for Artist -- Fan
+%      * Controller: ArtistController.searchArtists(...)
+%      * Service: ArtistService.searchArtists(...), distanceKm(...)
+%      * Repositories: ArtistRepository.searchWithinBounds(...), UserAccountRepository
+%      * DTOs / Models: ArtistSearchCriteria, ArtistSearchResult, Artist
+%      * Security: AccessControlService.requireRole(..., Role.FAN)
+%    - UC: Create Event -- Artist
+%      * Controller: EventController.createEvent(...)
+%      * Service: EventService.createEvent(...), validateEvent(...)
+%      * Repositories: EventRepository.save(...), UserAccountRepository
+%      * DTOs / Models: CreateEventRequest, TicketTier, Event, EventStatus
+%      * Security: AccessControlService.requireRole(..., Role.ARTIST)
+%    - UC: Review Report -- Admin
+%      * Controller: ReportController.getPendingReports(...), resolveReport(...)
+%      * Service: ReportService.resolveReport(...), applyAction(...), removeContent(...)
+%      * Repositories: ReportRepository, PostRepository, UserAccountRepository
+%      * Models / Enums: Report, ResolveReportRequest, ReportStatus, ModerationAction, ReportTargetType
+%      * Notification: NotificationService.notify(...)
+%
+% 2. Nicholas Nolen:
+%    - UC: Update Event (Step 5 input validation, Step 6 review acknowledgment)
+%      * Controller: EventController.updateEvent(...)
+%      * Service: EventService.updateEvent(...), validateEventInput(...)
+%      * Repositories: EventRepository.findById(...), EventRepository.save(...)
+%      * Models: Event (reviewedAcknowledgment, eventType, startsAt, status)
+%    - UC: Unban Fan (Conflict of interest guard, AI ToS evaluation, clean fake data)
+%      * Controller: ModerationController.getOpenAppeals(...), unbanFan(...), markAppealInvalid(...)
+%      * Service: ModerationService.getOpenAppealsForAdmin(...), unbanFan(...), checkConflictOfInterest(...)
+%      * Repositories: BanAppealRepository, FanRepository
+%      * Models / Enums: BanAppeal, Fan, AppealStatus (OPEN, APPROVED, INVALID)
+%    - UC: Receive Recommendation (Weighted interaction affinities, live recommendation ranking)
+%      * Controller: RecommendationController.getRecommendations(...), recordInteraction(...)
+%      * Service: RecommendationService.getRecommendations(...), calculateAffinityScores(...), buildRankedRecommendations(...)
+%      * Repositories: UserInteractionRepository, ArtistRepository
+%      * DTOs / Models: RecommendationDTO, ArtistRecommendation, UserInteraction
+%
+% 3. William Waweru:
+%    - UC: Follow Artist -- Fan
+%      * Controller: FollowController.followArtist(...), isFollowing(...)
+%      * Service: FollowService.followArtist(...), isFollowing(...), createFollow(...)
+%      * Repositories: FollowRepository, UserAccountRepository
+%      * Models: Fan, Artist, UserInteraction ("FOLLOW" weight 5.0)
+%    - UC: Manage Fan Profile -- Fan
+%      * Controller: ProfileController.getProfile(...), updateProfile(...)
+%      * Service: ProfileService.getProfile(...), updateProfile(...), validateProfile(...)
+%      * Repositories: ProfileRepository, UserAccountRepository
+%      * Models: Profile (avatarURL, displayTheme, privacySetting), Fan
+%    - UC: Report Inappropriate Content -- Fan (Client-side submission)
+%      * Controller: ReportController.submitReport(...)
+%      * Service: ReportService.submitReport(...), validateReport(...), findPendingReport(...)
+%      * Repositories: ReportRepository, PostRepository (ContentRepository)
+%      * Models / Enums: Report (PENDING status), ReportTargetType
+%
+% 4. Garrett DeYong:
+%    - UC: Make a Post -- Artist
+%      * Controller: PostController.savePost(...)
+%      * Service: PostService.savePost(...)
+%      * Repositories: PostRepository, FileRepository
+%      * Models / Wrappers: Post, PostFile, PostWrapper
+%    - UC: Message Another User (Beginning a New Conversation)
+%      * Controller: ConversationController.saveConversation(...), saveMessage(...)
+%      * Service: ConversationService.saveConversation(...), saveMessage(...)
+%      * Repositories: ConversationRepository
+%      * Models / Wrappers: Conversation, Message, MessageWrapper, UserWrapper
+%    - UC: Monitor Comments -- Artist
+%      * Controller: PostController.getAllPostsByUser(...), getPostById(...)
+%      * Service: PostService.getAllPostsByUser(...), getPostById(...)
+%      * Repositories: PostRepository, FileRepository
+%
+% 5. Gan-Orgil Gantumur:
+%    - UC: Suspending Artist Account -- Admin
+%      * Controller: ModerationController.suspendArtist(...)
+%      * Service: ModerationService.suspendArtist(...)
+%      * Repositories: ArtistRepository
+%      * Models: Artist.isSuspended
+%    - UC: Approve Artist Verification Application -- Admin
+%      * Controller: ModerationController.getPendingApplications(...), approveApplication(...), rejectApplication(...)
+%      * Service: ModerationService.getPendingApplications(...), approveApplication(...), rejectApplication(...)
+%      * Repositories: ArtistApplicationRepository
+%      * Models: ArtistApplication
+%    - UC: Comment on Artwork -- Fan
+%      * Controller: PostController.commentOnArtwork(...)
+%      * Service: PostService.addComment(...)
+%      * Repositories: UserInteractionRepository
+%      * Models: UserInteraction (postId, fanId, artistId, genre, content)
+% =========================================================================
 
-\subsection{Discovery, Events, and Personalized Recommendations}
+\subsection{Discovery, Following, Events, and Personalized Recommendations}
 
+% -------------------------------------------------------------------------
+% Subsystem 1 Controllers, Services, and Repositories
+% Realizes:
+%   - Alex Garcia: UC Search for Artist, UC Create Event
+%   - Nicholas Nolen: UC Update Event, UC Receive Recommendation
+%   - William Waweru: UC Follow Artist -- Fan
+% -------------------------------------------------------------------------
 \subsubsection*{Controllers, Services, and Repositories}
 \begin{center}\rotatebox{90}{\resizebox{0.92\textheight}{!}{%
 \begin{tikzpicture}
   % ---------- Controllers ----------
-  \begin{class}[text width=9.5cm]{ArtistController}{0,0}
+  \begin{class}[text width=9cm]{ArtistController}{0,0}
     \operation{+ searchArtists(fanId : Long, name : String, genre : String,}
     \operation{\quad location : String, lat : Double, lng : Double,}
     \operation{\quad radiusKm : Double) : List\textless ArtistSearchResult\textgreater}
+    \operation{+ getAllArtists() : List\textless Artist\textgreater}
+    \operation{+ getArtistById(id : Long) : Artist}
   \end{class}
 
-  \begin{class}[text width=10.5cm]{EventController}{11.5,0}
+  \begin{class}[text width=8.5cm]{FollowController}{9.5,0}
+    \operation{+ followArtist(fanId : Long, artistId : Long) : boolean}
+    \operation{+ isFollowing(fanId : Long, artistId : Long) : boolean}
+  \end{class}
+
+  \begin{class}[text width=10.5cm]{EventController}{18.5,0}
     \operation{+ createEvent(userId : Long, request : CreateEventRequest) : Event}
     \operation{+ getMyEvents(userId : Long) : List\textless Event\textgreater}
-    \operation{+ updateEvent(id : Long, updatedEvent : Event) : Event}
     \operation{+ getAllEvents() : List\textless Event\textgreater}
     \operation{+ getEventById(id : Long) : Event}
+    \operation{+ getEventsByArtist(artistId : Long) : List\textless Event\textgreater}
+    \operation{+ updateEvent(id : Long, updatedEvent : Event) : Event}
     \operation{+ deleteEvent(id : Long) : void}
   \end{class}
 
-  \begin{class}[text width=10cm]{RecommendationController}{24,0}
+  \begin{class}[text width=9.5cm]{RecommendationController}{29.5,0}
     \operation{+ getRecommendations(fanId : Long) : RecommendationDTO}
     \operation{+ recordInteraction(fanId : Long, artistId : Long,}
     \operation{\quad interactionType : String) : UserInteraction}
   \end{class}
 
   % ---------- Services ----------
-  \begin{class}[text width=9.5cm]{ArtistService}{0,-5.5}
+  \begin{class}[text width=9cm]{ArtistService}{0,-6}
     \attribute{- MAX\_RADIUS\_KM : double = 500}
     \operation{+ searchArtists(fanId : Long, criteria : ArtistSearchCriteria)}
     \operation{\quad : List\textless ArtistSearchResult\textgreater}
+    \operation{+ getAllArtists(includeSuspended : boolean) : List\textless Artist\textgreater}
+    \operation{+ getArtistById(artistId : Long) : Artist}
     \operation{- resolveOrigin(fan : UserAccount, criteria : ArtistSearchCriteria) : double[2]}
     \operation{- searchNearby(name, genre, location : String, lat, lng, radiusKm : double)}
     \operation{\quad : List\textless ArtistSearchResult\textgreater}
     \operation{\underline{distanceKm(lat1, lon1, lat2, lon2 : double) : double}}
   \end{class}
 
-  \begin{class}[text width=10.5cm]{EventService}{11.5,-5.5}
+  \begin{class}[text width=8.5cm]{FollowService}{9.5,-6}
+    \operation{+ followArtist(fanId : Long, artistId : Long) : boolean}
+    \operation{+ isFollowing(fanId : Long, artistId : Long) : boolean}
+    \operation{+ findArtist(artistId : Long) : Artist}
+    \operation{+ createFollow(fanId : Long, artistId : Long) : void}
+    \operation{+ updateFollowerInfo(artistId : Long) : void}
+  \end{class}
+
+  \begin{class}[text width=10.5cm]{EventService}{18.5,-6}
     \operation{+ createEvent(userId : Long, request : CreateEventRequest) : Event}
     \operation{+ getEventsForArtist(userId : Long) : List\textless Event\textgreater}
-    \operation{+ updateEvent(eventId : Long, updatedInfo : Event) : Event}
     \operation{+ getAllEvents() : List\textless Event\textgreater}
     \operation{+ getEventById(eventId : Long) : Event}
+    \operation{+ getEventsByArtist(artistId : Long) : List\textless Event\textgreater}
+    \operation{+ updateEvent(eventId : Long, updatedInfo : Event) : Event}
     \operation{+ deleteEvent(eventId : Long) : void}
     \operation{\textasciitilde\ validateEvent(request : CreateEventRequest) : void}
     \operation{- validateEventInput(event : Event) : void}
   \end{class}
 
-  \begin{class}[text width=10cm]{RecommendationService}{24,-5.5}
+  \begin{class}[text width=9.5cm]{RecommendationService}{29.5,-6}
     \operation{+ getRecommendations(fanId : Long) : RecommendationDTO}
     \operation{+ recordInteraction(fanId : Long, artistId : Long,}
     \operation{\quad type : String) : UserInteraction}
@@ -60,7 +181,7 @@
     \operation{\quad : List\textless ArtistRecommendation\textgreater}
   \end{class}
 
-  \begin{class}[text width=8cm]{AccessControlService}{6,-12}
+  \begin{class}[text width=8cm]{AccessControlService}{7,-12.5}
     \operation{+ requireRole(userId : Long, role : Role) : UserAccount}
   \end{class}
 
@@ -69,23 +190,30 @@
     \operation{+ search(name, genre, location : String) : List\textless Artist\textgreater}
     \operation{+ searchWithinBounds(name, genre, location : String,}
     \operation{\quad minLat, maxLat, minLng, maxLng : double) : List\textless Artist\textgreater}
+    \operation{+ findArtistById(id : Long) : Artist}
   \end{interface}
 
-  \begin{interface}[text width=6cm]{UserAccountRepository}{8.5,-17.5}
+  \begin{interface}[text width=7.5cm]{FollowRepository}{8,-17.5}
+    \operation{+ isFollowing(fanId : Long, artistId : Long) : boolean}
+    \operation{+ createFollow(fanId : Long, artistId : Long) : void}
+    \operation{+ findByFanId(fanId : Long) : List\textless Long\textgreater}
+  \end{interface}
+
+  \begin{interface}[text width=6cm]{UserAccountRepository}{16,-17.5}
     \operation{+ findById(id : Long) : UserAccount}
     \operation{+ save(account : UserAccount) : UserAccount}
   \end{interface}
 
-  \begin{interface}[text width=7.5cm]{EventRepository}{15.5,-17.5}
+  \begin{interface}[text width=7.5cm]{EventRepository}{22.5,-17.5}
     \operation{+ save(event : Event) : Event}
     \operation{+ findById(id : Long) : Event}
-    \operation{+ findByArtistId(artistId : Long)}
-    \operation{\quad : List\textless Event\textgreater}
+    \operation{+ findEventById(id : Long) : Event}
+    \operation{+ findByArtistId(artistId : Long) : List\textless Event\textgreater}
     \operation{+ findByArtistIdOrderByStartsAtAsc(}
     \operation{\quad artistId : Long) : List\textless Event\textgreater}
   \end{interface}
 
-  \begin{interface}[text width=8cm]{UserInteractionRepository}{24,-17.5}
+  \begin{interface}[text width=7.5cm]{UserInteractionRepository}{30.5,-17.5}
     \operation{+ findByFanIdOrderByTimestampDesc(}
     \operation{\quad fanId : Long) : List\textless UserInteraction\textgreater}
     \operation{+ save(ui : UserInteraction) : UserInteraction}
@@ -93,6 +221,7 @@
 
   % ---------- Relationships ----------
   \unidirectionalAssociation{ArtistController}{}{1}{ArtistService}
+  \unidirectionalAssociation{FollowController}{}{1}{FollowService}
   \unidirectionalAssociation{EventController}{}{1}{EventService}
   \unidirectionalAssociation{RecommendationController}{}{1}{RecommendationService}
 
@@ -101,12 +230,21 @@
   \draw[umlcd style, ->] (RecommendationService.south west) -- (AccessControlService.east);
 
   \draw[umlcd style, ->] (ArtistService.south) -- (ArtistRepository.north);
+  \draw[umlcd style, ->] (FollowService.south) -- (FollowRepository.north);
   \draw[umlcd style, ->] (AccessControlService.south) -- (UserAccountRepository.north);
   \draw[umlcd style, ->] (EventService.south) -- (EventRepository.north);
   \draw[umlcd style, ->] (RecommendationService.south) -- (UserInteractionRepository.north);
 \end{tikzpicture}}}\end{center}
 
 \clearpage
+% -------------------------------------------------------------------------
+% Subsystem 1 Entities, Request/Response Objects, and Enumerations
+% Realizes:
+%   - Artist (with suspension state and geolocation)
+%   - Event (with ticket tier composition, lifecycle status, draft & review acknowledgment)
+%   - UserInteraction (covers FOLLOW, LIKE, VIEW, COMMENT) & RecommendationDTO / ArtistRecommendation
+%   - ArtistSearchCriteria, ArtistSearchResult, CreateEventRequest
+% -------------------------------------------------------------------------
 \subsubsection*{Entities, Request/Response Objects, and Enumerations}
 \begin{center}\rotatebox{90}{\resizebox{0.92\textheight}{!}{%
 \begin{tikzpicture}
@@ -125,7 +263,7 @@
     \operation{+ isSuspended() : boolean}
   \end{class}
 
-  \begin{class}[text width=5cm]{EventStatus}{0,-8.5}
+  \begin{class}[text width=5cm]{EventStatus}{0,-9.5}
     \attribute{\emph{$\ll$enumeration$\gg$}}
     \attribute{DRAFT}
     \attribute{PENDING\_APPROVAL}
@@ -154,9 +292,11 @@
     \operation{+ isReviewedAcknowledgment() : boolean}
   \end{class}
 
-  \begin{class}[text width=5.5cm]{TicketTier}{8.5,-9}
+  \begin{class}[text width=6cm]{TicketTier}{8.5,-12}
     \attribute{- name : String}
     \attribute{- price : BigDecimal}
+    \operation{+ getName() : String}
+    \operation{+ getPrice() : BigDecimal}
   \end{class}
 
   % ---------- Column 3: Interaction & Recommendations ----------
@@ -168,17 +308,19 @@
     \attribute{- genre : String}
     \attribute{- weight : double}
     \attribute{- timestamp : LocalDateTime}
+    \attribute{- postId : Long}
+    \attribute{- content : String}
     \operation{+ getWeight() : double}
   \end{class}
 
-  \begin{class}[text width=7.5cm]{RecommendationDTO}{18,-6.5}
+  \begin{class}[text width=7.5cm]{RecommendationDTO}{18,-7.5}
     \attribute{+ hasInteractions : boolean}
     \attribute{+ message : String}
     \attribute{+ genreAffinityScores : Map\textless String, Double\textgreater}
     \attribute{+ recommendations : List\textless ArtistRecommendation\textgreater}
   \end{class}
 
-  \begin{class}[text width=7.5cm]{ArtistRecommendation}{18,-11.5}
+  \begin{class}[text width=7.5cm]{ArtistRecommendation}{18,-12.5}
     \attribute{+ artist : Artist}
     \attribute{+ matchPercentage : double}
     \attribute{+ matchingGenres : List\textless String\textgreater}
@@ -193,14 +335,14 @@
     \attribute{+ radiusKm : Double [0..1]}
   \end{class}
 
-  \begin{class}[text width=7.5cm]{ArtistSearchResult}{27.5,-4}
+  \begin{class}[text width=7.5cm]{ArtistSearchResult}{27.5,-4.5}
     \attribute{+ id : Long}
     \attribute{+ name, genre, location : String}
     \attribute{+ profileThumbnail : String}
     \attribute{+ distanceKm : Double [0..1]}
   \end{class}
 
-  \begin{class}[text width=7.5cm]{CreateEventRequest}{27.5,-8.5}
+  \begin{class}[text width=7.5cm]{CreateEventRequest}{27.5,-9.5}
     \attribute{+ title, description, location : String}
     \attribute{+ startsAt : LocalDateTime}
     \attribute{+ virtual : boolean}
@@ -218,31 +360,62 @@
 \end{tikzpicture}}}\end{center}
 
 \clearpage
-\subsection{Moderation, Fan Ban Appeals, and User Management}
+\subsection{User Profiles, Moderation, Fan Ban Appeals, and Verification}
 
+% -------------------------------------------------------------------------
+% Subsystem 2 Controllers, Services, and Repositories
+% Realizes:
+%   - William Waweru: UC Manage Fan Profile -- Fan, UC Report Inappropriate Content -- Fan (submission)
+%   - Alex Garcia: UC Review Report -- Admin (resolution)
+%   - Nicholas Nolen: UC Unban Fan (anti-conflict-of-interest, AI evaluation)
+%   - Gan-Orgil Gantumur: UC Suspending Artist Account, UC Approve Artist Verification Application
+% -------------------------------------------------------------------------
 \subsubsection*{Controllers, Services, and Repositories}
 \begin{center}\rotatebox{90}{\resizebox{0.92\textheight}{!}{%
 \begin{tikzpicture}
   % ---------- Controllers ----------
-  \begin{class}[text width=10.5cm]{ReportController}{0,0}
+  \begin{class}[text width=8.5cm]{ProfileController}{0,0}
+    \operation{+ getProfile(fanId : Long) : Profile}
+    \operation{+ updateProfile(fanId : Long, changes : String,}
+    \operation{\quad privacy : String) : Profile}
+  \end{class}
+
+  \begin{class}[text width=10.5cm]{ReportController}{9.2,0}
+    \operation{+ submitReport(fanId : Long, targetId : Long,}
+    \operation{\quad reason : String, details : String) : Report}
     \operation{+ getPendingReports(adminId : Long, type : ReportTargetType) : List\textless Report\textgreater}
     \operation{+ getReport(adminId : Long, reportId : Long) : Report}
     \operation{+ resolveReport(adminId : Long, reportId : Long,}
     \operation{\quad request : ResolveReportRequest) : Report}
   \end{class}
 
-  \begin{class}[text width=11.5cm]{ModerationController}{13.5,0}
+  \begin{class}[text width=11.5cm]{ModerationController}{20.5,0}
     \operation{+ getAllAppeals() : List\textless BanAppeal\textgreater}
     \operation{+ getOpenAppeals(adminId : Long) : List\textless BanAppeal\textgreater}
     \operation{+ getAppealById(id : Long) : BanAppeal}
     \operation{+ unbanFan(id : Long, adminId : Long, notes : String) : BanAppeal}
     \operation{+ markAppealInvalid(id : Long, adminId : Long, notes : String) : BanAppeal}
+    \operation{+ suspendArtist(artistId : Long) : Artist}
+    \operation{+ getPendingApplications() : List\textless ArtistApplication\textgreater}
+    \operation{+ approveApplication(applicationId : Long) : ArtistApplication}
+    \operation{+ rejectApplication(applicationId : Long) : ArtistApplication}
     \operation{+ getAllFans() : List\textless Fan\textgreater}
     \operation{+ getFanById(id : Long) : Fan}
   \end{class}
 
   % ---------- Services ----------
-  \begin{class}[text width=10.5cm]{ReportService}{0,-5.5}
+  \begin{class}[text width=8.5cm]{ProfileService}{0,-6.5}
+    \operation{+ getProfile(fanId : Long) : Profile}
+    \operation{+ updateProfile(fanId : Long, changes : String,}
+    \operation{\quad privacy : String) : Profile}
+    \operation{+ validateProfile(changes : String) : boolean}
+  \end{class}
+
+  \begin{class}[text width=10.5cm]{ReportService}{9.2,-6.5}
+    \operation{+ submitReport(fanId : Long, targetId : Long,}
+    \operation{\quad reason : String, details : String) : Report}
+    \operation{+ validateReport(reason, details : String) : boolean}
+    \operation{+ findPendingReport(fanId, targetId : Long) : Report}
     \operation{+ getPendingReports(adminId : Long, type : ReportTargetType) : List\textless Report\textgreater}
     \operation{+ getReport(adminId : Long, reportId : Long) : Report}
     \operation{+ resolveReport(adminId : Long, reportId : Long,}
@@ -252,66 +425,79 @@
     \operation{- setAccountStatus(userId : Long, status : AccountStatus) : void}
   \end{class}
 
-  \begin{class}[text width=11.5cm]{ModerationService}{13.5,-5.5}
+  \begin{class}[text width=11.5cm]{ModerationService}{20.5,-6.5}
     \operation{+ getOpenAppealsForAdmin(adminId : Long) : List\textless BanAppeal\textgreater}
     \operation{+ getAppealById(appealId : Long) : BanAppeal}
     \operation{+ unbanFan(appealId : Long, adminId : Long, notes : String) : BanAppeal}
     \operation{+ markAppealInvalid(appealId : Long, adminId : Long, notes : String) : BanAppeal}
     \operation{+ checkConflictOfInterest(appeal : BanAppeal, adminId : Long) : void}
+    \operation{+ suspendArtist(artistId : Long) : Artist}
+    \operation{+ getPendingApplications() : List\textless ArtistApplication\textgreater}
+    \operation{+ approveApplication(applicationId : Long) : ArtistApplication}
+    \operation{+ rejectApplication(applicationId : Long) : ArtistApplication}
     \operation{+ getAllFans() : List\textless Fan\textgreater}
     \operation{+ getFanById(id : Long) : Fan}
   \end{class}
 
-  \begin{class}[text width=8cm]{AccessControlService}{4,-12}
+  \begin{class}[text width=8cm]{AccessControlService}{5,-16}
     \operation{+ requireRole(userId : Long, role : Role) : UserAccount}
   \end{class}
 
-  \begin{class}[text width=8.5cm]{NotificationService}{16,-12}
+  \begin{class}[text width=8.5cm]{NotificationService}{18,-16}
     \operation{+ notify(recipientId : Long, message : String) : Notification}
     \operation{+ getNotifications(recipientId : Long) : List\textless Notification\textgreater}
   \end{class}
 
   % ---------- Repositories ----------
-  \begin{interface}[text width=7cm]{ReportRepository}{0,-17.5}
+  \begin{interface}[text width=5.5cm]{ProfileRepository}{0,-21}
+    \operation{+ findProfile(fanId : Long) : Profile}
+    \operation{+ saveProfile(p : Profile) : Profile}
+  \end{interface}
+
+  \begin{interface}[text width=6cm]{ReportRepository}{6,-21}
+    \operation{+ findPendingReport(fanId, targetId : Long) : Report}
     \operation{+ findQueue(status : ReportStatus,}
     \operation{\quad type : ReportTargetType) : List\textless Report\textgreater}
     \operation{+ findById(id : Long) : Report}
     \operation{+ save(report : Report) : Report}
   \end{interface}
 
-  \begin{interface}[text width=5cm]{PostRepository}{7.5,-17.5}
+  \begin{interface}[text width=5cm]{PostRepository}{12.5,-21}
     \operation{+ findById(id : Long) : Post}
     \operation{+ save(post : Post) : Post}
   \end{interface}
 
-  \begin{interface}[text width=6cm]{UserAccountRepository}{13,-17.5}
+  \begin{interface}[text width=6cm]{UserAccountRepository}{18.5,-21}
     \operation{+ findById(id : Long) : UserAccount}
     \operation{+ save(account : UserAccount) : UserAccount}
   \end{interface}
 
-  \begin{interface}[text width=7.5cm]{BanAppealRepository}{19.5,-17.5}
+  \begin{interface}[text width=6.5cm]{BanAppealRepository}{25,-21}
     \operation{+ findByStatus(status : AppealStatus)}
     \operation{\quad : List\textless BanAppeal\textgreater}
     \operation{+ findById(id : Long) : BanAppeal}
     \operation{+ save(appeal : BanAppeal) : BanAppeal}
   \end{interface}
 
-  \begin{interface}[text width=6cm]{FanRepository}{27.5,-17.5}
+  \begin{interface}[text width=5cm]{FanRepository}{31.5,-21}
     \operation{+ findById(id : Long) : Fan}
     \operation{+ findAll() : List\textless Fan\textgreater}
     \operation{+ save(fan : Fan) : Fan}
   \end{interface}
 
-  \begin{interface}[text width=7cm]{NotificationRepository}{34,-17.5}
-    \operation{+ save(n : Notification) : Notification}
-    \operation{+ findByRecipientIdOrderByCreatedAtDesc(}
-    \operation{\quad recipientId : Long) : List\textless Notification\textgreater}
+  \begin{interface}[text width=6cm]{ArtistApplicationRepository}{37.5,-21}
+    \operation{+ findByStatus(status : String)}
+    \operation{\quad : List\textless ArtistApplication\textgreater}
+    \operation{+ findById(id : Long) : ArtistApplication}
+    \operation{+ save(app : ArtistApplication) : ArtistApplication}
   \end{interface}
 
   % ---------- Relationships ----------
+  \unidirectionalAssociation{ProfileController}{}{1}{ProfileService}
   \unidirectionalAssociation{ReportController}{}{1}{ReportService}
   \unidirectionalAssociation{ModerationController}{}{1}{ModerationService}
 
+  \draw[umlcd style, ->] (ProfileService.south) -- (ProfileRepository.north);
   \draw[umlcd style, ->] (ReportService.south) -- (AccessControlService.north west);
   \draw[umlcd style, ->] (ModerationService.south) -- (AccessControlService.north east);
   \draw[umlcd style, ->] (ReportService.south east) -- (NotificationService.north west);
@@ -321,53 +507,39 @@
   \draw[umlcd style, ->] (ReportService.south) -- (PostRepository.north);
   \draw[umlcd style, ->] (ModerationService.south) -- (BanAppealRepository.north);
   \draw[umlcd style, ->] (ModerationService.south) -- (FanRepository.north);
-  \draw[umlcd style, ->] (NotificationService.south) -- (NotificationRepository.north);
+  \draw[umlcd style, ->] (ModerationService.south) -- (ArtistApplicationRepository.north);
 \end{tikzpicture}}}\end{center}
 
 \clearpage
+% -------------------------------------------------------------------------
+% Subsystem 2 Entities, Request/Response Objects, and Enumerations
+% Realizes:
+%   - UserAccount, Fan, Admin identity hierarchy
+%   - Profile (avatar, theme, privacy)
+%   - Report & BanAppeal moderation entities
+%   - ArtistApplication verification entity
+%   - Role, AccountStatus, AppealStatus, ModerationAction, ReportTargetType enums
+% -------------------------------------------------------------------------
 \subsubsection*{Entities, Request/Response Objects, and Enumerations}
 \begin{center}\rotatebox{90}{\resizebox{0.92\textheight}{!}{%
 \begin{tikzpicture}
-  % ---------- Column 0: Enumerations ----------
-  \begin{class}[text width=4.5cm]{Role}{-6.5,0}
+% ---------- Column 0: User Enumerations ----------
+  \begin{class}[text width=3.8cm]{Role}{-4.5,0}
     \attribute{\emph{$\ll$enumeration$\gg$}}
     \attribute{FAN}
     \attribute{ARTIST}
     \attribute{ADMIN}
   \end{class}
 
-  \begin{class}[text width=4.5cm]{AccountStatus}{-6.5,-3}
+  \begin{class}[text width=3.8cm]{AccountStatus}{-4.5,-4.0}
     \attribute{\emph{$\ll$enumeration$\gg$}}
     \attribute{ACTIVE}
     \attribute{SUSPENDED}
     \attribute{BANNED}
   \end{class}
 
-  \begin{class}[text width=4.5cm]{AppealStatus}{-6.5,-6.2}
-    \attribute{\emph{$\ll$enumeration$\gg$}}
-    \attribute{OPEN}
-    \attribute{APPROVED}
-    \attribute{INVALID}
-  \end{class}
-
-  \begin{class}[text width=4.5cm]{ModerationAction}{-6.5,-9.5}
-    \attribute{\emph{$\ll$enumeration$\gg$}}
-    \attribute{DISMISS}
-    \attribute{WARN\_USER}
-    \attribute{REMOVE\_CONTENT}
-    \attribute{SUSPEND\_USER}
-    \attribute{BAN\_USER}
-  \end{class}
-
-  \begin{class}[text width=4.5cm]{ReportTargetType}{-6.5,-14}
-    \attribute{\emph{$\ll$enumeration$\gg$}}
-    \attribute{POST}
-    \attribute{EVENT}
-    \attribute{USER}
-  \end{class}
-
   % ---------- Column 1: Identity (UserAccount & Fan) ----------
-  \begin{class}[text width=6.5cm]{UserAccount}{0,0}
+  \begin{class}[text width=6.2cm]{UserAccount}{1.2,0}
     \attribute{- id : Long}
     \attribute{- username : String}
     \attribute{- displayName : String}
@@ -380,7 +552,7 @@
     \operation{+ isActive() : boolean}
   \end{class}
 
-  \begin{class}[text width=6.5cm]{Fan}{0,-9}
+  \begin{class}[text width=6.2cm]{Fan}{1.2,-9.5}
     \attribute{- id : Long}
     \attribute{- username : String}
     \attribute{- email : String}
@@ -390,8 +562,27 @@
     \operation{+ isEligibleForAppeal() : boolean}
   \end{class}
 
-  % ---------- Column 2: Moderation (Report & Notification) ----------
-  \begin{class}[text width=7.5cm]{Report}{9,0}
+  % ---------- Column 2: Profile & Verification Application ----------
+  \begin{class}[text width=5.8cm]{Profile}{8.8,0}
+    \attribute{- profileID : Long}
+    \attribute{- avatarURL : String}
+    \attribute{- displayTheme : String}
+    \attribute{- privacySetting : String}
+    \operation{+ updateTheme(theme : String) : void}
+  \end{class}
+
+  \begin{class}[text width=6.2cm]{ArtistApplication}{8.8,-9.5}
+    \attribute{- id : Long}
+    \attribute{- fanId : Long}
+    \attribute{- applicantName : String}
+    \attribute{- proposedGenre : String}
+    \attribute{- portfolioLinks : String}
+    \attribute{- status : String}
+    \attribute{- submittedAt : LocalDateTime}
+  \end{class}
+
+  % ---------- Column 3: Moderation (Report, Requests, Enums, Notification) ----------
+  \begin{class}[text width=7.2cm]{Report}{17.5,0}
     \attribute{- id : Long}
     \attribute{- reporterId : Long}
     \attribute{- targetType : ReportTargetType}
@@ -406,20 +597,36 @@
     \attribute{- resolutionNotes : String [0..1]}
   \end{class}
 
-  \begin{class}[text width=7.5cm]{ResolveReportRequest}{9,-8.5}
+  \begin{class}[text width=5.0cm]{ResolveReportRequest}{14.8,-10.5}
     \attribute{+ action : ModerationAction}
     \attribute{+ notes : String}
   \end{class}
 
-  \begin{class}[text width=7.5cm]{Notification}{9,-12.5}
+  \begin{class}[text width=5.0cm]{Notification}{14.8,-14.2}
     \attribute{- id : Long}
     \attribute{- recipientId : Long}
     \attribute{- message : String}
     \attribute{- createdAt : LocalDateTime}
   \end{class}
 
-  % ---------- Column 3: Fan Appeals ----------
-  \begin{class}[text width=7.5cm]{BanAppeal}{19,0}
+  \begin{class}[text width=4.4cm]{ModerationAction}{20.4,-10.5}
+    \attribute{\emph{$\ll$enumeration$\gg$}}
+    \attribute{DISMISS}
+    \attribute{WARN\_USER}
+    \attribute{REMOVE\_CONTENT}
+    \attribute{SUSPEND\_USER}
+    \attribute{BAN\_USER}
+  \end{class}
+
+  \begin{class}[text width=4.4cm]{ReportTargetType}{20.4,-15.0}
+    \attribute{\emph{$\ll$enumeration$\gg$}}
+    \attribute{POST}
+    \attribute{EVENT}
+    \attribute{USER}
+  \end{class}
+
+  % ---------- Column 4: Fan Appeals & Status ----------
+  \begin{class}[text width=7.5cm]{BanAppeal}{27.5,0}
     \attribute{- id : Long}
     \attribute{- fanId : Long}
     \attribute{- fanUsername : String}
@@ -437,13 +644,194 @@
     \operation{+ canReview(adminId : Long) : boolean}
   \end{class}
 
+  \begin{class}[text width=4.2cm]{AppealStatus}{27.5,-12.5}
+    \attribute{\emph{$\ll$enumeration$\gg$}}
+    \attribute{OPEN}
+    \attribute{APPROVED}
+    \attribute{INVALID}
+  \end{class}
+
   % ---------- Relationships ----------
-  \unidirectionalAssociation{UserAccount}{role}{1}{Role}
-  \unidirectionalAssociation{UserAccount}{status}{1}{AccountStatus}
-  \unidirectionalAssociation{Report}{action}{0..1}{ModerationAction}
-  \unidirectionalAssociation{Report}{targetType}{1}{ReportTargetType}
-  \unidirectionalAssociation{Report}{notifies}{0..2}{Notification}
-  \unidirectionalAssociation{BanAppeal}{status}{1}{AppealStatus}
-  \draw[umlcd style, ->] (BanAppeal.south) -- node[above, font=\small, sloped]{appeals ban for} (Fan.east);
-  \draw[umlcd style, ->] (Report.west) -- node[above, font=\small]{targets} (UserAccount.east);
+  \draw[->, >=angle 90, color=red!70!black] (UserAccount.west) -- node[above, font=\footnotesize]{role} (Role.east);
+  \draw[->, >=angle 90, color=red!70!black] (UserAccount.west) -- node[below, font=\footnotesize]{status} (AccountStatus.east);
+  \draw[->, >=angle 90, color=red!70!black] (UserAccount.east) -- node[above, font=\footnotesize]{profile} (Profile.west);
+
+  \draw[->, >=angle 90, color=red!70!black] (Fan.north) -- node[right, font=\footnotesize]{extends} (UserAccount.south);
+  \draw[->, >=angle 90, color=red!70!black] (ArtistApplication.west) -- node[above=1pt, font=\scriptsize]{submitted by} (Fan.east);
+
+  \draw[->, >=angle 90, color=red!70!black] (Report.south) -- (ResolveReportRequest.north);
+  \draw[->, >=angle 90, color=red!70!black] (Report.south) -- node[above, font=\footnotesize]{action [0..1]} (ModerationAction.north);
+  \draw[->, >=angle 90, color=red!70!black] (Report.east) -- ++(0.8, 0) |- node[pos=0.75, right, font=\footnotesize]{targetType} (ReportTargetType.east);
+  \draw[->, >=angle 90, color=red!70!black] (ResolveReportRequest.south) -- node[right, font=\footnotesize]{notifies [0..2]} (Notification.north);
+  \draw[->, >=angle 90, color=red!70!black] (ResolveReportRequest.east) -- (ModerationAction.west);
+
+  \draw[->, >=angle 90, color=red!70!black] (BanAppeal.south) -- node[right, font=\footnotesize]{status} (AppealStatus.north);
+
+  % Clean overhead route for Report targeting UserAccount (NO fill)
+  \draw[->, >=angle 90, color=red!70!black] (Report.north) -- ++(0, 1.2) -| node[pos=0.25, above, font=\footnotesize]{targets} (UserAccount.north);
+
+  % Clean underflow route for BanAppeal appealing ban for Fan (NO fill)
+  \draw[->, >=angle 90, color=red!70!black] (BanAppeal.south) -- (27.5, -18.5) -- node[pos=0.5, below, font=\footnotesize]{appeals ban for} (1.2, -18.5) -- (Fan.south);
+\end{tikzpicture}}}\end{center}
+
+\clearpage
+\subsection{Community Posts, Media Attachments, and Direct Messaging}
+
+% -------------------------------------------------------------------------
+% Subsystem 3 Controllers, Services, and Repositories
+% Realizes:
+%   - Garrett DeYong: UC Make a Post -- Artist, UC Message Another User, UC Monitor Comments
+%   - Gan-Orgil Gantumur: UC Comment on Artwork -- Fan
+% -------------------------------------------------------------------------
+\subsubsection*{Controllers, Services, and Repositories}
+\begin{center}\rotatebox{90}{\resizebox{0.92\textheight}{!}{%
+\begin{tikzpicture}
+  % ---------- Controllers ----------
+  \begin{class}[text width=11cm]{PostController}{0,0}
+    \operation{+ savePost(postWrapper : PostWrapper) : PostWrapper}
+    \operation{+ getAllPosts() : List\textless Post\textgreater}
+    \operation{+ getAllPostsByUser(posterId : Long) : List\textless Post\textgreater}
+    \operation{+ getPostById(postId : Long) : Post}
+    \operation{+ getAllFiles() : List\textless PostFile\textgreater}
+    \operation{+ getFilesByPostId(postId : Long) : List\textless PostFile\textgreater}
+    \operation{+ getFileById(fileId : Long) : PostFile}
+    \operation{+ commentOnArtwork(postId : Long, fanId : Long, artistId : Long,}
+    \operation{\quad genre : String, content : String) : UserInteraction}
+  \end{class}
+
+  \begin{class}[text width=11cm]{ConversationController}{13.5,0}
+    \operation{+ saveConversation(userWrapper : UserWrapper) : Conversation}
+    \operation{+ saveMessage(messageWrapper : MessageWrapper) : Message}
+    \operation{+ getAllConversations() : List\textless Conversation\textgreater}
+    \operation{+ getConversation(conversationId : Long) : Conversation}
+  \end{class}
+
+  % ---------- Services ----------
+  \begin{class}[text width=11cm]{PostService}{0,-6.5}
+    \operation{+ savePost(postWrapper : PostWrapper) : PostWrapper}
+    \operation{+ getAllPosts() : List\textless Post\textgreater}
+    \operation{+ getAllPostsByUser(posterId : Long) : List\textless Post\textgreater}
+    \operation{+ getPostById(postId : Long) : Post}
+    \operation{+ getAllFiles() : List\textless PostFile\textgreater}
+    \operation{+ getFilesByPostId(postId : Long) : List\textless PostFile\textgreater}
+    \operation{+ getFileById(fileId : Long) : PostFile}
+    \operation{+ addComment(postId : Long, fanId : Long, artistId : Long,}
+    \operation{\quad genre : String, content : String) : UserInteraction}
+  \end{class}
+
+  \begin{class}[text width=11cm]{ConversationService}{13.5,-6.5}
+    \operation{+ saveConversation(userWrapper : UserWrapper) : Conversation}
+    \operation{+ saveMessage(messageWrapper : MessageWrapper) : Message}
+    \operation{+ getAllConversations() : List\textless Conversation\textgreater}
+    \operation{+ getConversationById(conversationId : Long) : Conversation}
+    \operation{+ getConversationByUsers(userWrapper : UserWrapper) : Conversation}
+  \end{class}
+
+  % ---------- Repositories ----------
+  \begin{interface}[text width=6.5cm]{PostRepository}{0,-14}
+    \operation{+ save(post : Post) : Post}
+    \operation{+ findAll() : List\textless Post\textgreater}
+    \operation{+ findByPosterId(posterId : Long)}
+    \operation{\quad : List\textless Post\textgreater}
+    \operation{+ findPostById(id : Long) : Post}
+  \end{interface}
+
+  \begin{interface}[text width=6.5cm]{FileRepository}{7.5,-14}
+    \operation{+ save(file : PostFile) : PostFile}
+    \operation{+ findAll() : List\textless PostFile\textgreater}
+    \operation{+ findByPostId(postId : Long)}
+    \operation{\quad : List\textless PostFile\textgreater}
+    \operation{+ findFileById(id : Long) : PostFile}
+  \end{interface}
+
+  \begin{interface}[text width=8.5cm]{ConversationRepository}{15,-14}
+    \operation{+ save(conversation : Conversation) : Conversation}
+    \operation{+ findAll() : List\textless Conversation\textgreater}
+    \operation{+ findByConversationId(id : Long) : Conversation}
+    \operation{+ findByUserIds(u1 : Long, u2 : Long) : Conversation}
+  \end{interface}
+
+  % ---------- Relationships ----------
+  \unidirectionalAssociation{PostController}{}{1}{PostService}
+  \unidirectionalAssociation{ConversationController}{}{1}{ConversationService}
+
+  \draw[umlcd style, ->] (PostService.south) -- (PostRepository.north);
+  \draw[umlcd style, ->] (PostService.south) -- (FileRepository.north);
+  \draw[umlcd style, ->] (ConversationService.south) -- (ConversationRepository.north);
+\end{tikzpicture}}}\end{center}
+
+\clearpage
+% -------------------------------------------------------------------------
+% Subsystem 3 Entities, Wrappers, and Attachments
+% Realizes:
+%   - Post & PostFile (media attachments, public/private visibility)
+%   - Conversation & Message (direct chat between two users)
+%   - PostWrapper, MessageWrapper, UserWrapper (transport containers)
+% -------------------------------------------------------------------------
+\subsubsection*{Entities, Wrappers, and Attachments}
+\begin{center}\rotatebox{90}{\resizebox{0.92\textheight}{!}{%
+\begin{tikzpicture}
+  % ---------- Column 1: Post & PostFile ----------
+  \begin{class}[text width=6.5cm]{Post}{0,0}
+    \attribute{- id : Long}
+    \attribute{- posterId : Long}
+    \attribute{- postDate : LocalDateTime}
+    \attribute{- isPublic : boolean}
+    \attribute{- commentsAllowed : boolean}
+    \attribute{- postText : String}
+    \attribute{- hidden : boolean}
+  \end{class}
+
+  \begin{class}[text width=6.5cm]{PostFile}{0,-7.5}
+    \attribute{- id : Long}
+    \attribute{- postId : Long}
+    \attribute{- fileName : String}
+    \attribute{- fileType : String}
+    \attribute{- fileData : String}
+  \end{class}
+
+  % ---------- Column 2: PostWrapper ----------
+  \begin{class}[text width=6cm]{PostWrapper}{8,-3.5}
+    \attribute{+ post : Post}
+    \attribute{+ files : List\textless PostFile\textgreater}
+  \end{class}
+
+  % ---------- Column 3: Conversation & Message ----------
+  \begin{class}[text width=6.8cm]{Conversation}{16.5,0}
+    \attribute{- id : Long}
+    \attribute{- conversationId : Long}
+    \attribute{- user1Id : Long}
+    \attribute{- user2Id : Long}
+    \attribute{- createdAt : LocalDateTime}
+    \attribute{- messages : List\textless Message\textgreater}
+  \end{class}
+
+  \begin{class}[text width=6.8cm]{Message}{16.5,-7.5}
+    \attribute{- id : Long}
+    \attribute{- conversationId : Long}
+    \attribute{- senderId : Long}
+    \attribute{- recipientId : Long}
+    \attribute{- content : String}
+    \attribute{- timestamp : LocalDateTime}
+    \attribute{- read : boolean}
+  \end{class}
+
+  % ---------- Column 4: MessageWrapper & UserWrapper ----------
+  \begin{class}[text width=6.2cm]{MessageWrapper}{25,-2}
+    \attribute{+ userWrapper : UserWrapper}
+    \attribute{+ message : Message}
+  \end{class}
+
+  \begin{class}[text width=6.2cm]{UserWrapper}{25,-7.5}
+    \attribute{+ users : List\textless UserAccount\textgreater}
+    \operation{+ getUser(index : int) : UserAccount}
+  \end{class}
+
+  % ---------- Relationships ----------
+  \composition{Post}{files}{0..*}{PostFile}
+  \composition{Conversation}{messages}{0..*}{Message}
+  \draw[umlcd style, ->] (PostWrapper.west) -- (Post.east);
+  \draw[umlcd style, ->] (PostWrapper.west) -- (PostFile.east);
+  \draw[umlcd style, ->] (MessageWrapper.west) -- (Message.east);
+  \draw[umlcd style, ->] (MessageWrapper.south) -- (UserWrapper.north);
 \end{tikzpicture}}}\end{center}
