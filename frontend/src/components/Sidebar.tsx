@@ -16,7 +16,7 @@ export default function Sidebar({ currentUser, setCurrentUser, tab, setTab }: Si
     const navItems = currentUser.role === "Fan"
         ? [{ label: "For You", icon: "✳", tabName: "Recommendations" }, { label: "Discover", icon: "⌕", tabName: "Discover" }]
         : currentUser.role === "Artist"
-            ? [{ label: "Discover", icon: "⌕", tabName: "Discover" }, { label: "Make a post", icon: "＋", tabName: "Make a post" }, { label: "Manage Events", icon: "▦", tabName: "Manage Events" }]
+            ? [{ label: "Discover", icon: "⌕", tabName: "Discover" }, { label: "Make a post", icon: "＋", tabName: "Make a post" }, { label: "Manage Events", icon: "▦", tabName: "Manage Events" }, { label: "Messages", icon: "✉", tabName: "Messages"}]
             : [{ label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" }, { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" }, { label: "Verifications", icon: "✓", tabName: "Verifications" }];
 
     return (

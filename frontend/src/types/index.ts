@@ -75,11 +75,22 @@ export type RecommendationData = {
 };
 
 export type Post = {
-    id: string;
-    text: string;
-    public: boolean;
-    comments: boolean;
-    files: { name: string; type: string; data: string; }[];
+    tempId: string;
+    posterId: number;
+    postText: string;
+    isPublic: boolean;
+    commentsAllowed: boolean;
+};
+
+export type PostFile = {
+    postId: number;
+    type: string;
+    content: string;
+};
+
+export type PostWrapper = {
+    post: Post;
+    files: PostFile[];
 };
 
 export type LocalStore = {
@@ -88,3 +99,18 @@ export type LocalStore = {
     chats: Record<string, string[]>;
     bookings: { artistId: number; details: string }[];
 };
+
+
+export type UserWrapper = {
+    users: Artist[];
+}
+
+export type Message = {
+    senderId: number;
+    messageText: string;
+}
+
+export type MessageWrapper = {
+    userWrapper: UserWrapper;
+    message: Message
+}
