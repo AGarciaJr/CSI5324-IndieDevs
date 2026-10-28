@@ -86,12 +86,12 @@ export type PostFile = {
     postId: number;
     type: string;
     content: string;
-}
+};
 
 export type PostWrapper = {
     post: Post;
     files: PostFile[];
-}
+};
 
 export type LocalStore = {
     posts: Post[];
@@ -99,3 +99,18 @@ export type LocalStore = {
     chats: Record<string, string[]>;
     bookings: { artistId: number; details: string }[];
 };
+
+
+export type UserWrapper = {
+    users: Artist[];
+}
+
+export type Message = {
+    senderId: number;
+    messageText: string;
+}
+
+export type MessageWrapper = {
+    userWrapper: UserWrapper;
+    message: Message
+}

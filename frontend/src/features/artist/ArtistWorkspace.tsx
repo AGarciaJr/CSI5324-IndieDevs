@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
-import {UserPersona, EventItem, Post, PostFile, PostWrapper, LocalStore} from "../../types/index";
+import {UserPersona, EventItem, Post, PostFile, PostWrapper, LocalStore, UserWrapper} from "../../types/index";
 import { API_BASE, emptyEventForm } from "../../constants/index";
+import Link from "next/link";
 
 export default function ArtistWorkspace({ currentUser, tab, store, persistStore }: any) {
     // 1. ARTIST DOMAIN STATE
@@ -20,6 +21,10 @@ export default function ArtistWorkspace({ currentUser, tab, store, persistStore 
     const [eventForm, setEventForm] = useState<Partial<EventItem>>(emptyEventForm());
     const [eventFormErrors, setEventFormErrors] = useState<Record<string, string>>({});
     const [showReviewStep, setShowReviewStep] = useState(false);
+
+    // Message states
+    const [recipientId, setRecipientId] = useState(0);
+    const [messageText, setMessageText] = useState("");
     
 
     // 2. ARTIST LIFECYCLE
@@ -101,7 +106,7 @@ export default function ArtistWorkspace({ currentUser, tab, store, persistStore 
                 },
                 body: JSON.stringify(newPostWrapper),
             }
-        )
+        );
     }
 
     function startEditEvent(ev: EventItem) {
@@ -253,6 +258,33 @@ export default function ArtistWorkspace({ currentUser, tab, store, persistStore 
             return;
         }
         setShowReviewStep(true);
+    }
+
+    // Start a new conversation
+    async function startConversation(e: FormEvent) {
+        e.preventDefault();
+
+        try {
+            const recipient_res = await fetch(`${API_BASE}/api/artists/${recipientId}`);
+            if (!recipient_res.ok) throw new Error("Could not find recipient.");
+            const recipient = await recipient_res.json();
+
+            const userWrapper: UserWrapper = {
+                users: [currentUser, recipient],
+            };
+
+            const response = await fetch(
+                `${API_BASE}/api/conversations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(userWrapper),
+                }
+            );
+
+        } catch {}
     }
 
     return (
@@ -652,6 +684,38 @@ export default function ArtistWorkspace({ currentUser, tab, store, persistStore 
                     )}
                 </div>
             )}
+
+            {/* ========================================================================= */}
+            {/* TAB: MANAGE MESSAGES                                                      */}
+            {/* ========================================================================= */}
+            {tab === "Messages" && (
+                <div className="studio-grid">
+
+                    <form onSubmit={startConversation}>
+                        <label>Start a new conversation</label>
+
+                        <textarea
+                            rows={7}
+                            maxLength={5000}
+                            placeholder={"Type your message here..."}
+                            value={messageText}
+                            onChange={e => setMessageText(e.target.value)}
+                        />
+
+                        <input
+                            aria-label={"Recipient ID"}
+                            type={"text"}
+                            placeholder={"ID of the user to send the message to"}
+                            onChange={e => setRecipientId(e.target.valueAsNumber)}
+                        />
+
+                        <button className={"primary full"}>Send message</button>
+
+                    </form>
+
+                </div>
+            )}
+
         </>
     );
 }
