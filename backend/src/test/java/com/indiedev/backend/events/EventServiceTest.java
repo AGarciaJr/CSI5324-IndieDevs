@@ -15,6 +15,7 @@ import java.util.NoSuchElementException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@org.springframework.transaction.annotation.Transactional
 class EventServiceTest {
 
     @Autowired

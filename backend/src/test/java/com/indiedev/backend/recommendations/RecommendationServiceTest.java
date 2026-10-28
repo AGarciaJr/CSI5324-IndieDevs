@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@org.springframework.transaction.annotation.Transactional
 class RecommendationServiceTest {
 
     @Autowired
