@@ -14,6 +14,8 @@
   \begin{class}[text width=10cm]{EventController}{12,0}
     \operation{+ createEvent(userId : Long, request : CreateEventRequest) : Event}
     \operation{+ getMyEvents(userId : Long) : List\textless Event\textgreater}
+    \operation{+ updateEvent(id : Long, updatedEvent : Event) : Event}
+    \operation{+ getAllEvents() : List\textless Event\textgreater}
   \end{class}
   \begin{class}[text width=10.5cm]{ReportController}{24,0}
     \operation{+ getPendingReports(adminId : Long, type : ReportTargetType) : List\textless Report\textgreater}
@@ -35,7 +37,9 @@
   \begin{class}[text width=10cm]{EventService}{12,-5.5}
     \operation{+ createEvent(userId : Long, request : CreateEventRequest) : Event}
     \operation{+ getEventsForArtist(userId : Long) : List\textless Event\textgreater}
+    \operation{+ updateEvent(eventId : Long, updatedInfo : Event) : Event}
     \operation{\textasciitilde\ validateEvent(request : CreateEventRequest) : void}
+    \operation{- validateEventInput(event : Event) : void}
   \end{class}
   \begin{class}[text width=10.5cm]{ReportService}{24,-5.5}
     \operation{+ getPendingReports(adminId : Long, type : ReportTargetType) : List\textless Report\textgreater}
@@ -68,6 +72,8 @@
   \begin{interface}[text width=7.5cm]{EventRepository}{16,-17.5}
     \operation{+ save(event : Event) : Event}
     \operation{+ findById(id : Long) : Event}
+    \operation{+ findByArtistId(artistId : Long)}
+    \operation{\quad : List\textless Event\textgreater}
     \operation{+ findByArtistIdOrderByStartsAtAsc(}
     \operation{\quad artistId : Long) : List\textless Event\textgreater}
   \end{interface}
@@ -130,20 +136,30 @@
     \attribute{- genre : String}
     \attribute{- location : String}
     \attribute{- profileThumbnail : String}
+    \attribute{- bio : String}
+    \attribute{- tags : String}
+    \attribute{- isSuspended : boolean}
     \attribute{- latitude : Double}
     \attribute{- longitude : Double}
+    \operation{+ isSuspended() : boolean}
   \end{class}
   \begin{class}[text width=6.5cm]{Event}{8.5,0}
     \attribute{- id : Long}
     \attribute{- artistId : Long}
+    \attribute{- eventType : String}
     \attribute{- title : String}
     \attribute{- description : String}
     \attribute{- startsAt : LocalDateTime}
     \attribute{- location : String}
     \attribute{- virtual : boolean}
     \attribute{- capacity : Integer}
+    \attribute{- imageUrl : String}
     \attribute{- status : EventStatus}
+    \attribute{- reviewedAcknowledgment : boolean}
     \attribute{- createdAt : LocalDateTime}
+    \attribute{- updatedAt : LocalDateTime}
+    \operation{+ getEventDate() : LocalDateTime}
+    \operation{+ isReviewedAcknowledgment() : boolean}
   \end{class}
   \begin{class}[text width=4.5cm]{TicketTier}{8.5,-8.5}
     \attribute{- name : String}

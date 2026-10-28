@@ -1,0 +1,339 @@
+@startuml
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam classAttributeIconSize 0
+skinparam defaultFontName "Helvetica, Arial, sans-serif"
+skinparam defaultFontSize 11
+skinparam packageFontSize 12
+skinparam packageFontStyle bold
+skinparam classFontStyle bold
+skinparam nodesep 50
+skinparam ranksep 55
+skinparam linetype ortho
+
+skinparam class {
+  BackgroundColor #FFFFFF
+  ArrowColor #37474F
+  BorderColor #455A64
+  BorderThickness 1.2
+}
+
+' ==============================================================
+' USER & IDENTITY MANAGEMENT
+' ==============================================================
+package "User & Identity Management" #F8F9FA {
+  class UserAccount #E0F2F1 {
+    - id : Long
+    - username : String
+    - displayName : String
+    - role : Role
+    - status : AccountStatus
+    - artistId : Long
+    - latitude : Double
+    - longitude : Double
+    - searchRadiusKm : Double
+    --
+    + isActive() : boolean
+  }
+
+  class Fan #FFFDE7 {
+    - aboutBio : String
+    - banned : boolean
+    - canLogin : boolean
+    - canAppeal : boolean
+    --
+    + followArtist(artist : Artist) : void
+    + submitBanAppeal(reason : String) : BanAppeal
+  }
+
+  class Artist #EDE7F6 {
+    - name : String
+    - genre : String
+    - location : String
+    - bio : String
+    - tags : String
+    - isSuspended : boolean
+    - latitude : Double
+    - longitude : Double
+    --
+    + isSuspended() : boolean
+  }
+
+  class Admin #E0F7FA {
+    - adminLevel : int
+    --
+    + resolveReport(reportId : Long, action : ModerationAction) : void
+    + unbanFan(appealId : Long, notes : String) : void
+    + reviewApplication(appId : Long, approved : boolean) : void
+  }
+
+  enum Role <<enumeration>> #ECEFF1 {
+    FAN
+    ARTIST
+    ADMIN
+  }
+
+  enum AccountStatus <<enumeration>> #ECEFF1 {
+    ACTIVE
+    SUSPENDED
+    BANNED
+  }
+
+  UserAccount <|-- Fan
+  UserAccount <|-- Artist
+  UserAccount <|-- Admin
+  UserAccount --> Role : role
+  UserAccount --> AccountStatus : status
+}
+
+' ==============================================================
+' EVENTS & TICKETING
+' ==============================================================
+package "Events & Ticketing" #F1F8E9 {
+  class Event #DCEDC8 {
+    - id : Long
+    - artistId : Long
+    - eventType : String
+    - title : String
+    - description : String
+    - startsAt : LocalDateTime
+    - location : String
+    - virtual : boolean
+    - capacity : Integer
+    - imageUrl : String
+    - status : EventStatus
+    - reviewedAcknowledgment : boolean
+    - createdAt : LocalDateTime
+    - updatedAt : LocalDateTime
+    --
+    + isVirtual() : boolean
+    + isReviewedAcknowledgment() : boolean
+    + getEventDate() : LocalDateTime
+  }
+
+  class TicketTier #F9FBE7 {
+    - name : String
+    - price : BigDecimal
+    --
+    + getName() : String
+    + getPrice() : BigDecimal
+  }
+
+  enum EventStatus <<enumeration>> #ECEFF1 {
+    DRAFT
+    PENDING_APPROVAL
+    PUBLISHED
+    REMOVED
+  }
+
+  Event "1" *-- "1..*" TicketTier : ticketTiers
+  Event --> EventStatus : status
+}
+
+' ==============================================================
+' MODERATION & BAN APPEALS
+' ==============================================================
+package "Moderation & Fan Appeals" #FFEBEE {
+  class BanAppeal #FFE0B2 {
+    - id : Long
+    - fanId : Long
+    - fanUsername : String
+    - banningAdminId : Long
+    - banningAdminName : String
+    - reviewingAdminId : Long
+    - reason : String
+    - offendingContent : String
+    - reportMaterial : String
+    - aiRecommendation : String
+    - status : AppealStatus
+    - reviewNotes : String
+    - createdAt : LocalDateTime
+    - reviewedAt : LocalDateTime
+    --
+    + canReview(adminId : Long) : boolean
+    + approveUnban(adminId : Long, notes : String) : void
+    + markInvalid(adminId : Long, notes : String) : void
+  }
+
+  class Report #FFCDD2 {
+    - id : Long
+    - reporterId : Long
+    - targetType : ReportTargetType
+    - targetId : Long
+    - reportedUserId : Long
+    - reason : String
+    - status : ReportStatus
+    - action : ModerationAction
+    - resolvedBy : Long
+    - resolvedAt : LocalDateTime
+    - resolutionNotes : String
+    --
+    + isPending() : boolean
+    + applyResolution(action : ModerationAction, adminId : Long) : void
+  }
+
+  class ArtistApplication #F3E5F5 {
+    - id : Long
+    - fanId : Long
+    - applicantName : String
+    - proposedGenre : String
+    - portfolioLinks : String
+    - status : String
+    - submittedAt : LocalDateTime
+    --
+    + approve() : void
+    + reject() : void
+  }
+
+  enum AppealStatus <<enumeration>> #ECEFF1 {
+    OPEN
+    APPROVED
+    INVALID
+  }
+
+  enum ReportStatus <<enumeration>> #ECEFF1 {
+    PENDING
+    RESOLVED
+    DISMISSED
+  }
+
+  enum ReportTargetType <<enumeration>> #ECEFF1 {
+    POST
+    EVENT
+    USER
+  }
+
+  enum ModerationAction <<enumeration>> #ECEFF1 {
+    DISMISS
+    WARN_USER
+    REMOVE_CONTENT
+    SUSPEND_USER
+    BAN_USER
+  }
+
+  BanAppeal --> AppealStatus : status
+  Report --> ReportStatus : status
+  Report --> ReportTargetType : targetType
+  Report --> ModerationAction : action
+}
+
+' ==============================================================
+' RECOMMENDATIONS & DISCOVERY
+' ==============================================================
+package "Recommendations & Discovery" #EDE7F6 {
+  class UserInteraction #D1C4E9 {
+    - id : Long
+    - fanId : Long
+    - artistId : Long
+    - interactionType : String
+    - genre : String
+    - weight : double
+    - timestamp : LocalDateTime
+    --
+    + getWeight() : double
+  }
+
+  class RecommendationDTO #F3E5F5 {
+    - hasInteractions : boolean
+    - message : String
+    - genreAffinityScores : Map<String, Double>
+    - recommendations : List<ArtistRecommendation>
+  }
+
+  class ArtistRecommendation #F3E5F5 {
+    - matchPercentage : double
+    - matchingGenres : List<String>
+    - reason : String
+    - latentFeatureSummary : String
+    --
+    + isTopMatch() : boolean
+  }
+
+  RecommendationDTO "1" *-- "0..*" ArtistRecommendation : recommendations
+}
+
+' ==============================================================
+' COMMUNITY POSTS & MEDIA
+' ==============================================================
+package "Community Posts & Content" #E8F5E9 {
+  class Post #C8E6C9 {
+    - id : Long
+    - posterId : Long
+    - postDate : LocalDateTime
+    - isPublic : boolean
+    - commentsAllowed : boolean
+    - postText : String
+    - hidden : boolean
+    --
+    + hidePost() : void
+  }
+
+  class PostFile #E8F8F5 {
+    - id : Long
+    - fileName : String
+    - fileType : String
+    - fileData : String
+  }
+
+  Post "1" *-- "0..*" PostFile : attachments
+}
+
+' ==============================================================
+' MESSAGING & NOTIFICATIONS
+' ==============================================================
+package "Communication & Notifications" #E1F5FE {
+  class Conversation #B3E5FC {
+    - id : Long
+    - user1Id : Long
+    - user2Id : Long
+    - createdAt : LocalDateTime
+  }
+
+  class Message #E1F5FE {
+    - id : Long
+    - conversationId : Long
+    - senderId : Long
+    - recipientId : Long
+    - content : String
+    - timestamp : LocalDateTime
+    - read : boolean
+    --
+    + markAsRead() : void
+  }
+
+  class Notification #E0F2F1 {
+    - id : Long
+    - recipientId : Long
+    - message : String
+    - createdAt : LocalDateTime
+  }
+
+  Conversation "1" *-- "0..*" Message : messages
+}
+
+' ==============================================================
+' ASSOCIATIONS & RELATIONSHIPS
+' ==============================================================
+Artist "1" --> "0..*" Event : organizes
+Artist "1" --> "0..*" Post : publishes
+Fan "0..*" --> "0..*" Artist : follows
+Fan "0..*" --> "0..*" Event : attends
+
+Fan "1" --> "0..*" BanAppeal : submits
+Admin "1" --> "0..*" BanAppeal : reviews (anti-self-review)
+Admin "1" --> "0..*" Report : resolves
+Fan "1" --> "0..1" ArtistApplication : submits
+Admin "1" --> "0..*" ArtistApplication : evaluates
+
+Fan "1" --> "0..*" UserInteraction : generates
+UserInteraction --> Artist : targets
+ArtistRecommendation --> Artist : recommends
+
+UserAccount "1" --> "0..*" Conversation : participates
+UserAccount "1" --> "0..*" Notification : receives
+
+Report ..> Event : flags
+Report ..> Post : flags
+Report ..> UserAccount : flags
+
+@enduml

@@ -1768,7 +1768,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
 % ============================================================
 \chapter{Design Class Diagram}
 \begin{center}
-  \includegraphics[width=\textwidth, totalheight=15cm, keepaspectratio=false]{designClassDiagram.png}
+  \includegraphics[width=\textwidth, keepaspectratio]{designClassDiagram.png}
 \end{center}
 
 \clearpage
@@ -1777,6 +1777,13 @@ The classes below are the ones used in Alex Garcia's sequence diagrams, with the
 Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService.requireRole}, which only lets an active account with the required role continue.
 
 \input{alex_design_classes.tex}
+
+\clearpage
+\section{Design Classes -- Update Event, Unban Fan, Receive Recommendation}
+The classes below are the ones used in Nicholas Nolen's sequence diagrams, with the operations and types from the implementation.
+These detail the event modification workflow with mandatory review acknowledgment (Extension 6a), the fan ban appeal system with anti-self-review conflict of interest guards, and the personalized recommendation engine driven by weighted fan-artist interaction metrics.
+
+\input{nicholas_design_classes.tex}
 
 % ============================================================
 \chapter{Operation Contracts}
