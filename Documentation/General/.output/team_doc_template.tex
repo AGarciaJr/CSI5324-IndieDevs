@@ -1871,7 +1871,25 @@ JUnit integration tests use Spring Boot, MockMvc, and the H2 database to exercis
 
 Coverage includes valid workflows, role authorization, artist availability, independent fan accounts, privacy filtering, text and image validation, stale edits, storage failures, required report fields, duplicate pending reports, and evidence retained after content deletion. Browser checks additionally verified saved follows after reload, account switching, profile editing and privacy, reporting and administrator resolution, and mobile layout.
 
+Integration tests also strictly govern administrator moderation workflows and cross-domain user interactions. By asserting against baseline H2 database counts, the test suite verifies state transitions for suspending active artists, dynamically provisioning new artist profiles from approved verification applications, and ensuring that fan comments automatically persist with a 3.0 algorithmic weight to power the recommendation engine.
+
 \section{Test Cases Table}
+
+\newcommand{\gantestcase}[6]{%
+\par\medskip\noindent\begin{minipage}{\textwidth}
+\small\renewcommand{\arraystretch}{1.18}%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}|>{\raggedright\arraybackslash}p{\dimexpr0.77\textwidth-4\tabcolsep-3\arrayrulewidth\relax}|}
+\hline
+\textbf{Test Case ID \#} & \textbf{#1} \\ \hline
+\textbf{Assigned Tester} & Gan-Orgil Gantumur \\ \hline
+\textbf{Scenario/Condition} & #2 \\ \hline
+\textbf{Test Inputs} & #3 \\ \hline
+\textbf{Expected Result} & #4 \\ \hline
+\textbf{Actual Result} & #5 \\ \hline
+\textbf{Test Status} & #6 \\ \hline
+\end{tabular}
+\end{minipage}\par\medskip
+}
 
 \newcommand{\williamtestcase}[6]{%
 \par\medskip\noindent\begin{minipage}{\textwidth}
@@ -1888,6 +1906,43 @@ Coverage includes valid workflows, role authorization, artist availability, inde
 \end{tabular}
 \end{minipage}\par\medskip
 }
+
+\clearpage
+\subsection*{Suspend Artist Account -- Administrator}
+\gantestcase
+{GG-SA-01}
+{Admin successfully suspends an active Artist account.}
+{PUT /api/moderation/artists/\{id\}/suspend targeting a valid, unsuspended Artist.}
+{HTTP 200 OK. The JSON response shows suspended=true, and the database reflects the updated state.}
+{Observed HTTP 200 OK with suspended=true. Database query verified the isSuspended flag was persisted as true.}
+{Passed}
+
+\subsection*{Comment on Artwork -- Fan}
+\gantestcase
+{GG-CA-01}
+{Fan successfully comments on an Artist's post, generating a weighted taste profile interaction.}
+{POST /api/posts/\{postId\}/comments with fanId, artistId, genre parameters, and a text body payload.}
+{HTTP 200 OK. The system saves a new UserInteraction entity with type "COMMENT" and a default algorithmic weight of 3.0.}
+{Observed HTTP 200 OK. The UserInteraction table incremented by 1, correctly asserting a weight of 3.0 and automated timestamp creation.}
+{Passed}
+
+\subsection*{Approve Artist Verification Application -- Administrator}
+\gantestcase
+{GG-AV-01}
+{Admin approves a pending Artist Verification application.}
+{PUT /api/moderation/applications/\{id\}/approve targeting an application with status PENDING.}
+{HTTP 200 OK. Application status updates to APPROVED. A new Artist entity is successfully provisioned and verifiable in the ArtistRepository.}
+{Observed HTTP 200 OK. Application status changed to APPROVED. Baseline artist count incremented by 1, and the provisioned artist matched the submitted application details.}
+{Passed}
+
+\gantestcase
+{GG-AV-02}
+{Admin rejects a pending Artist Verification application.}
+{PUT /api/moderation/applications/\{id\}/reject targeting an application with status PENDING.}
+{HTTP 200 OK. Application status updates to REJECTED. No new Artist entity is provisioned in the ArtistRepository.}
+{Observed HTTP 200 OK with status REJECTED. The Artist table count remained unchanged against the baseline, verifying no ghost profiles were created.}
+{Passed}
+
 \clearpage
 \subsection*{Follow Artist -- Fan}
 \williamtestcase
@@ -1904,6 +1959,7 @@ Coverage includes valid workflows, role authorization, artist availability, inde
 {All requests return HTTP 200. Each fan/artist pair has exactly one follow row and one FOLLOW interaction. Repeated requests do not increase the follower count for the same fan.}
 {Both repeated requests and all four concurrent requests returned 200. Database assertions found one relationship and one FOLLOW interaction per tested pair.}
 {Passed}
+
 \clearpage
 \noindent\textbf{Follow Artist -- Fan (continued)}\par
 \williamtestcase
@@ -1920,6 +1976,7 @@ Coverage includes valid workflows, role authorization, artist availability, inde
 {Unauthenticated request returns HTTP 401; artist-role request returns 403. Fan 5 initially sees an empty list. After both fans follow, the shared artist count is exactly 2.}
 {Observed 401 and 403. Fan 5's list was initially empty; its own follow returned followerCount=2 without duplicating either fan's relationship.}
 {Passed}
+
 \clearpage
 \subsection*{Manage Fan Profile -- Fan}
 \williamtestcase
@@ -1936,6 +1993,7 @@ Coverage includes valid workflows, role authorization, artist availability, inde
 {For the public profile, fan 5 receives HTTP 200 without interests or supportedArtists values. Once private, fan 5 receives 404 while the owner still receives 200 with their full profile.}
 {Public response omitted the hidden fields. After the privacy change, the other fan received 404 and the owner retained 200 access.}
 {Passed}
+
 \clearpage
 \noindent\textbf{Manage Fan Profile -- Fan (continued)}\par
 \williamtestcase
@@ -1952,6 +2010,7 @@ Coverage includes valid workflows, role authorization, artist availability, inde
 {The update returns HTTP 503. The transaction rolls back: the profile biography remains Persisted biography and the account display name remains Persisted Name.}
 {Observed HTTP 503. Follow-up database reads confirmed the previous biography and account display name; neither attempted replacement was committed.}
 {Passed}
+
 \clearpage
 \subsection*{Report Inappropriate Content -- Fan}
 \williamtestcase
@@ -1968,6 +2027,7 @@ Coverage includes valid workflows, role authorization, artist availability, inde
 {Missing reason returns HTTP 400. Missing post and unpublished event each return 404. The artist-role request returns 403. No rejected request adds a report; the seeded count stays at 3.}
 {Observed 400, 404, 404, and 403 respectively. Database report count remained three.}
 {Passed}
+
 \clearpage
 \noindent\textbf{Report Inappropriate Content -- Fan (continued)}\par
 \williamtestcase
@@ -1994,6 +2054,7 @@ The previous Section 13 should be modified because it does not align with the ne
 \end{tcolorbox}
 \setlength{\tabcolsep}{3pt}
 \small
+\endgroup
 \subsection*{Previous Section 13: Test Cases (retained for revision)}
 
 % \begin{guidance}[Traceability of tests]

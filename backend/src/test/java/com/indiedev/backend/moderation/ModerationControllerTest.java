@@ -1,7 +1,11 @@
 package com.indiedev.backend.moderation;
 
+import com.indiedev.backend.model.Artist;
+import com.indiedev.backend.model.ArtistApplication;
 import com.indiedev.backend.model.BanAppeal;
 import com.indiedev.backend.model.Fan;
+import com.indiedev.backend.repository.ArtistApplicationRepository;
+import com.indiedev.backend.repository.ArtistRepository;
 import com.indiedev.backend.repository.BanAppealRepository;
 import com.indiedev.backend.repository.FanRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,8 +16,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -31,8 +36,16 @@ class ModerationControllerTest {
     @Autowired
     private BanAppealRepository banAppealRepository;
 
+    @Autowired
+    private ArtistRepository artistRepository;
+
+    @Autowired
+    private ArtistApplicationRepository applicationRepository;
+
     private Fan testFan;
     private BanAppeal testAppeal;
+    private Artist testArtist;
+    private ArtistApplication testApplication;
 
     @BeforeEach
     void setUp() {
@@ -50,6 +63,20 @@ class ModerationControllerTest {
         appeal.setAiRecommendation("Automated AI ToS Recommendation: Behavior appears to be lag-induced duplication. Recommendation: Unban.");
         appeal.setStatus(BanAppeal.AppealStatus.OPEN);
         testAppeal = banAppealRepository.save(appeal);
+
+        Artist artist = new Artist();
+        artist.setName("Neon Dreamer");
+        artist.setGenre("Synthwave");
+        artist.setLocation("Austin, TX");
+        artist.setSuspended(false);
+        testArtist = artistRepository.save(artist);
+
+        ArtistApplication app = new ArtistApplication();
+        app.setFanId(10L);
+        app.setApplicantName("Elena Rodriguez");
+        app.setProposedGenre("Synth-Pop");
+        app.setStatus("PENDING");
+        testApplication = applicationRepository.save(app);
     }
 
     @Test
@@ -120,5 +147,48 @@ class ModerationControllerTest {
                 .andExpect(jsonPath("$.banned").value(true))
                 .andExpect(jsonPath("$.canLogin").value(false))
                 .andExpect(jsonPath("$.canAppeal").value(false));
+    }
+
+    @Test
+    @DisplayName("PUT /api/moderation/artists/{id}/suspend - Successfully suspends an artist")
+    void testSuspendArtist() throws Exception {
+        mockMvc.perform(put("/api/moderation/artists/" + testArtist.getId() + "/suspend"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.suspended").value(true));
+
+        Artist updatedArtist = artistRepository.findById(testArtist.getId()).orElseThrow();
+        assertTrue(updatedArtist.isSuspended());
+    }
+
+    @Test
+    @DisplayName("PUT /api/moderation/applications/{id}/approve - Approves app and provisions artist")
+    void testApproveArtistApplication() throws Exception {
+        // Base state: 6 (from data.sql) + 1 (Neon Dreamer from @BeforeEach) = 7
+        assertEquals(7, artistRepository.count());
+
+        mockMvc.perform(put("/api/moderation/applications/" + testApplication.getId() + "/approve"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+
+        // Verify entity generation contract: 7 existing + 1 newly provisioned = 8
+        assertEquals(8, artistRepository.count());
+        List<Artist> allArtists = artistRepository.findAll();
+        Artist provisioned = allArtists.stream()
+                .filter(a -> "Elena Rodriguez".equals(a.getName()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("Synth-Pop", provisioned.getGenre());
+    }
+
+    @Test
+    @DisplayName("PUT /api/moderation/applications/{id}/reject - Rejects app without provisioning")
+    void testRejectArtistApplication() throws Exception {
+        mockMvc.perform(put("/api/moderation/applications/" + testApplication.getId() + "/reject"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJECTED"));
+
+        // Ensure no new artist was provisioned (count remains 7)
+        assertEquals(7, artistRepository.count());
     }
 }

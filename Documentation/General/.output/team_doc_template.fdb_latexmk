@@ -1,11 +1,10 @@
 # Fdb version 4
-["pdflatex"] 1793235866.07135 "/Users/gan/Documents/csi-meng/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" "team_doc_template.pdf" "team_doc_template" 1793235871.11437 0
+["pdflatex"] 1793239970.50939 "/Users/gan/Documents/csi-meng/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" "team_doc_template.pdf" "team_doc_template" 1793239975.39452 2
   "../../UseCaseDiagram/UseCaseDiagram-PUML.pdf" 1792015479.21821 3541 4452d8ecc3f5011b9428af9007a32478 ""
-  "/Users/gan/Documents/csi-meng/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" 1793235865.8573 108956 612d5841c783d780e5d272ede491d9c8 ""
+  "/Users/gan/Documents/csi-meng/CSI5324-IndieDevs/Documentation/General/.output/team_doc_template.tex" 1793239813.22585 112060 b0b72b4a20274b4c553463060c1e6858 ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/tfm/jknappen/ec/tcbx1440.tfm" 1136768653 1536 31d7b1d6f1ef88de2aa925487cab16c7 ""
-  "/usr/local/texlive/2026basic/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/tfm/jknappen/ec/tcrm1095.tfm" 1136768653 1536 02c06700a42be0f5a28664c7273f82e7 ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/tfm/public/cm/cmbsy10.tfm" 1136768653 1116 4e6ba9d7914baa6482fd69f67d126380 ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/tfm/public/cm/cmbx10.tfm" 1136768653 1328 c834bbb027764024c09d3d2bf908b5f0 ""
@@ -40,7 +39,6 @@
   "/usr/local/texlive/2026basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb" 1248133631 31099 c85edf1dd5b9e826d67c9c7293b6786c ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb" 1248133631 24252 1e4e051947e12dfb50fee0b7f4e26e3a ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb" 1215737283 135942 859a90cad7494a1e79c94baf546d7de5 ""
-  "/usr/local/texlive/2026basic/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb" 1215737283 138258 6525c253f16cededa14c7fd0da7f67b2 ""
   "/usr/local/texlive/2026basic/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb" 1215737283 145929 f25e56369a345c4ff583b067cd87ce8e ""
   "/usr/local/texlive/2026basic/texmf-dist/tex/context/base/mkii/supp-pdf.mkii" 1461363279 71627 94eb9990bed73c364d7f53f960cc8c5b ""
   "/usr/local/texlive/2026basic/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty" 1576625341 40635 c40361e206be584d448876bba8a64a3b ""
@@ -185,10 +183,10 @@
   "SearchforArtist-screenshot.png" 1792015479.20541 159350 3a12dcc7098ac95541fdbd0e59489ada ""
   "alex_design_classes.tex" 1793144013.26455 10688 b9394a8cf1e3b9c6dfb3b264ecc205f0 ""
   "designClassDiagram.png" 1792024696.41787 544582 60597b2c22db4bffc585676f44ebc39d ""
-  "team_doc_template.aux" 1793235870.96226 10922 fde4350908323c41a0ab2e12d25bcbc2 "pdflatex"
-  "team_doc_template.out" 1793235870.96399 12069 0d6144e3b4ea09f8ba7f8e3eef747660 "pdflatex"
-  "team_doc_template.tex" 1793235865.8573 108956 612d5841c783d780e5d272ede491d9c8 ""
-  "team_doc_template.toc" 1793235870.9644 5738 9fcfaf7eb3dc84b8e3d9807303969bf1 "pdflatex"
+  "team_doc_template.aux" 1793239975.20896 10921 f95f6743326d760def4daed19a375fa2 "pdflatex"
+  "team_doc_template.out" 1793239975.21049 12069 0d6144e3b4ea09f8ba7f8e3eef747660 "pdflatex"
+  "team_doc_template.tex" 1793239813.22585 112060 b0b72b4a20274b4c553463060c1e6858 ""
+  "team_doc_template.toc" 1793239975.21083 5737 124b63538bb0e01999ff2e20813cc0d4 "pdflatex"
   "updated-ui-initial-draft.png" 1791479494.30355 2186125 deb8e167a5b8b318b423c0ec2bc13c90 ""
   (generated)
   "team_doc_template.aux"
