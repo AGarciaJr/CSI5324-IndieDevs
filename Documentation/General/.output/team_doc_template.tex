@@ -103,38 +103,27 @@
 \begin{document}
 
 \maketitle
-\tableofcontents
 
 % ============================================================
-%\chapter*{Change Log}
-\addcontentsline{toc}{chapter}{Change Log}
+\chapter*{Change Logs}
+\addcontentsline{toc}{chapter}{Change Logs}
 
-% \begin{guidance}[Treating early iterations as "draft"]
-% Do not use placeholder text or "to be decided" sections anywhere in this
-% document. Each iteration should be written as a complete, reviewable
-% deliverable -- assume it is final unless a later iteration explicitly
-% revises it.
-% \end{guidance}
 
-%\textbf{Iteration 1:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in Iteration 1}
-%\end{itemize}
+\section*{Iteration I}
+\begin{itemize}
+  \item \textbf{Documentation Changes:} Defined the project overview, functional/non-functional requirements, user stories, and identified key technical risks.
+  \item \textbf{Functional Requirements:} Authored 15 fully-dressed use cases covering core workflows for Fans, Artists, and Admins.
+  \item \textbf{Design Changes:} Developed the conceptual system Domain Model, Use Case Diagram, and initial UI Mockups for core screens.
+\end{itemize}
 
-%\textbf{Iteration 2:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in Iteration 2}
-%\end{itemize}
+\section*{Iteration II}
+\begin{itemize}
+  \item \textbf{Functional \& Design Changes:} Designed the backend architecture, objects, and logic for the features that were defined and assigned in Iteration I.
+  \item \textbf{Documentation (Sequence Diagrams):} Created detailed Sequence Diagrams for all team member use cases, mapping interactions between actors, Controllers, Services, and Repositories.
+  \item \textbf{Documentation (Architecture):} Built the Design Class Diagram and formalized Operation Contracts for core backend operations (\texttt{searchArtists}, \texttt{resolveReport}, \texttt{createEvent}).
+\end{itemize}
 
-%\textbf{Iteration 3:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in Iteration 3}
-%\end{itemize}
-
-%\textbf{Final Iteration:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in the Final Iteration}
-%\end{itemize}
+\tableofcontents
 
 
 % ============================================================
@@ -1777,6 +1766,41 @@ Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService
 
 \input{alex_design_classes.tex}
 
+
+% ============================================================
+\chapter{Implementation Overview}
+
+This section explains how the backend system is implemented at a high level. The ArtistConnect backend is built using a layered, three-tier architecture in Java, dividing responsibilities into distinct packages for data routing, business logic, and database persistence.
+
+\section{Architecture}
+
+The system architecture is strictly organized into major layers, each with a single, well-defined responsibility. This separation of concerns ensures that the application is scalable, testable, and easier to maintain.
+
+\begin{itemize}
+  \item \textbf{Controller Layer (\texttt{controller/}):} This layer serves as the entry point for the REST API. It handles incoming HTTP requests, extracts parameters and payloads (such as JSON data), delegates processing to the appropriate services, and returns formatted HTTP responses. It includes domain-specific controllers (e.g., \texttt{ArtistController}, \texttt{EventController}, \texttt{ReportController}) and utility classes like \texttt{CurrentUser} for session and identity management.
+  
+  \item \textbf{Service Layer (\texttt{service/}):} The service layer acts as the "brain" of the application, containing all core business logic and workflows. It enforces business rules, verifies permissions, and coordinates data flow between multiple repositories. For example, \texttt{EventService} handles the logic of drafting or publishing an event, while \texttt{AccessControlService} strictly enforces role-based permissions before any action occurs.
+  
+  \item \textbf{Repository Layer (\texttt{repository/}):} This data access layer handles all database persistence. It isolates the rest of the application from the underlying database technologies (e.g., SQL queries). By utilizing interfaces (like \texttt{EventRepository} or \texttt{UserAccountRepository}), it provides clean methods for creating, reading, updating, and deleting domain entities.
+  
+  \item \textbf{Domain Model (\texttt{model/}):} This package defines the core entities of the application that map to database tables (e.g., \texttt{UserAccount}, \texttt{Event}, \texttt{Post}, \texttt{Report}). It also contains critical enumerations (\texttt{Role}, \texttt{AccountStatus}, \texttt{ReportStatus}) that govern application state.
+  
+  \item \textbf{Data Transfer Object Layer (\texttt{dto/}):} This layer contains strictly typed objects used to pass data between the client and server (e.g., \texttt{CreateEventRequest}, \texttt{ArtistSearchCriteria}). They act as the public API contract, completely decoupled from the internal database models.
+\end{itemize}
+
+\section{Key Design Decisions}
+
+During the implementation of Iteration II, several important structural choices were made to support the specific functional and non-functional requirements of the ArtistConnect platform:
+
+\begin{itemize}
+  \item \textbf{Centralized Access Control:} Rather than checking permissions ad-hoc inside every controller, we implemented a dedicated \texttt{AccessControlService}. Because ArtistConnect relies heavily on strict Role-Based Access Control (Admins, Artists, Fans) and account states (Suspended, Banned, Active), funneling all authorization checks through a single service prevents security oversights and reduces code duplication.
+
+  \item \textbf{Separation of Models and DTOs:} We intentionally decoupled our database entities (\texttt{model/}) from our API payloads (\texttt{dto/}). Using classes like \texttt{CreateEventRequest} instead of accepting a raw \texttt{Event} object prevents over-posting attacks, hides sensitive internal attributes (like database IDs or password hashes) from the frontend, and allows us to validate incoming data safely before mapping it to a persistent entity.
+
+  \item \textbf{Domain-Driven Service Segregation:} Instead of a monolithic \texttt{UserService} handling everything, the logic is highly segregated into bounded contexts (e.g., \texttt{FanCommunityService}, \texttt{ModerationService}, \texttt{ConversationService}, \texttt{PostService}). This adheres to the Single Responsibility Principle (SRP) and ensures that, for instance, the complex logic for messaging and notifications does not bloat the core artist discovery logic.
+
+  \item \textbf{Dedicated Moderation Subsystem:} Content safety was identified as a key risk in Iteration I. In response, we designed a dedicated moderation ecosystem (\texttt{Report}, \texttt{ReportEvidence}, \texttt{ReportController}, \texttt{ModerationService}). By isolating moderation into its own pipeline, we can more easily integrate future AI-based moderation tools and provide Administrators with clean, auditable queues of user conduct reports.
+\end{itemize}
 % ============================================================
 \chapter{Operation Contracts}
 
