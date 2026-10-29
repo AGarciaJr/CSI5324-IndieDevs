@@ -6,10 +6,10 @@ package com.indiedev.backend.model;
 import java.util.ArrayList;
 
 public class UserWrapper {
-    private final ArrayList<Artist> users;
+    private final ArrayList<User> users;
 
-    public UserWrapper(ArrayList<Artist> users) { this.users = users;}
+    public UserWrapper(ArrayList<User> users) { this.users = users;}
 
-    public Artist getUser(int idx) { return users.get(idx); }
+    public User getUser(int idx) { return users.get(idx); }
 
 }

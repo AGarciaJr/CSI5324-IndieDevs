@@ -16,8 +16,6 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private String tempId;
-
     private Long posterId;
     private LocalDateTime postDate;
 
@@ -27,7 +25,7 @@ public class Post {
     private String postText;
 
     // Set when an admin removes the post after a report
-    private boolean hidden = false;
+    private boolean hidden;
 
     public Post() {
         postDate = LocalDateTime.now();
