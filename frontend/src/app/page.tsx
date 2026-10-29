@@ -99,6 +99,20 @@ type Post = {
     }[];
 };
 
+type UserWrapper = {
+    users: Artist[];
+}
+
+type Message = {
+    senderId: number;
+    messageText: string;
+}
+
+type MessageWrapper = {
+    userWrapper: UserWrapper;
+    message: Message
+}
+
 type LocalStore = {
     posts: Post[];
     follows: number[];
@@ -190,6 +204,10 @@ export default function Home() {
     // Use Case 3: Receive Recommendation State (Fan)
     const [recommendationData, setRecommendationData] = useState<RecommendationData | null>(null);
     const [loadingRecs, setLoadingRecs] = useState(false);
+
+    // Message states
+    const [recipientId, setRecipientId] = useState(0);
+    const [messageText, setMessageText] = useState("");
 
     // Initialize local demo data & verify backend connection
     useEffect(() => {
@@ -790,6 +808,34 @@ export default function Home() {
         setNotice("Your post has been published to your profile!");
     }
 
+    // Start a new conversation
+    async function startConversation(e: FormEvent) {
+        e.preventDefault();
+
+        try {
+            const recipient_res = await fetch(`${API_BASE}/api/artists/${recipientId}`);
+            if (!recipient_res.ok) throw new Error("Could not find recipient.");
+            const recipient = await recipient_res.json();
+
+            const userWrapper: UserWrapper = {
+                users: [currentUser, recipient],
+            };
+
+            const response = await fetch(
+                `${API_BASE}/api/conversations`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(userWrapper),
+                }
+            );
+
+        } catch {}
+    }
+
+
     // Map legacy UI personas to UserAccount ids for the header-based account mechanism.
     const backendAccountId = userAccountId(currentUser);
 
@@ -807,6 +853,7 @@ export default function Home() {
                 { label: "Discover", icon: "⌕", tabName: "Discover" },
                 { label: "Make a post", icon: "＋", tabName: "Make a post" },
                 { label: "Manage Events", icon: "▦", tabName: "Manage Events" },
+                { label: "Messages", icon: "✉", tabName: "Messages"},
             ]
             : [
                 { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
@@ -1858,6 +1905,35 @@ export default function Home() {
                             )}
                         </div>
                     )}
+
+                    {tab === "Messages" && (
+                        <div className="studio-grid">
+
+                            <form onSubmit={startConversation}>
+                                <label>Start a new conversation</label>
+
+                                <textarea
+                                    rows={7}
+                                    maxLength={5000}
+                                    placeholder={"Type your message here..."}
+                                    value={messageText}
+                                    onChange={e => setMessageText(e.target.value)}
+                                />
+
+                                <input
+                                    aria-label={"Recipient ID"}
+                                    type={"text"}
+                                    placeholder={"ID of the user to send the message to"}
+                                    onChange={e => setRecipientId(e.target.valueAsNumber)}
+                                />
+
+                                <button className={"primary full"}>Send message</button>
+
+                            </form>
+
+                        </div>
+                    )}
+
                 </main>
 
                 <footer>
