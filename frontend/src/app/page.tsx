@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import { UserPersona, LocalStore, Artist } from "../types/index";
 import { API_BASE, STORE_KEY, PERSONAS, initialStore } from "../constants/index";
+import Link from "next/link";
+import { FanCommunityProvider, FollowButton, FollowingPanel, FanProfilePanel, FanReportsPanel, ReportArtistButton, AdminReportsPanel } from "../components/fan-community";
+import { useEffect, useState, type FormEvent } from "react";
 
 // Components
 import Sidebar from "../components/Sidebar";
@@ -15,6 +18,12 @@ export default function Home() {
     // Global State
     const [currentUser, setCurrentUser] = useState<UserPersona>(PERSONAS[0]); // Nicholas Nolen (Fan)
     const [tab, setTab] = useState("Recommendations");
+    const [showAccountMenu, setShowAccountMenu] = useState(false);
+
+    // Active Navigation Tab
+    const [tab, setTab] = useState("Discover");
+
+    // General app state
     const [store, setStore] = useState<LocalStore>(initialStore);
     const [backendConnected, setBackendConnected] = useState<boolean | null>(null);
 
@@ -30,6 +39,7 @@ export default function Home() {
 
     // Initialize local demo data & verify backend connection
     useEffect(() => {
+        const timer = setTimeout(() => {
         try {
             const saved = localStorage.getItem(STORE_KEY);
             if (saved) {
@@ -49,6 +59,8 @@ export default function Home() {
                 else setBackendConnected(false);
             })
             .catch(() => setBackendConnected(false));
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // Routing Guardrails (Protecting tabs on persona switch)
@@ -59,6 +71,7 @@ export default function Home() {
     }, [currentUser, tab]);
 
     return (
+        <FanCommunityProvider key={`${backendAccountId}-${currentUser.role}`} accountId={backendAccountId} role={currentUser.role}>
         <div className="app-shell">
             <Sidebar 
                 currentUser={currentUser} 
@@ -103,5 +116,6 @@ export default function Home() {
                 />
             )}
         </div>
+        </FanCommunityProvider>
     );
 }

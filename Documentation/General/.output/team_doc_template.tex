@@ -103,38 +103,27 @@
 \begin{document}
 
 \maketitle
-\tableofcontents
 
 % ============================================================
-%\chapter*{Change Log}
-\addcontentsline{toc}{chapter}{Change Log}
+\chapter*{Change Logs}
+\addcontentsline{toc}{chapter}{Change Logs}
 
-% \begin{guidance}[Treating early iterations as "draft"]
-% Do not use placeholder text or "to be decided" sections anywhere in this
-% document. Each iteration should be written as a complete, reviewable
-% deliverable -- assume it is final unless a later iteration explicitly
-% revises it.
-% \end{guidance}
 
-%\textbf{Iteration 1:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in Iteration 1}
-%\end{itemize}
+\section*{Iteration I}
+\begin{itemize}
+  \item \textbf{Documentation Changes:} Defined the project overview, functional/non-functional requirements, user stories, and identified key technical risks.
+  \item \textbf{Functional Requirements:} Authored 15 fully-dressed use cases covering core workflows for Fans, Artists, and Admins.
+  \item \textbf{Design Changes:} Developed the conceptual system Domain Model, Use Case Diagram, and initial UI Mockups for core screens.
+\end{itemize}
 
-%\textbf{Iteration 2:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in Iteration 2}
-%\end{itemize}
+\section*{Iteration II}
+\begin{itemize}
+  \item \textbf{Functional \& Design Changes:} Designed the backend architecture, objects, and logic for the features that were defined and assigned in Iteration I.
+  \item \textbf{Documentation (Sequence Diagrams):} Built the Design Class Diagram. Created detailed Sequence Diagrams for all team member use cases, mapping interactions between actors, Controllers, Services, and Repositories.
+  \item \textbf{Quality Assurance:} Defined and documented automated backend test cases for Iteration 2 scenarios mapping to standard and alternative use case flows.
+\end{itemize}
 
-%\textbf{Iteration 3:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in Iteration 3}
-%\end{itemize}
-
-%\textbf{Final Iteration:}
-%\begin{itemize}
-%  \item \fillin{What was created/changed in the Final Iteration}
-%\end{itemize}
+\tableofcontents
 
 
 % ============================================================
@@ -735,8 +724,7 @@ Existing platforms generally focus on a single medium (e.g., SoundCloud) or cate
     \begin{enumerate}
       \item A fan selects the option to display artists they might like.
       \item The system retrieves the artists a fan has previously interacted with (e.g. viewed profiles, liking posts, commenting on posts, etc.).
-      \item The system constructs a numerical score for each of the types and genres of content the user interacts with.
-      \item The system uses an AI process to find artists with similar content to the user’s most interacted with types.
+      \item The system utilizes an algorithm to determine artists similar to the fan's most interacted with artists.
       \item The system displays a list of artists to the user.
 
     \end{enumerate}
@@ -1778,6 +1766,41 @@ Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService
 
 \input{alex_design_classes.tex}
 
+
+% ============================================================
+\chapter{Implementation Overview}
+
+This section explains how the backend system is implemented at a high level. The ArtistConnect backend is built using a layered, three-tier architecture in Java, dividing responsibilities into distinct packages for data routing, business logic, and database persistence.
+
+\section{Architecture}
+
+The system architecture is strictly organized into major layers, each with a single, well-defined responsibility. This separation of concerns ensures that the application is scalable, testable, and easier to maintain.
+
+\begin{itemize}
+  \item \textbf{Controller Layer (\texttt{controller/}):} This layer serves as the entry point for the REST API. It handles incoming HTTP requests, extracts parameters and payloads (such as JSON data), delegates processing to the appropriate services, and returns formatted HTTP responses. It includes domain-specific controllers (e.g., \texttt{ArtistController}, \texttt{EventController}, \texttt{ReportController}) and utility classes like \texttt{CurrentUser} for session and identity management.
+  
+  \item \textbf{Service Layer (\texttt{service/}):} The service layer acts as the "brain" of the application, containing all core business logic and workflows. It enforces business rules, verifies permissions, and coordinates data flow between multiple repositories. For example, \texttt{EventService} handles the logic of drafting or publishing an event, while \texttt{AccessControlService} strictly enforces role-based permissions before any action occurs.
+  
+  \item \textbf{Repository Layer (\texttt{repository/}):} This data access layer handles all database persistence. It isolates the rest of the application from the underlying database technologies (e.g., SQL queries). By utilizing interfaces (like \texttt{EventRepository} or \texttt{UserAccountRepository}), it provides clean methods for creating, reading, updating, and deleting domain entities.
+  
+  \item \textbf{Domain Model (\texttt{model/}):} This package defines the core entities of the application that map to database tables (e.g., \texttt{UserAccount}, \texttt{Event}, \texttt{Post}, \texttt{Report}). It also contains critical enumerations (\texttt{Role}, \texttt{AccountStatus}, \texttt{ReportStatus}) that govern application state.
+  
+  \item \textbf{Data Transfer Object Layer (\texttt{dto/}):} This layer contains strictly typed objects used to pass data between the client and server (e.g., \texttt{CreateEventRequest}, \texttt{ArtistSearchCriteria}). They act as the public API contract, completely decoupled from the internal database models.
+\end{itemize}
+
+\section{Key Design Decisions}
+
+During the implementation of Iteration II, several important structural choices were made to support the specific functional and non-functional requirements of the ArtistConnect platform:
+
+\begin{itemize}
+  \item \textbf{Centralized Access Control:} Rather than checking permissions ad-hoc inside every controller, we implemented a dedicated \texttt{AccessControlService}. Because ArtistConnect relies heavily on strict Role-Based Access Control (Admins, Artists, Fans) and account states (Suspended, Banned, Active), funneling all authorization checks through a single service prevents security oversights and reduces code duplication.
+
+  \item \textbf{Separation of Models and DTOs:} We intentionally decoupled our database entities (\texttt{model/}) from our API payloads (\texttt{dto/}). Using classes like \texttt{CreateEventRequest} instead of accepting a raw \texttt{Event} object prevents over-posting attacks, hides sensitive internal attributes (like database IDs or password hashes) from the frontend, and allows us to validate incoming data safely before mapping it to a persistent entity.
+
+  \item \textbf{Domain-Driven Service Segregation:} Instead of a monolithic \texttt{UserService} handling everything, the logic is highly segregated into bounded contexts (e.g., \texttt{FanCommunityService}, \texttt{ModerationService}, \texttt{ConversationService}, \texttt{PostService}). This adheres to the Single Responsibility Principle (SRP) and ensures that, for instance, the complex logic for messaging and notifications does not bloat the core artist discovery logic.
+
+  \item \textbf{Dedicated Moderation Subsystem:} Content safety was identified as a key risk in Iteration I. In response, we designed a dedicated moderation ecosystem (\texttt{Report}, \texttt{ReportEvidence}, \texttt{ReportController}, \texttt{ModerationService}). By isolating moderation into its own pipeline, we can more easily integrate future AI-based moderation tools and provide Administrators with clean, auditable queues of user conduct reports.
+\end{itemize}
 % ============================================================
 \chapter{Operation Contracts}
 
@@ -1840,7 +1863,138 @@ Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService
 \end{description}
 
 % ============================================================
-\chapter{Test Cases}
+\chapter{Testing}
+\section{JUnit Testing Summary}
+This section documents testing of each member's implemented use cases.
+
+JUnit integration tests use Spring Boot, MockMvc, and the H2 database to exercise the controller, service, repository, and existing administrator-report integration. The tests check HTTP responses and stored records, rather than relying only on interface messages. Mockito simulates a repository write failure to verify transaction rollback. Concurrent requests verify duplicate protection.
+
+Coverage includes valid workflows, role authorization, artist availability, independent fan accounts, privacy filtering, text and image validation, stale edits, storage failures, required report fields, duplicate pending reports, and evidence retained after content deletion. Browser checks additionally verified saved follows after reload, account switching, profile editing and privacy, reporting and administrator resolution, and mobile layout.
+
+\section{Test Cases Table}
+
+\newcommand{\williamtestcase}[6]{%
+\par\medskip\noindent\begin{minipage}{\textwidth}
+\small\renewcommand{\arraystretch}{1.18}%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}|>{\raggedright\arraybackslash}p{\dimexpr0.77\textwidth-4\tabcolsep-3\arrayrulewidth\relax}|}
+\hline
+\textbf{Test Case ID \#} & \textbf{#1} \\ \hline
+\textbf{Assigned Tester} & William Waweru \\ \hline
+\textbf{Scenario/Condition} & #2 \\ \hline
+\textbf{Test Inputs} & #3 \\ \hline
+\textbf{Expected Result} & #4 \\ \hline
+\textbf{Actual Result} & #5 \\ \hline
+\textbf{Test Status} & #6 \\ \hline
+\end{tabular}
+\end{minipage}\par\medskip
+}
+\clearpage
+\subsection*{Follow Artist -- Fan}
+\williamtestcase
+{WW-FA-01}
+{Follow an active artist and retrieve the relationship; then unfollow.}
+{Active fan account 1; active artist 1 (Luna Park). Send PUT to the follow endpoint, GET the following list and own profile, then DELETE the follow.}
+{PUT returns HTTP 200 with following=true and followerCount=1. Both lists contain artist 1. DELETE returns 204; the next follow-state read reports followerCount=0.}
+{Observed HTTP 200 and one follower; Luna Park appeared in both lists. Unfollow returned 204 and the count became 0.}
+{Passed}
+\williamtestcase
+{WW-FA-02}
+{Repeated and concurrent follow requests must not create duplicate relationships.}
+{Send the same follow request twice for fan 1 / artist 1. In a separate test, send four simultaneous PUT requests for fan 5 / artist 6.}
+{All requests return HTTP 200. Each fan/artist pair has exactly one follow row and one FOLLOW interaction. Repeated requests do not increase the follower count for the same fan.}
+{Both repeated requests and all four concurrent requests returned 200. Database assertions found one relationship and one FOLLOW interaction per tested pair.}
+{Passed}
+\clearpage
+\noindent\textbf{Follow Artist -- Fan (continued)}\par
+\williamtestcase
+{WW-FA-03}
+{Reject a suspended artist, a banned artist account, and an unknown artist.}
+{Fan 1 attempts to follow artist 1 with its suspension flag set; retries after clearing that flag and banning the linked artist account; also requests artist 9999.}
+{Suspended and banned cases each return HTTP 409. The unknown artist returns 404. No follow relationship is stored for any rejected request.}
+{Observed 409 for each unavailable-artist case and 404 for artist 9999. Follow repository count remained zero.}
+{Passed}
+\williamtestcase
+{WW-FA-04}
+{Enforce fan authorization and keep different fans' following lists independent.}
+{Follow artist 1 with no acting-account header and then artist account 2. Separately, fan 1 follows artist 1; inspect fan 5's list before fan 5 follows the same artist.}
+{Unauthenticated request returns HTTP 401; artist-role request returns 403. Fan 5 initially sees an empty list. After both fans follow, the shared artist count is exactly 2.}
+{Observed 401 and 403. Fan 5's list was initially empty; its own follow returned followerCount=2 without duplicating either fan's relationship.}
+{Passed}
+\clearpage
+\subsection*{Manage Fan Profile -- Fan}
+\williamtestcase
+{WW-MFP-01}
+{Save valid profile text and a valid uploaded profile image.}
+{Fan 1 saves display name New Fan Name, biography Love independent art, interests Jazz and art, and valid privacy values. A separate request uploads a generated 2-by-2-pixel PNG as a data URL.}
+{Each valid update returns HTTP 200. Subsequent profile reads return the saved text and exactly the uploaded PNG data URL. Publicly enabled interests and image are visible to fan 5.}
+{Observed 200 for valid updates. Saved text and image matched the submitted values; fan 5 retrieved the enabled public fields.}
+{Passed}
+\williamtestcase
+{WW-MFP-02}
+{Apply field-level and whole-profile privacy on the server.}
+{Fan 1 saves a public profile with showInterests=false and showFollowing=false. Fan 5 requests that profile. Fan 1 then sets publicProfile=false; repeat reads as fan 5 and as the owner.}
+{For the public profile, fan 5 receives HTTP 200 without interests or supportedArtists values. Once private, fan 5 receives 404 while the owner still receives 200 with their full profile.}
+{Public response omitted the hidden fields. After the privacy change, the other fan received 404 and the owner retained 200 access.}
+{Passed}
+\clearpage
+\noindent\textbf{Manage Fan Profile -- Fan (continued)}\par
+\williamtestcase
+{WW-MFP-03}
+{Reject invalid content, malformed images, and stale edits without replacing valid data.}
+{After saving Saved Name / Saved bio, submit a blank name and then a biography containing script markup. Separately submit a malformed PNG data URL and a profile update carrying an outdated version.}
+{Blank-name, prohibited-content, and malformed-image requests return HTTP 400. The blank-name response identifies displayName. A stale version returns 409. Rejected requests preserve the previous stored profile.}
+{Observed 400 with a displayName field error, 400 for script markup and malformed PNG data, and 409 for the stale edit. Stored Saved Name / Saved bio remained unchanged after the invalid text requests.}
+{Passed}
+\williamtestcase
+{WW-MFP-04}
+{Preserve both profile and account data when a database write fails.}
+{Save Persisted Name / Persisted biography for fan 1. Configure the profile repository spy to throw a database write exception, then attempt to save Must roll back / Must not persist.}
+{The update returns HTTP 503. The transaction rolls back: the profile biography remains Persisted biography and the account display name remains Persisted Name.}
+{Observed HTTP 503. Follow-up database reads confirmed the previous biography and account display name; neither attempted replacement was committed.}
+{Passed}
+\clearpage
+\subsection*{Report Inappropriate Content -- Fan}
+\williamtestcase
+{WW-RIC-01}
+{Submit a valid report and make it available to the existing administrator queue.}
+{Fan 1 reports published EVENT 2 with reason Spam and details Please review this context. Admin account 3 retrieves the pending report queue.}
+{Submission returns HTTP 201 with status=PENDING and reportedUserId=2. The saved snapshot includes Austin Acoustic Night. The seeded three-report admin queue increases to four.}
+{Observed 201, PENDING, owner account 2, and the expected event snapshot. The admin queue contained four reports, including the new submission.}
+{Passed}
+\williamtestcase
+{WW-RIC-02}
+{Reject missing reasons, unavailable content, and callers without the fan role.}
+{Submit a whitespace-only reason for EVENT 2; report nonexistent POST 9999; report unpublished EVENT 3; and attempt reporting as artist account 2.}
+{Missing reason returns HTTP 400. Missing post and unpublished event each return 404. The artist-role request returns 403. No rejected request adds a report; the seeded count stays at 3.}
+{Observed 400, 404, 404, and 403 respectively. Database report count remained three.}
+{Passed}
+\clearpage
+\noindent\textbf{Report Inappropriate Content -- Fan (continued)}\par
+\williamtestcase
+{WW-RIC-03}
+{Prevent duplicate pending reports, including simultaneous submissions.}
+{Fan 1 submits EVENT 2 twice. In a separate test, fan 5 sends four simultaneous reports for EVENT 2 with reason Spam.}
+{The first sequential request returns HTTP 201 and the duplicate returns 409. The concurrent set produces exactly one 201 and three 409 responses, leaving only one new pending report for that fan/target.}
+{Observed 201 then 409 for the sequential pair. Concurrent results were exactly 201, 409, 409, 409; duplicate pending reports were not created.}
+{Passed}
+\williamtestcase
+{WW-RIC-04}
+{Allow reporting deleted content only with evidence captured for the same fan and target.}
+{Fan 5 captures server evidence for POST 1000; delete that post. Submit without evidence, try the captured ID as fan 1 against EVENT 2, then submit as fan 5 for POST 1000 using the matching evidence.}
+{Without evidence the deleted-post request returns HTTP 404. Evidence with the wrong fan/target returns 404. Matching retained evidence returns 201 and preserves the snapshot text New single out Friday.}
+{Observed 404 for missing evidence and mismatched ownership/target. Matching evidence returned 201; the saved report retained the original post text.}
+{Passed}
+
+\clearpage
+\begingroup
+\color{blue!70!black}
+% REVISION COMMENT: The previous Section 13 should be modified because it does not align with the new testing format.
+\begin{tcolorbox}[colback=blue!4,colframe=blue!70!black,coltext=blue!70!black,title={Revision note: previous testing content},fonttitle=\bfseries]
+The previous Section 13 should be modified because it does not align with the new format. In particular, its existing cases need assigned testers, explicit test inputs, actual results, and Passed or Failed statuses, together with a JUnit testing summary. The earlier material below is preserved in blue for the responsible team members to revise; it is not deleted or replaced by William Waweru's test results.
+\end{tcolorbox}
+\setlength{\tabcolsep}{3pt}
+\small
+\subsection*{Previous Section 13: Test Cases (retained for revision)}
 
 % \begin{guidance}[Traceability of tests]
 % Each test case should reference the requirement or use case it
@@ -1848,10 +2002,10 @@ Every Fan, Artist, and Admin operation goes through \texttt{AccessControlService
 % coverage are easy to spot.
 % \end{guidance}
 
-\section{Test Cases for Iteration 1}
+\subsubsection*{Test Cases for Iteration 1}
 No test cases were produced during iteration one.
 
-\section{Test Cases for Iteration 2}
+\subsubsection*{Test Cases for Iteration 2}
 \begin{itemize}
   \item Artist Search
   \item Unban Fan
@@ -1859,7 +2013,7 @@ No test cases were produced during iteration one.
 \end{itemize}
 
 \subsection*{Search for Artist, Create Event, Review Report (automated, \texttt{backend/src/test})}
-\begin{longtable}{|>{\raggedright\arraybackslash}p{1.4cm}|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}p{6.2cm}|>{\raggedright\arraybackslash}p{4cm}|}
+\begin{longtable}{|>{\raggedright\arraybackslash}p{0.08\textwidth}|>{\raggedright\arraybackslash}p{0.18\textwidth}|>{\raggedright\arraybackslash}p{0.40\textwidth}|>{\raggedright\arraybackslash}p{0.23\textwidth}|}
 \hline
 \textbf{ID} & \textbf{Use case} & \textbf{Scenario} & \textbf{Expected result} \\ \hline
 \endhead
@@ -1883,6 +2037,193 @@ RR-5 & Review Report (5b) & Admin bans the reported user & Account BANNED and bl
 RR-6 & Review Report (3a) & Admin resolves an already resolved report & 409 \\ \hline
 RR-7 & Review Report (5c) & Remove content on a user report; unknown report; missing action & 400 / 404 / 400 \\ \hline
 \end{longtable}
+
+% ============================================================
+
+\endgroup
+
+% ============================================================
+\chapter{Setup / Installation Guide}
+This guide explains how to reproduce ArtistConnect on a local computer, start both application tiers, and run the automated checks. The commands use Windows PowerShell unless a macOS/Linux alternative is given. The backend uses Spring Boot and an embedded H2 database; the frontend uses Next.js.
+
+\section{Required Tools}
+Install the following tools before starting:
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.24\textwidth}|>{\raggedright\arraybackslash}p{0.68\textwidth}|}
+\hline
+\textbf{Tool} & \textbf{Requirement} \\ \hline
+Git & Required to clone the repository and select the project branch. \\ \hline
+Java Development Kit & JDK 21, including the Java compiler (\texttt{javac}). A Java runtime alone is insufficient. \\ \hline
+Node.js and npm & An LTS version of Node.js meeting the frontend's minimum of 20.9.0, with npm installed. \\ \hline
+Web browser & Required to open the application. Automated browser tests additionally require Playwright and Chromium. \\ \hline
+\end{tabular}
+\end{center}
+
+Maven does not require a separate installation: the repository includes a Maven wrapper. A separate database server is also unnecessary because the backend creates H2 and loads its sample records automatically. Internet access is required for initial dependency downloads. The current backend uses Spring Boot \texttt{4.1.2-SNAPSHOT}, with its snapshot repository configured in the Maven build.
+
+Installation sources are \href{https://git-scm.com/install/}{Git}, \href{https://adoptium.net/temurin/releases/?version=21}{Eclipse Temurin JDK 21}, and \href{https://nodejs.org/en/download}{Node.js}.
+
+\section{Environment Configuration}
+Set \texttt{JAVA\_HOME} to the JDK installation directory, not its \texttt{bin} subdirectory. Add the JDK's \texttt{bin} directory to \texttt{PATH}.
+
+On Windows, use the installer's environment-variable options when available. Otherwise, open \textbf{Edit the system environment variables}, select \textbf{Environment Variables}, create or update \texttt{JAVA\_HOME}, and add \texttt{\%JAVA\_HOME\%\textbackslash bin} to \texttt{Path}. On macOS/Linux, configure the equivalent variables through the JDK installation or shell environment. Open a new terminal after making changes.
+
+Verify the tools before continuing:
+\begin{samepage}
+\begin{verbatim}
+git --version
+java -version
+javac -version
+node --version
+npm --version
+\end{verbatim}
+\end{samepage}
+Both Java commands should report version 21. Node.js must be at least 20.9.0. If a command is not recognized, correct its installation or environment configuration before proceeding.
+
+No environment file is needed for the default local setup. The frontend expects the backend at \texttt{http://localhost:8080}. If a different address is necessary, create \texttt{frontend/.env.local}, set \texttt{NEXT\_PUBLIC\_API\_URL} to that address, and restart the frontend. A production frontend build must be rebuilt after changing this value. The backend currently permits the frontend origin \texttt{http://localhost:3000}; changing that origin also requires updating its CORS configuration.
+
+\section{Download the Project}
+Open a terminal in the directory where the project should be stored:
+\begin{samepage}
+\begin{verbatim}
+git clone https://github.com/AGarciaJr/CSI5324-IndieDevs.git
+cd CSI5324-IndieDevs
+git switch william
+git branch --show-current
+\end{verbatim}
+\end{samepage}
+The final command should print \texttt{william}. If the repository is already available locally, use that checkout and confirm the intended branch instead of cloning again.
+
+The \texttt{backend} directory contains the Spring Boot application, Maven wrapper, and JUnit tests. The \texttt{frontend} directory contains the Next.js application and browser-test scripts. Run Maven commands inside \texttt{backend} and npm commands inside \texttt{frontend}.
+
+\section{Start the Backend}
+Open \textbf{Terminal 1} in the repository root. On Windows PowerShell, run:
+\begin{samepage}
+\begin{verbatim}
+cd backend
+.\mvnw.cmd spring-boot:run
+\end{verbatim}
+\end{samepage}
+On macOS/Linux, use:
+\begin{samepage}
+\begin{verbatim}
+cd backend
+./mvnw spring-boot:run
+\end{verbatim}
+\end{samepage}
+The first run may take several minutes while Maven downloads its dependencies. Wait until the log reports that Tomcat started on port 8080 and that \texttt{BackendApplication} started. Leave this terminal running.
+
+Verify startup by opening \url{http://localhost:8080/api/artists}. A JSON list of sample artists should appear. The backend root URL is not the application's frontend page.
+
+The default database requires no manual schema creation. For optional inspection, open \url{http://localhost:8080/h2-console}, use JDBC URL \texttt{jdbc:h2:mem:testdb}, driver \texttt{org.h2.Driver}, user name \texttt{sa}, and a blank password.
+
+\section{Install and Start the Frontend}
+Open \textbf{Terminal 2} in the repository root:
+\begin{samepage}
+\begin{verbatim}
+cd frontend
+npm ci
+npm run dev
+\end{verbatim}
+\end{samepage}
+The \texttt{npm ci} command installs the versions recorded in the frontend lockfile. Wait for Next.js to report that it is ready, then open \url{http://localhost:3000}. Keep both terminals running: the frontend uses port 3000 and communicates with the backend on port 8080. The initial fan view should show the artist-discovery search controls, with the demo-account switcher beneath the logo.
+
+Use \texttt{localhost:3000} for this setup so that the browser origin matches the backend's CORS configuration. Press \textbf{Ctrl+C} in a server's terminal to stop it.
+
+To run the frontend as a production build instead, stop its development server and execute these commands from \texttt{frontend}, while keeping the backend running:
+\begin{samepage}
+\begin{verbatim}
+npm run build
+npm run start
+\end{verbatim}
+\end{samepage}
+A successful build is required before \texttt{npm run start}. The browser address remains \url{http://localhost:3000}.
+
+\section{Run the Automated Checks}
+\subsection{Backend JUnit Tests}
+The backend tests start their own Spring Boot test context and H2 database; the application servers do not need to be running. From the repository root, use Windows PowerShell:
+\begin{samepage}
+\begin{verbatim}
+cd backend
+.\mvnw.cmd test
+\end{verbatim}
+\end{samepage}
+On macOS/Linux, replace the second command with \texttt{./mvnw test}. A successful run ends with \textbf{BUILD SUCCESS} and zero test failures or errors. Detailed reports are written to \path{backend/target/surefire-reports/}.
+
+To run only the fan-community tests, execute the following from \texttt{backend}:
+\begin{samepage}
+\begin{verbatim}
+.\mvnw.cmd "-Dtest=FanCommunityTest" test
+\end{verbatim}
+\end{samepage}
+On macOS/Linux, use \texttt{./mvnw} instead of \texttt{.\textbackslash mvnw.cmd}.
+
+\subsection{Frontend Checks}
+From the repository root, open another terminal and run:
+\begin{samepage}
+\begin{verbatim}
+cd frontend
+npm run lint
+npx tsc --noEmit
+npm run build
+\end{verbatim}
+\end{samepage}
+These commands check lint rules, TypeScript types, and the production build. There is currently no separate \texttt{npm test} script. Two existing hook-dependency lint warnings and the Next.js multiple-lockfile warning should be distinguished from errors.
+
+\subsection{Browser Integration Tests}
+Keep the backend and frontend running at their default addresses. In a third terminal, from the repository root, install the optional test tools:
+\begin{samepage}
+\begin{verbatim}
+cd frontend
+npm install --no-save --package-lock=false playwright
+npx playwright install chromium
+\end{verbatim}
+\end{samepage}
+This local installation does not change the package manifest or lockfile. A subsequent \texttt{npm ci} removes the extra Playwright package, so reinstall it when necessary. If Linux reports missing browser libraries, use \texttt{npx playwright install --with-deps chromium}; installation of system libraries may require administrator privileges.
+
+Restart the backend and wait for startup to complete before each script so that the expected sample records are available. From \texttt{frontend}, run:
+\begin{samepage}
+\begin{verbatim}
+node tests/presentation-regression.cjs
+\end{verbatim}
+\end{samepage}
+This checks original demo accounts, search, navigation, existing team screens, and the added fan/admin tabs on desktop and mobile. It does not modify backend records.
+
+After another backend restart, run:
+\begin{samepage}
+\begin{verbatim}
+node tests/fan-community-smoke.cjs
+\end{verbatim}
+\end{samepage}
+This checks live follow persistence, account isolation, profile validation/privacy, reporting, duplicate protection, administrator resolution, and mobile layout. It changes local demo profile, follow, and report data. Restart the backend again when the original samples are needed for a presentation.
+
+Both scripts print a \textbf{PASS} message on success and return a nonzero exit code on failure. Screenshots are saved in \texttt{frontend/test-results/}.
+
+\section{Troubleshooting and Resetting Sample Data}
+\begin{description}[style=nextline,leftmargin=0pt]
+\item[Java or Maven cannot find the JDK.]
+Verify \texttt{JAVA\_HOME}, \texttt{PATH}, \texttt{java -version}, and \texttt{javac -version}. An unsupported-release error usually means that an older JDK is active.
+\item[PowerShell blocks npm or npx scripts.]
+Use \texttt{npm.cmd} or \texttt{npx.cmd}, for example \texttt{npm.cmd ci} and \texttt{npm.cmd run dev}.
+\item[The Maven wrapper reports permission denied on macOS/Linux.]
+From \texttt{backend}, run \texttt{chmod +x mvnw} and retry the wrapper command.
+\item[Dependencies cannot be downloaded.]
+Check the internet connection and proxy settings. Maven needs Maven Central and the configured Spring snapshot repository; npm and Playwright also need access to their download services.
+\item[Port 8080 or 3000 is already occupied.]
+Stop the previous server with Ctrl+C in its terminal, or close the application using that port. Retain the default ports for this guide and the browser tests.
+\item[The interface opens but live features fail.]
+Confirm that the backend remains running and that its artist-list endpoint returns JSON. Open the frontend through \texttt{http://localhost:3000}, not a different host name or port.
+\item[Playwright cannot find its module or browser.]
+Repeat the optional Playwright installation. Then, from \texttt{frontend}, run:
+\begin{samepage}
+\begin{verbatim}
+npx playwright install chromium
+\end{verbatim}
+\end{samepage}
+\item[Demo data reset or browser tests fail.]
+The default H2 database is in memory with schema recreation enabled. Restarting the backend, including a DevTools restart, restores its seeded records. Browser reloads alone do not reset it. Restart the backend before a presentation or seed-dependent test. Some existing demo features store data in browser local storage; restarting the backend does not clear that separate browser data.
+\end{description}
 
 % ============================================================
 \chapter{UI Mockups}
