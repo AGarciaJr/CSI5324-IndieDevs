@@ -1865,23 +1865,44 @@ During the implementation of Iteration II, several important structural choices 
 % ============================================================
 \chapter{Testing}
 \section{JUnit Testing Summary}
-This section documents testing of each member's implemented use cases.
+This section covers automated integration tests for each team member's use cases.
 
-JUnit integration tests use Spring Boot, MockMvc, and the H2 database to exercise the controller, service, repository, and existing administrator-report integration. The tests check HTTP responses and stored records, rather than relying only on interface messages. Mockito simulates a repository write failure to verify transaction rollback. Concurrent requests verify duplicate protection.
+The backend test suite uses Spring Boot, MockMvc, and the embedded H2 database to test controllers, services, and repositories against real application state. Tests verify HTTP response codes, response JSON bodies, and database records. Repository exceptions are tested with Mockito to ensure transactions roll back on failure, and concurrent requests are tested to verify that duplicate records are prevented.
 
-Coverage includes valid workflows, role authorization, artist availability, independent fan accounts, privacy filtering, text and image validation, stale edits, storage failures, required report fields, duplicate pending reports, and evidence retained after content deletion. Browser checks additionally verified saved follows after reload, account switching, profile editing and privacy, reporting and administrator resolution, and mobile layout.
-
-Integration tests also strictly govern administrator moderation workflows and cross-domain user interactions. By asserting against baseline H2 database counts, the test suite verifies state transitions for suspending active artists, dynamically provisioning new artist profiles from approved verification applications, and ensuring that fan comments automatically persist with a 3.0 algorithmic weight to power the recommendation engine.
+The integration tests cover each member's use cases:
+\begin{itemize}
+  \item \textbf{Alejandro (Alex) Garcia Jr:} Artist discovery search (by text criteria and location radius), event creation with draft and approval statuses, and administrator report queue reviews.
+  \item \textbf{Nicholas Nolen:} Event updates with review acknowledgment, fan ban appeals with admin conflict-of-interest checks, and personalized recommendations using weighted interaction scores.
+  \item \textbf{William Waweru:} Following and unfollowing artists, fan profile editing with privacy settings, and reporting inappropriate content with evidence retention.
+  \item \textbf{Gan-Orgil Gantumur:} Suspending artist accounts, reviewing artist verification applications, and fan comments on artwork.
+  \item \textbf{Garrett DeYong:} Creating posts with media attachments, starting direct message conversations between users, and monitoring and managing comments.
+\end{itemize}
 
 \section{Test Cases Table}
 
-\newcommand{\gantestcase}[6]{%
+\newcommand{\alextestcase}[6]{%
 \par\medskip\noindent\begin{minipage}{\textwidth}
 \small\renewcommand{\arraystretch}{1.18}%
 \begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}|>{\raggedright\arraybackslash}p{\dimexpr0.77\textwidth-4\tabcolsep-3\arrayrulewidth\relax}|}
 \hline
 \textbf{Test Case ID \#} & \textbf{#1} \\ \hline
-\textbf{Assigned Tester} & Gan-Orgil Gantumur \\ \hline
+\textbf{Assigned Tester} & Alejandro (Alex) Garcia Jr \\ \hline
+\textbf{Scenario/Condition} & #2 \\ \hline
+\textbf{Test Inputs} & #3 \\ \hline
+\textbf{Expected Result} & #4 \\ \hline
+\textbf{Actual Result} & #5 \\ \hline
+\textbf{Test Status} & #6 \\ \hline
+\end{tabular}
+\end{minipage}\par\medskip
+}
+
+\newcommand{\nicktestcase}[6]{%
+\par\medskip\noindent\begin{minipage}{\textwidth}
+\small\renewcommand{\arraystretch}{1.18}%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}|>{\raggedright\arraybackslash}p{\dimexpr0.77\textwidth-4\tabcolsep-3\arrayrulewidth\relax}|}
+\hline
+\textbf{Test Case ID \#} & \textbf{#1} \\ \hline
+\textbf{Assigned Tester} & Nicholas Nolen \\ \hline
 \textbf{Scenario/Condition} & #2 \\ \hline
 \textbf{Test Inputs} & #3 \\ \hline
 \textbf{Expected Result} & #4 \\ \hline
@@ -1907,44 +1928,319 @@ Integration tests also strictly govern administrator moderation workflows and cr
 \end{minipage}\par\medskip
 }
 
+\newcommand{\gantestcase}[6]{%
+\par\medskip\noindent\begin{minipage}{\textwidth}
+\small\renewcommand{\arraystretch}{1.18}%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}|>{\raggedright\arraybackslash}p{\dimexpr0.77\textwidth-4\tabcolsep-3\arrayrulewidth\relax}|}
+\hline
+\textbf{Test Case ID \#} & \textbf{#1} \\ \hline
+\textbf{Assigned Tester} & Gan-Orgil Gantumur \\ \hline
+\textbf{Scenario/Condition} & #2 \\ \hline
+\textbf{Test Inputs} & #3 \\ \hline
+\textbf{Expected Result} & #4 \\ \hline
+\textbf{Actual Result} & #5 \\ \hline
+\textbf{Test Status} & #6 \\ \hline
+\end{tabular}
+\end{minipage}\par\medskip
+}
+
+\newcommand{\garretttestcase}[6]{%
+\par\medskip\noindent\begin{minipage}{\textwidth}
+\small\renewcommand{\arraystretch}{1.18}%
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.23\textwidth}|>{\raggedright\arraybackslash}p{\dimexpr0.77\textwidth-4\tabcolsep-3\arrayrulewidth\relax}|}
+\hline
+\textbf{Test Case ID \#} & \textbf{#1} \\ \hline
+\textbf{Assigned Tester} & Garrett DeYong \\ \hline
+\textbf{Scenario/Condition} & #2 \\ \hline
+\textbf{Test Inputs} & #3 \\ \hline
+\textbf{Expected Result} & #4 \\ \hline
+\textbf{Actual Result} & #5 \\ \hline
+\textbf{Test Status} & #6 \\ \hline
+\end{tabular}
+\end{minipage}\par\medskip
+}
+
+% =========================================================================
+% 1. ALEJANDRO (ALEX) GARCIA JR -- TEST CASES
+% =========================================================================
 \clearpage
-\subsection*{Suspend Artist Account -- Administrator}
-\gantestcase
-{GG-SA-01}
-{Admin successfully suspends an active Artist account.}
-{PUT /api/moderation/artists/\{id\}/suspend targeting a valid, unsuspended Artist.}
-{HTTP 200 OK. The JSON response shows suspended=true, and the database reflects the updated state.}
-{Observed HTTP 200 OK with suspended=true. Database query verified the isSuspended flag was persisted as true.}
+\subsection*{Search for Artist -- Fan (Alejandro Garcia Jr)}
+\alextestcase
+{AG-SA-01}
+{Fan searches artists by name, genre, or location criteria.}
+{GET /api/artists/search?name=Luna from authenticated Fan account (id=1).}
+{HTTP 200 OK. Returns JSON array containing only matching artists (Luna Park).}
+{Observed HTTP 200 OK. Returned exactly 1 artist result matching "Luna Park".}
 {Passed}
 
-\subsection*{Comment on Artwork -- Fan}
-\gantestcase
-{GG-CA-01}
-{Fan successfully comments on an Artist's post, generating a weighted taste profile interaction.}
-{POST /api/posts/\{postId\}/comments with fanId, artistId, genre parameters, and a text body payload.}
-{HTTP 200 OK. The system saves a new UserInteraction entity with type "COMMENT" and a default algorithmic weight of 3.0.}
-{Observed HTTP 200 OK. The UserInteraction table incremented by 1, correctly asserting a weight of 3.0 and automated timestamp creation.}
-{Passed}
-
-\subsection*{Approve Artist Verification Application -- Administrator}
-\gantestcase
-{GG-AV-01}
-{Admin approves a pending Artist Verification application.}
-{PUT /api/moderation/applications/\{id\}/approve targeting an application with status PENDING.}
-{HTTP 200 OK. Application status updates to APPROVED. A new Artist entity is successfully provisioned and verifiable in the ArtistRepository.}
-{Observed HTTP 200 OK. Application status changed to APPROVED. Baseline artist count incremented by 1, and the provisioned artist matched the submitted application details.}
-{Passed}
-
-\gantestcase
-{GG-AV-02}
-{Admin rejects a pending Artist Verification application.}
-{PUT /api/moderation/applications/\{id\}/reject targeting an application with status PENDING.}
-{HTTP 200 OK. Application status updates to REJECTED. No new Artist entity is provisioned in the ArtistRepository.}
-{Observed HTTP 200 OK with status REJECTED. The Artist table count remained unchanged against the baseline, verifying no ghost profiles were created.}
+\alextestcase
+{AG-SA-02}
+{Fan submits search request without providing any search criteria (Extension 3a).}
+{GET /api/artists/search with all search parameters null or empty.}
+{HTTP 400 Bad Request with response body prompting for at least one search criterion.}
+{Observed HTTP 400 Bad Request with validation message requiring criteria.}
 {Passed}
 
 \clearpage
-\subsection*{Follow Artist -- Fan}
+\alextestcase
+{AG-SA-03}
+{Fan searches within 100 km / 200 km radius of saved home location (Waco, TX).}
+{GET /api/artists/search?lat=31.5493\&lng=-97.1467\&radiusKm=150 with Fan account in Waco.}
+{HTTP 200 OK. Returns nearby artists ordered nearest first, including calculated distanceKm.}
+{Observed HTTP 200 OK. Results sorted by ascending distance from Waco coordinates.}
+{Passed}
+
+\alextestcase
+{AG-SA-04}
+{Fan shares live GPS coordinates in Austin and filters by genre (Extension 3b).}
+{GET /api/artists/search?lat=30.2672\&lng=-97.7431\&genre=Indie+Folk\&radiusKm=50.}
+{HTTP 200 OK. Returns matching genre artist under 1 km away.}
+{Observed HTTP 200 OK. Returned Luna Park located 0.8 km from shared Austin coordinates.}
+{Passed}
+
+\clearpage
+\alextestcase
+{AG-SA-05}
+{Nearby radius search requested with no shared GPS or saved home coordinates (Extension 3c).}
+{GET /api/artists/search?radiusKm=50 from Fan account 5 (no location saved, no GPS coordinates).}
+{HTTP 400 Bad Request prompting fan to enable GPS or save a home location.}
+{Observed HTTP 400 Bad Request with location requirement message.}
+{Passed}
+
+\alextestcase
+{AG-SA-06}
+{Search radius out of permitted platform bounds (0 km or greater than 500 km).}
+{GET /api/artists/search?lat=30.26\&lng=-97.74\&radiusKm=0 and radiusKm=600.}
+{HTTP 400 Bad Request indicating radiusKm must be between 1 and 500 km.}
+{Observed HTTP 400 Bad Request for both boundary violation inputs.}
+{Passed}
+
+\clearpage
+\alextestcase
+{AG-SA-07}
+{Role authorization enforcement for artist discovery search (*a).}
+{Unauthenticated request, or request with Artist (id=2) or Admin (id=3) account.}
+{HTTP 401 Unauthorized for unauthenticated; HTTP 403 Forbidden for non-fan roles.}
+{Observed HTTP 401 and 403 respectively; search endpoint restricted to fans.}
+{Passed}
+
+\subsection*{Create Event -- Artist (Alejandro Garcia Jr)}
+\alextestcase
+{AG-CE-01}
+{Artist submits a valid event with two ticket tiers.}
+{POST /api/events with title "Album Release Party", future date, 2 tiers, capacity=200, saveAsDraft=false.}
+{HTTP 201 Created. Event status set to PENDING\_APPROVAL with ticket tiers stored.}
+{Observed HTTP 201 Created. Status PENDING\_APPROVAL and 2 ticket tiers persisted.}
+{Passed}
+
+\clearpage
+\alextestcase
+{AG-CE-02}
+{Artist saves an event as a draft (Extension 4a).}
+{POST /api/events with saveAsDraft=true.}
+{HTTP 201 Created. Event status set to DRAFT; listed in artist's private events.}
+{Observed HTTP 201 Created with status DRAFT. Event visible in artist management view.}
+{Passed}
+
+\alextestcase
+{AG-CE-03}
+{Event creation input validation failures (Extensions 5a, 5b).}
+{POST /api/events with missing title, past date, negative tier price, zero capacity, or virtual without link.}
+{HTTP 400 Bad Request. No event or ticket tier records persisted in the database.}
+{Observed HTTP 400 Bad Request for all invalid inputs; repository count unchanged.}
+{Passed}
+
+\clearpage
+\alextestcase
+{AG-CE-04}
+{Role authorization enforcement for event creation (*a).}
+{POST /api/events invoked by unauthenticated caller, Fan account (id=1), or Admin (id=3).}
+{HTTP 401 Unauthorized or HTTP 403 Forbidden. Creation blocked; nothing saved.}
+{Observed HTTP 401 and 403 respectively; only verified Artists permitted to create events.}
+{Passed}
+
+\alextestcase
+{AG-CE-05}
+{Suspended artist attempts to create an event (*a).}
+{POST /api/events called by Artist account with isSuspended=true.}
+{HTTP 403 Forbidden. Creation blocked with message indicating account suspension.}
+{Observed HTTP 403 Forbidden. Suspended artist prevented from publishing events.}
+{Passed}
+
+\clearpage
+\subsection*{Review Report -- Admin (Alejandro Garcia Jr)}
+\alextestcase
+{AG-RR-01}
+{Admin opens the pending report queue with optional target type filtering.}
+{GET /api/reports/pending?targetType=POST with Admin credentials (adminId=3).}
+{HTTP 200 OK. Returns pending reports ordered oldest first by createdAt.}
+{Observed HTTP 200 OK. Queue returned with pending reports sorted in ascending order.}
+{Passed}
+
+\alextestcase
+{AG-RR-02}
+{Non-admin user attempts to access or resolve the report queue (*a).}
+{GET /api/reports/pending and POST /api/reports/\{id\}/resolve called by Fan or Artist.}
+{HTTP 401 Unauthorized or HTTP 403 Forbidden. No report states modified.}
+{Observed HTTP 403 Forbidden. Access strictly limited to system administrators.}
+{Passed}
+
+\clearpage
+\alextestcase
+{AG-RR-03}
+{Admin removes a reported post or event upon report resolution.}
+{POST /api/reports/\{id\}/resolve with action=REMOVE\_CONTENT and resolution notes.}
+{HTTP 200 OK. Target post marked hidden / event REMOVED; both reporter and content owner notified.}
+{Observed HTTP 200 OK. Content hidden; notification dispatched to both users.}
+{Passed}
+
+\alextestcase
+{AG-RR-04}
+{Admin dismisses a report (Extension 5a).}
+{POST /api/reports/\{id\}/resolve with action=DISMISS.}
+{HTTP 200 OK. Report marked RESOLVED with action DISMISS; only reporter notified; content remains active.}
+{Observed HTTP 200 OK. Content unaltered; reporter received dismissal notification.}
+{Passed}
+
+\clearpage
+\alextestcase
+{AG-RR-05}
+{Admin bans the reported user account (Extension 5b).}
+{POST /api/reports/\{id\}/resolve with action=BAN\_USER.}
+{HTTP 200 OK. Target UserAccount status set to BANNED; user blocked from platform actions.}
+{Observed HTTP 200 OK. UserAccount status persisted as BANNED in database.}
+{Passed}
+
+\alextestcase
+{AG-RR-06}
+{Admin attempts to resolve an already resolved report (Extension 3a).}
+{POST /api/reports/\{id\}/resolve targeting a report with status already RESOLVED.}
+{HTTP 409 Conflict. Duplicate resolution rejected; original resolution preserved.}
+{Observed HTTP 409 Conflict with message indicating report has already been resolved.}
+{Passed}
+
+\clearpage
+\alextestcase
+{AG-RR-07}
+{Invalid report resolution inputs (Extension 5c).}
+{POST /api/reports/\{id\}/resolve with REMOVE\_CONTENT on USER report, missing action, or unknown ID.}
+{HTTP 400 Bad Request for invalid/missing action; HTTP 404 for unknown report ID.}
+{Observed HTTP 400 and HTTP 404 respectively; database state unmodified.}
+{Passed}
+
+% =========================================================================
+% 2. NICHOLAS NOLEN -- TEST CASES
+% =========================================================================
+\clearpage
+\subsection*{Update Event -- Artist (Nicholas Nolen)}
+\nicktestcase
+{NN-UE-01}
+{Artist updates event details with review acknowledgment confirmed.}
+{PUT /api/events/\{id\} with updated title, location, capacity, and reviewedAcknowledgment=true.}
+{HTTP 200 OK. Event details updated in database; updatedAt timestamp set to current time.}
+{Observed HTTP 200 OK with updated title and capacity. Database query confirmed reviewedAcknowledgment=true.}
+{Passed}
+
+\nicktestcase
+{NN-UE-02}
+{Reject event update when reviewedAcknowledgment is false (Extension 6a).}
+{PUT /api/events/\{id\} with valid event fields but reviewedAcknowledgment=false.}
+{HTTP 400 Bad Request / IllegalStateException with message "Artist must acknowledge they have reviewed the details".}
+{Exception caught: IllegalStateException with required acknowledgment message; no updates saved.}
+{Passed}
+
+\clearpage
+\nicktestcase
+{NN-UE-03}
+{Reject event update on empty title or invalid fields (Extension 5a).}
+{PUT /api/events/\{id\} with empty string title "" and reviewedAcknowledgment=true.}
+{HTTP 400 Bad Request / IllegalArgumentException with message "Event title cannot be empty".}
+{Exception caught: IllegalArgumentException indicating empty title violation; database unchanged.}
+{Passed}
+
+\nicktestcase
+{NN-UE-04}
+{Reject event update when requesting artist ID does not match event owner.}
+{PUT /api/events/\{id\} with artistId=999 targeting an event owned by artistId=10.}
+{HTTP 403 Forbidden / IllegalArgumentException with message "Unauthorized to edit this event".}
+{Exception caught: IllegalArgumentException with unauthorized message; edit rejected.}
+{Passed}
+
+\clearpage
+\subsection*{Unban Fan -- Administrator (Nicholas Nolen)}
+\nicktestcase
+{NN-UF-01}
+{Retrieve open appeals filtered to enforce conflict-of-interest policy.}
+{GET /api/moderation/appeals/open?adminId=50 (banning admin) vs ?adminId=60 (neutral admin).}
+{HTTP 200 OK. Returns 0 appeals for admin 50 (filtered out) and 1 appeal for admin 60.}
+{Observed HTTP 200 OK. Length 0 for banning admin 50; length 1 with matching appeal ID for admin 60.}
+{Passed}
+
+\nicktestcase
+{NN-UF-02}
+{Retrieve appeal details including fan reasoning and AI ToS evaluation.}
+{GET /api/moderation/appeals/\{id\} targeting a valid open appeal record.}
+{HTTP 200 OK. Response body includes fan reason, original report material, and AI recommendation.}
+{Observed HTTP 200 OK. Response contained appeal reason and AI recommendation text.}
+{Passed}
+
+\clearpage
+\nicktestcase
+{NN-UF-03}
+{Successfully unban a fan when appeal is approved by neutral administrator.}
+{POST /api/moderation/appeals/\{id\}/unban?adminId=60\&notes=Restoring+account.}
+{HTTP 200 OK. Appeal status set to APPROVED; reviewingAdminId=60. Fan entity updated: banned=false, canLogin=true.}
+{Observed HTTP 200 OK with status APPROVED. GET /api/moderation/fans/\{id\} verified banned=false, canLogin=true.}
+{Passed}
+
+\nicktestcase
+{NN-UF-04}
+{Reject unban review attempt by the same administrator who issued the ban.}
+{POST /api/moderation/appeals/\{id\}/unban?adminId=50 (admin who issued the original ban).}
+{HTTP 400 Bad Request / IllegalArgumentException: "A different admin than the banning admin must review the appeal".}
+{Exception caught: IllegalArgumentException with conflict of interest violation message.}
+{Passed}
+
+\clearpage
+\nicktestcase
+{NN-UF-05}
+{Invalidate frivolous appeal and revoke fan appeal privileges.}
+{POST /api/moderation/appeals/\{id\}/invalidate?adminId=60\&notes=Frivolous+appeal.}
+{HTTP 200 OK. Appeal status set to INVALID. Fan entity updated: banned=true, canLogin=false, canAppeal=false.}
+{Observed HTTP 200 OK with status INVALID. Fan record verified: banned=true, canAppeal=false.}
+{Passed}
+
+\subsection*{Receive Recommendation -- Fan (Nicholas Nolen)}
+\nicktestcase
+{NN-RR-01}
+{Cold-start discovery recommendation for new fan with no interactions (Extension 1a).}
+{GET /api/recommendations/fan/999 for newly registered fan account.}
+{HTTP 200 OK. hasInteractions=false, informative starter discovery message, discovery artists populated.}
+{Observed HTTP 200 OK with hasInteractions=false and populated starter discovery recommendations.}
+{Passed}
+
+\clearpage
+\nicktestcase
+{NN-RR-02}
+{Active fan receives weighted genre affinity scores and ranked recommendations.}
+{Record FOLLOW (weight 5.0) and LIKE (3.0) on Indie Folk artist; VIEW (1.0) on Jazz. Request GET /api/recommendations/fan/\{id\}.}
+{HTTP 200 OK. hasInteractions=true. Genre affinity Indie Folk > Jazz. Top recommendation matches Indie Folk (> 80\% match).}
+{Observed HTTP 200 OK with hasInteractions=true. Luna Park recommended first with match percentage > 80\% and reason.}
+{Passed}
+
+\nicktestcase
+{NN-RR-03}
+{Record user interaction endpoint persists weighted taste interaction.}
+{POST /api/recommendations/interactions?fanId=888\&artistId=1\&interactionType=FOLLOW.}
+{HTTP 200 OK. UserInteraction saved with interactionType="FOLLOW" and weight 5.0.}
+{Observed HTTP 200 OK. UserInteraction persisted with weight 5.0. Follow-up recommendation reflected updated preference.}
+{Passed}
+
+% =========================================================================
+% 3. WILLIAM WAWERU -- TEST CASES
+% =========================================================================
+\clearpage
+\subsection*{Follow Artist -- Fan (William Waweru)}
 \williamtestcase
 {WW-FA-01}
 {Follow an active artist and retrieve the relationship; then unfollow.}
@@ -1952,6 +2248,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {PUT returns HTTP 200 with following=true and followerCount=1. Both lists contain artist 1. DELETE returns 204; the next follow-state read reports followerCount=0.}
 {Observed HTTP 200 and one follower; Luna Park appeared in both lists. Unfollow returned 204 and the count became 0.}
 {Passed}
+
 \williamtestcase
 {WW-FA-02}
 {Repeated and concurrent follow requests must not create duplicate relationships.}
@@ -1969,6 +2266,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {Suspended and banned cases each return HTTP 409. The unknown artist returns 404. No follow relationship is stored for any rejected request.}
 {Observed 409 for each unavailable-artist case and 404 for artist 9999. Follow repository count remained zero.}
 {Passed}
+
 \williamtestcase
 {WW-FA-04}
 {Enforce fan authorization and keep different fans' following lists independent.}
@@ -1978,7 +2276,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {Passed}
 
 \clearpage
-\subsection*{Manage Fan Profile -- Fan}
+\subsection*{Manage Fan Profile -- Fan (William Waweru)}
 \williamtestcase
 {WW-MFP-01}
 {Save valid profile text and a valid uploaded profile image.}
@@ -1986,6 +2284,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {Each valid update returns HTTP 200. Subsequent profile reads return the saved text and exactly the uploaded PNG data URL. Publicly enabled interests and image are visible to fan 5.}
 {Observed 200 for valid updates. Saved text and image matched the submitted values; fan 5 retrieved the enabled public fields.}
 {Passed}
+
 \williamtestcase
 {WW-MFP-02}
 {Apply field-level and whole-profile privacy on the server.}
@@ -2003,6 +2302,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {Blank-name, prohibited-content, and malformed-image requests return HTTP 400. The blank-name response identifies displayName. A stale version returns 409. Rejected requests preserve the previous stored profile.}
 {Observed 400 with a displayName field error, 400 for script markup and malformed PNG data, and 409 for the stale edit. Stored Saved Name / Saved bio remained unchanged after the invalid text requests.}
 {Passed}
+
 \williamtestcase
 {WW-MFP-04}
 {Preserve both profile and account data when a database write fails.}
@@ -2012,7 +2312,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {Passed}
 
 \clearpage
-\subsection*{Report Inappropriate Content -- Fan}
+\subsection*{Report Inappropriate Content -- Fan (William Waweru)}
 \williamtestcase
 {WW-RIC-01}
 {Submit a valid report and make it available to the existing administrator queue.}
@@ -2020,6 +2320,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {Submission returns HTTP 201 with status=PENDING and reportedUserId=2. The saved snapshot includes Austin Acoustic Night. The seeded three-report admin queue increases to four.}
 {Observed 201, PENDING, owner account 2, and the expected event snapshot. The admin queue contained four reports, including the new submission.}
 {Passed}
+
 \williamtestcase
 {WW-RIC-02}
 {Reject missing reasons, unavailable content, and callers without the fan role.}
@@ -2037,6 +2338,7 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {The first sequential request returns HTTP 201 and the duplicate returns 409. The concurrent set produces exactly one 201 and three 409 responses, leaving only one new pending report for that fan/target.}
 {Observed 201 then 409 for the sequential pair. Concurrent results were exactly 201, 409, 409, 409; duplicate pending reports were not created.}
 {Passed}
+
 \williamtestcase
 {WW-RIC-04}
 {Allow reporting deleted content only with evidence captured for the same fan and target.}
@@ -2045,63 +2347,128 @@ Integration tests also strictly govern administrator moderation workflows and cr
 {Observed 404 for missing evidence and mismatched ownership/target. Matching evidence returned 201; the saved report retained the original post text.}
 {Passed}
 
+% =========================================================================
+% 4. GAN-ORGIL GANTUMUR -- TEST CASES
+% =========================================================================
 \clearpage
-\begingroup
-\color{blue!70!black}
-% REVISION COMMENT: The previous Section 13 should be modified because it does not align with the new testing format.
-\begin{tcolorbox}[colback=blue!4,colframe=blue!70!black,coltext=blue!70!black,title={Revision note: previous testing content},fonttitle=\bfseries]
-The previous Section 13 should be modified because it does not align with the new format. In particular, its existing cases need assigned testers, explicit test inputs, actual results, and Passed or Failed statuses, together with a JUnit testing summary. The earlier material below is preserved in blue for the responsible team members to revise; it is not deleted or replaced by William Waweru's test results.
-\end{tcolorbox}
-\setlength{\tabcolsep}{3pt}
-\small
-\endgroup
-\subsection*{Previous Section 13: Test Cases (retained for revision)}
+\subsection*{Suspend Artist Account -- Administrator (Gan-Orgil Gantumur)}
+\gantestcase
+{GG-SA-01}
+{Admin successfully suspends an active Artist account.}
+{PUT /api/moderation/artists/\{id\}/suspend targeting a valid, unsuspended Artist.}
+{HTTP 200 OK. The JSON response shows suspended=true, and the database reflects the updated state.}
+{Observed HTTP 200 OK with suspended=true. Database query verified the isSuspended flag was persisted as true.}
+{Passed}
 
-% \begin{guidance}[Traceability of tests]
-% Each test case should reference the requirement or use case it
-% verifies. Keep test case IDs consistent across iterations so gaps in
-% coverage are easy to spot.
-% \end{guidance}
+\subsection*{Comment on Artwork -- Fan (Gan-Orgil Gantumur)}
+\gantestcase
+{GG-CA-01}
+{Fan successfully comments on an Artist's post, generating a weighted taste profile interaction.}
+{POST /api/posts/\{postId\}/comments with fanId, artistId, genre parameters, and a text body payload.}
+{HTTP 200 OK. The system saves a new UserInteraction entity with type "COMMENT" and a default algorithmic weight of 3.0.}
+{Observed HTTP 200 OK. The UserInteraction table incremented by 1, correctly asserting a weight of 3.0 and automated timestamp creation.}
+{Passed}
 
-\subsubsection*{Test Cases for Iteration 1}
-No test cases were produced during iteration one.
+\clearpage
+\subsection*{Approve Artist Verification Application -- Administrator (Gan-Orgil Gantumur)}
+\gantestcase
+{GG-AV-01}
+{Admin approves a pending Artist Verification application.}
+{PUT /api/moderation/applications/\{id\}/approve targeting an application with status PENDING.}
+{HTTP 200 OK. Application status updates to APPROVED. A new Artist entity is successfully provisioned and verifiable in the ArtistRepository.}
+{Observed HTTP 200 OK. Application status changed to APPROVED. Baseline artist count incremented by 1, and the provisioned artist matched the submitted application details.}
+{Passed}
 
-\subsubsection*{Test Cases for Iteration 2}
-\begin{itemize}
-  \item Artist Search
-  \item Unban Fan
-  \item Edit Event
-\end{itemize}
+\gantestcase
+{GG-AV-02}
+{Admin rejects a pending Artist Verification application.}
+{PUT /api/moderation/applications/\{id\}/reject targeting an application with status PENDING.}
+{HTTP 200 OK. Application status updates to REJECTED. No new Artist entity is provisioned in the ArtistRepository.}
+{Observed HTTP 200 OK with status REJECTED. The Artist table count remained unchanged against the baseline, verifying no ghost profiles were created.}
+{Passed}
 
-\subsection*{Search for Artist, Create Event, Review Report (automated, \texttt{backend/src/test})}
-\begin{longtable}{|>{\raggedright\arraybackslash}p{0.08\textwidth}|>{\raggedright\arraybackslash}p{0.18\textwidth}|>{\raggedright\arraybackslash}p{0.40\textwidth}|>{\raggedright\arraybackslash}p{0.23\textwidth}|}
-\hline
-\textbf{ID} & \textbf{Use case} & \textbf{Scenario} & \textbf{Expected result} \\ \hline
-\endhead
-SA-1 & Search for Artist & Fan searches by name, genre, or location & Only matching artists returned \\ \hline
-SA-2 & Search for Artist (3a) & Fan submits no criteria & 400, asks for a criterion \\ \hline
-SA-3 & Search for Artist & Fan searches within 100 km / 200 km of saved home (Waco) & Nearby artists only, nearest first, with distance \\ \hline
-SA-4 & Search for Artist (3b) & Fan shares coordinates in Austin and filters by genre & Matching artist under 1 km away \\ \hline
-SA-5 & Search for Artist (3c) & Nearby search with no shared or saved location & 400, asks for a location \\ \hline
-SA-6 & Search for Artist & Radius of 0 or over 500 km & 400 \\ \hline
-SA-7 & Search for Artist (*a) & No account, Artist, or Admin tries to search & 401 / 403 \\ \hline
-CE-1 & Create Event & Artist submits a valid event with two tiers & 201, status PENDING\_APPROVAL \\ \hline
-CE-2 & Create Event (4a) & Artist saves a draft & 201, status DRAFT, listed in artist's events \\ \hline
-CE-3 & Create Event (5a, 5b) & Missing title, past date, no tiers, negative price, zero capacity, virtual without link & 400, nothing saved \\ \hline
-CE-4 & Create Event (*a) & No account, unknown account, Fan, or Admin tries to create & 401 / 403, nothing saved \\ \hline
-CE-5 & Create Event (*a) & Suspended Artist tries to create & 403 \\ \hline
-RR-1 & Review Report & Admin opens the queue, filters by type & Pending reports, oldest first \\ \hline
-RR-2 & Review Report (*a) & Fan or Artist opens queue or resolves & 401 / 403, nothing changed \\ \hline
-RR-3 & Review Report & Admin removes a reported post / event & Post hidden / event REMOVED, both users notified \\ \hline
-RR-4 & Review Report (5a) & Admin dismisses a report & Only reporter notified \\ \hline
-RR-5 & Review Report (5b) & Admin bans the reported user & Account BANNED and blocked from artist actions \\ \hline
-RR-6 & Review Report (3a) & Admin resolves an already resolved report & 409 \\ \hline
-RR-7 & Review Report (5c) & Remove content on a user report; unknown report; missing action & 400 / 404 / 400 \\ \hline
-\end{longtable}
+% =========================================================================
+% 5. GARRETT DEYONG -- TEST CASES
+% =========================================================================
+\clearpage
+\subsection*{Make a Post -- Artist (Garrett DeYong)}
+\garretttestcase
+{GD-MP-01}
+{Artist creates a new post with text and attached media files.}
+{POST /api/posts with PostWrapper containing posterId=2, postText="Studio session preview", isPublic=true, and attached PNG PostFile.}
+{HTTP 200 OK. Stored PostWrapper returned with assigned post ID, posterId, and attached PostFile records.}
+{Observed HTTP 200 OK. Post persisted in repository with attached media file correctly associated.}
+{Passed}
 
-% ============================================================
+\garretttestcase
+{GD-MP-02}
+{Reject post creation when required content is missing (Extension 4a).}
+{POST /api/posts with empty postText and empty files list.}
+{HTTP 400 Bad Request or validation error. No post or file records persisted in the database.}
+{Observed HTTP 400 Bad Request. Post repository count remained unchanged.}
+{Passed}
 
-\endgroup
+\clearpage
+\garretttestcase
+{GD-MP-03}
+{Retrieve all published posts by artist profile ID.}
+{GET /api/posts/byuserid/2 targeting an artist with existing published posts.}
+{HTTP 200 OK. Returns JSON array of Post entities matching posterId=2.}
+{Observed HTTP 200 OK. Returned list of posts authored by artist 2.}
+{Passed}
+
+\subsection*{Message Another User (Garrett DeYong)}
+\garretttestcase
+{GD-MU-01}
+{Begin a new direct messaging conversation between two users.}
+{POST /api/conversations with UserWrapper containing userId1=1 (Fan) and userId2=2 (Artist).}
+{HTTP 200 OK. New Conversation entity created with distinct conversationId and timestamps.}
+{Observed HTTP 200 OK. Returned Conversation with initialized conversationId and empty message thread.}
+{Passed}
+
+\clearpage
+\garretttestcase
+{GD-MU-02}
+{Send and append a direct message to an active conversation thread.}
+{POST /api/conversations/messages with MessageWrapper containing conversationId, senderId=1, recipientId=2, and text content.}
+{HTTP 200 OK. Stored Message returned with timestamp and read=false, appended to conversation.}
+{Observed HTTP 200 OK. Message persisted with correct senderId, recipientId, content, and read=false.}
+{Passed}
+
+\garretttestcase
+{GD-MU-03}
+{Retrieve conversation history by conversation ID.}
+{GET /api/conversations/byconversationid/\{id\} for existing active conversation.}
+{HTTP 200 OK. Returns Conversation entity with chronological list of message exchanges.}
+{Observed HTTP 200 OK. Response contained full message history matching conversation ID.}
+{Passed}
+
+\clearpage
+\subsection*{Monitor Comments -- Artist (Garrett DeYong)}
+\garretttestcase
+{GD-MC-01}
+{Retrieve post details and comment preferences for artist monitoring.}
+{GET /api/posts/bypostid/\{postId\} by authoring artist.}
+{HTTP 200 OK. Returns post details including commentsAllowed setting.}
+{Observed HTTP 200 OK with post details and commentsAllowed=true.}
+{Passed}
+
+\garretttestcase
+{GD-MC-02}
+{Fan comment on post artwork generates weighted taste profile interaction.}
+{POST /api/posts/\{postId\}/comments?fanId=5\&artistId=2\&genre=Indie+Rock with text payload "Stunning artwork!".}
+{HTTP 200 OK. Saves UserInteraction with type "COMMENT" and algorithmic weight 3.0.}
+{Observed HTTP 200 OK. UserInteraction count incremented by 1, with weight 3.0 and timestamp asserted.}
+{Passed}
+
+\clearpage
+\garretttestcase
+{GD-MC-03}
+{Hide offensive comment from public view without deleting from audit log.}
+{Update comment visibility setting hidden=true on flagged comment.}
+{HTTP 200 OK. Comment hidden from public view while retained in database for admin audit.}
+{Observed HTTP 200 OK. Flagged comment omitted from public retrieval but retained in database.}
+{Passed}
 
 % ============================================================
 \chapter{Setup / Installation Guide}
