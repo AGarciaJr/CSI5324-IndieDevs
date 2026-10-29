@@ -2019,6 +2019,189 @@ RR-7 & Review Report (5c) & Remove content on a user report; unknown report; mis
 \endgroup
 
 % ============================================================
+\chapter{Setup / Installation Guide}
+This guide explains how to reproduce ArtistConnect on a local computer, start both application tiers, and run the automated checks. The commands use Windows PowerShell unless a macOS/Linux alternative is given. The backend uses Spring Boot and an embedded H2 database; the frontend uses Next.js.
+
+\section{Required Tools}
+Install the following tools before starting:
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|>{\raggedright\arraybackslash}p{0.24\textwidth}|>{\raggedright\arraybackslash}p{0.68\textwidth}|}
+\hline
+\textbf{Tool} & \textbf{Requirement} \\ \hline
+Git & Required to clone the repository and select the project branch. \\ \hline
+Java Development Kit & JDK 21, including the Java compiler (\texttt{javac}). A Java runtime alone is insufficient. \\ \hline
+Node.js and npm & An LTS version of Node.js meeting the frontend's minimum of 20.9.0, with npm installed. \\ \hline
+Web browser & Required to open the application. Automated browser tests additionally require Playwright and Chromium. \\ \hline
+\end{tabular}
+\end{center}
+
+Maven does not require a separate installation: the repository includes a Maven wrapper. A separate database server is also unnecessary because the backend creates H2 and loads its sample records automatically. Internet access is required for initial dependency downloads. The current backend uses Spring Boot \texttt{4.1.2-SNAPSHOT}, with its snapshot repository configured in the Maven build.
+
+Installation sources are \href{https://git-scm.com/install/}{Git}, \href{https://adoptium.net/temurin/releases/?version=21}{Eclipse Temurin JDK 21}, and \href{https://nodejs.org/en/download}{Node.js}.
+
+\section{Environment Configuration}
+Set \texttt{JAVA\_HOME} to the JDK installation directory, not its \texttt{bin} subdirectory. Add the JDK's \texttt{bin} directory to \texttt{PATH}.
+
+On Windows, use the installer's environment-variable options when available. Otherwise, open \textbf{Edit the system environment variables}, select \textbf{Environment Variables}, create or update \texttt{JAVA\_HOME}, and add \texttt{\%JAVA\_HOME\%\textbackslash bin} to \texttt{Path}. On macOS/Linux, configure the equivalent variables through the JDK installation or shell environment. Open a new terminal after making changes.
+
+Verify the tools before continuing:
+\begin{samepage}
+\begin{verbatim}
+git --version
+java -version
+javac -version
+node --version
+npm --version
+\end{verbatim}
+\end{samepage}
+Both Java commands should report version 21. Node.js must be at least 20.9.0. If a command is not recognized, correct its installation or environment configuration before proceeding.
+
+No environment file is needed for the default local setup. The frontend expects the backend at \texttt{http://localhost:8080}. If a different address is necessary, create \texttt{frontend/.env.local}, set \texttt{NEXT\_PUBLIC\_API\_URL} to that address, and restart the frontend. A production frontend build must be rebuilt after changing this value. The backend currently permits the frontend origin \texttt{http://localhost:3000}; changing that origin also requires updating its CORS configuration.
+
+\section{Download the Project}
+Open a terminal in the directory where the project should be stored:
+\begin{samepage}
+\begin{verbatim}
+git clone https://github.com/AGarciaJr/CSI5324-IndieDevs.git
+cd CSI5324-IndieDevs
+git switch william
+git branch --show-current
+\end{verbatim}
+\end{samepage}
+The final command should print \texttt{william}. If the repository is already available locally, use that checkout and confirm the intended branch instead of cloning again.
+
+The \texttt{backend} directory contains the Spring Boot application, Maven wrapper, and JUnit tests. The \texttt{frontend} directory contains the Next.js application and browser-test scripts. Run Maven commands inside \texttt{backend} and npm commands inside \texttt{frontend}.
+
+\section{Start the Backend}
+Open \textbf{Terminal 1} in the repository root. On Windows PowerShell, run:
+\begin{samepage}
+\begin{verbatim}
+cd backend
+.\mvnw.cmd spring-boot:run
+\end{verbatim}
+\end{samepage}
+On macOS/Linux, use:
+\begin{samepage}
+\begin{verbatim}
+cd backend
+./mvnw spring-boot:run
+\end{verbatim}
+\end{samepage}
+The first run may take several minutes while Maven downloads its dependencies. Wait until the log reports that Tomcat started on port 8080 and that \texttt{BackendApplication} started. Leave this terminal running.
+
+Verify startup by opening \url{http://localhost:8080/api/artists}. A JSON list of sample artists should appear. The backend root URL is not the application's frontend page.
+
+The default database requires no manual schema creation. For optional inspection, open \url{http://localhost:8080/h2-console}, use JDBC URL \texttt{jdbc:h2:mem:testdb}, driver \texttt{org.h2.Driver}, user name \texttt{sa}, and a blank password.
+
+\section{Install and Start the Frontend}
+Open \textbf{Terminal 2} in the repository root:
+\begin{samepage}
+\begin{verbatim}
+cd frontend
+npm ci
+npm run dev
+\end{verbatim}
+\end{samepage}
+The \texttt{npm ci} command installs the versions recorded in the frontend lockfile. Wait for Next.js to report that it is ready, then open \url{http://localhost:3000}. Keep both terminals running: the frontend uses port 3000 and communicates with the backend on port 8080. The initial fan view should show the artist-discovery search controls, with the demo-account switcher beneath the logo.
+
+Use \texttt{localhost:3000} for this setup so that the browser origin matches the backend's CORS configuration. Press \textbf{Ctrl+C} in a server's terminal to stop it.
+
+To run the frontend as a production build instead, stop its development server and execute these commands from \texttt{frontend}, while keeping the backend running:
+\begin{samepage}
+\begin{verbatim}
+npm run build
+npm run start
+\end{verbatim}
+\end{samepage}
+A successful build is required before \texttt{npm run start}. The browser address remains \url{http://localhost:3000}.
+
+\section{Run the Automated Checks}
+\subsection{Backend JUnit Tests}
+The backend tests start their own Spring Boot test context and H2 database; the application servers do not need to be running. From the repository root, use Windows PowerShell:
+\begin{samepage}
+\begin{verbatim}
+cd backend
+.\mvnw.cmd test
+\end{verbatim}
+\end{samepage}
+On macOS/Linux, replace the second command with \texttt{./mvnw test}. A successful run ends with \textbf{BUILD SUCCESS} and zero test failures or errors. Detailed reports are written to \path{backend/target/surefire-reports/}.
+
+To run only the fan-community tests, execute the following from \texttt{backend}:
+\begin{samepage}
+\begin{verbatim}
+.\mvnw.cmd "-Dtest=FanCommunityTest" test
+\end{verbatim}
+\end{samepage}
+On macOS/Linux, use \texttt{./mvnw} instead of \texttt{.\textbackslash mvnw.cmd}.
+
+\subsection{Frontend Checks}
+From the repository root, open another terminal and run:
+\begin{samepage}
+\begin{verbatim}
+cd frontend
+npm run lint
+npx tsc --noEmit
+npm run build
+\end{verbatim}
+\end{samepage}
+These commands check lint rules, TypeScript types, and the production build. There is currently no separate \texttt{npm test} script. Two existing hook-dependency lint warnings and the Next.js multiple-lockfile warning should be distinguished from errors.
+
+\subsection{Browser Integration Tests}
+Keep the backend and frontend running at their default addresses. In a third terminal, from the repository root, install the optional test tools:
+\begin{samepage}
+\begin{verbatim}
+cd frontend
+npm install --no-save --package-lock=false playwright
+npx playwright install chromium
+\end{verbatim}
+\end{samepage}
+This local installation does not change the package manifest or lockfile. A subsequent \texttt{npm ci} removes the extra Playwright package, so reinstall it when necessary. If Linux reports missing browser libraries, use \texttt{npx playwright install --with-deps chromium}; installation of system libraries may require administrator privileges.
+
+Restart the backend and wait for startup to complete before each script so that the expected sample records are available. From \texttt{frontend}, run:
+\begin{samepage}
+\begin{verbatim}
+node tests/presentation-regression.cjs
+\end{verbatim}
+\end{samepage}
+This checks original demo accounts, search, navigation, existing team screens, and the added fan/admin tabs on desktop and mobile. It does not modify backend records.
+
+After another backend restart, run:
+\begin{samepage}
+\begin{verbatim}
+node tests/fan-community-smoke.cjs
+\end{verbatim}
+\end{samepage}
+This checks live follow persistence, account isolation, profile validation/privacy, reporting, duplicate protection, administrator resolution, and mobile layout. It changes local demo profile, follow, and report data. Restart the backend again when the original samples are needed for a presentation.
+
+Both scripts print a \textbf{PASS} message on success and return a nonzero exit code on failure. Screenshots are saved in \texttt{frontend/test-results/}.
+
+\section{Troubleshooting and Resetting Sample Data}
+\begin{description}[style=nextline,leftmargin=0pt]
+\item[Java or Maven cannot find the JDK.]
+Verify \texttt{JAVA\_HOME}, \texttt{PATH}, \texttt{java -version}, and \texttt{javac -version}. An unsupported-release error usually means that an older JDK is active.
+\item[PowerShell blocks npm or npx scripts.]
+Use \texttt{npm.cmd} or \texttt{npx.cmd}, for example \texttt{npm.cmd ci} and \texttt{npm.cmd run dev}.
+\item[The Maven wrapper reports permission denied on macOS/Linux.]
+From \texttt{backend}, run \texttt{chmod +x mvnw} and retry the wrapper command.
+\item[Dependencies cannot be downloaded.]
+Check the internet connection and proxy settings. Maven needs Maven Central and the configured Spring snapshot repository; npm and Playwright also need access to their download services.
+\item[Port 8080 or 3000 is already occupied.]
+Stop the previous server with Ctrl+C in its terminal, or close the application using that port. Retain the default ports for this guide and the browser tests.
+\item[The interface opens but live features fail.]
+Confirm that the backend remains running and that its artist-list endpoint returns JSON. Open the frontend through \texttt{http://localhost:3000}, not a different host name or port.
+\item[Playwright cannot find its module or browser.]
+Repeat the optional Playwright installation. Then, from \texttt{frontend}, run:
+\begin{samepage}
+\begin{verbatim}
+npx playwright install chromium
+\end{verbatim}
+\end{samepage}
+\item[Demo data reset or browser tests fail.]
+The default H2 database is in memory with schema recreation enabled. Restarting the backend, including a DevTools restart, restores its seeded records. Browser reloads alone do not reset it. Restart the backend before a presentation or seed-dependent test. Some existing demo features store data in browser local storage; restarting the backend does not clear that separate browser data.
+\end{description}
+
+% ============================================================
 \chapter{UI Mockups}
 
 \begin{center}
