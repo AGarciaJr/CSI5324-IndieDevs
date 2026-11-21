@@ -148,78 +148,690 @@ export function FanProfilePanel() {
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
     const [fields, setFields] = useState<Record<string, string>>({});
-    const [directory, setDirectory] = useState<{ userId: number; displayName: string }[]>([]);
-    const [viewerId, setViewerId] = useState("");
-    const [viewed, setViewed] = useState<Profile | null>(null);
-    const [viewError, setViewError] = useState("");
+    const [mode, setMode] = useState<"edit" | "preview">("edit");
+    const [showRecentInteractions, setShowRecentInteractions] = useState(() => {
+        if (typeof window !== "undefined") {
+            const val = localStorage.getItem("fan_pref_showInteractions");
+            return val !== null ? val === "true" : true;
+        }
+        return true;
+    });
+
     const load = useCallback(async () => {
         try {
             setProfile(await request<Profile>(accountId, `${ROOT}/profile`));
-            setDirectory(await request<{ userId: number; displayName: string }[]>(accountId, `${ROOT}/profiles`));
             setError("");
             setFields({});
-        }
-        catch (e) {
+        } catch (e) {
             setError(errorText(e));
         }
     }, [accountId]);
-    useEffect(() => { const timer = setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => void load(), 0);
+        return () => clearTimeout(timer);
+    }, [load]);
+
     async function save(e: FormEvent) {
         e.preventDefault();
-        if (!profile)
-            return;
+        if (!profile) return;
         setBusy(true);
         setError("");
         setNotice("");
         setFields({});
         try {
-            const saved = await request<Profile>(accountId, `${ROOT}/profile`, { method: "PUT", body: JSON.stringify(profile) });
+            const saved = await request<Profile>(accountId, `${ROOT}/profile`, {
+                method: "PUT",
+                body: JSON.stringify(profile),
+            });
             setProfile(saved);
-            setDirectory(previous => previous.map(fan => fan.userId === saved.userId ? { ...fan, displayName: saved.displayName } : fan));
-            setNotice("Your fan profile and privacy preferences have been saved.");
+            if (typeof window !== "undefined") {
+                localStorage.setItem("fan_pref_showInteractions", String(showRecentInteractions));
+            }
+            setNotice("Your profile and preferences have been updated.");
             changed();
-        }
-        catch (e) {
+        } catch (e) {
             setError(errorText(e));
-            if (e instanceof ApiError)
-                setFields(e.fields);
-        }
-        finally {
+            if (e instanceof ApiError) setFields(e.fields);
+        } finally {
             setBusy(false);
         }
     }
+
     async function upload(file?: File) {
-        if (!file || !profile)
-            return;
-        if (!["image/png", "image/jpeg"].includes(file.type) || file.size > 512000) {
-            setError("Choose a PNG or JPEG no larger than 500 KB.");
+        if (!file || !profile) return;
+        if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 512000) {
+            setError("Choose a PNG, JPEG, or WebP image no larger than 500 KB.");
             return;
         }
         setBusy(true);
         setError("");
         try {
-            const data = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); });
-            setProfile(previous => previous ? { ...previous, image: data } : previous);
-        }
-        catch {
+            const data = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            setProfile((previous) => (previous ? { ...previous, image: data } : previous));
+        } catch {
             setError("The image could not be read. Please choose it again.");
-        }
-        finally {
+        } finally {
             setBusy(false);
         }
     }
-    return <div className="community-grid"><section className="panel"><h2>Manage fan profile</h2><p>Share what you love. You control what other accounts can see.</p><Feedback error={error} notice={notice}/><button disabled={busy} onClick={load}>Reload saved profile</button>{!profile && !error && <p role="status">Loading profile…</p>}{profile && <form onSubmit={save} className="community-form">
-        {([["displayName", "Display name", 80], ["biography", "Biography", 2000], ["interests", "Artistic interests", 300]] as const).map(([name, label, limit]) => <label key={name}>{label}{name === "biography" ? <textarea aria-label={label} rows={5} maxLength={limit} value={profile[name]} onChange={e => setProfile({ ...profile, [name]: e.target.value })} aria-invalid={!!fields[name]}/> : <input aria-label={label} required={name === "displayName"} maxLength={limit} value={profile[name] || ""} onChange={e => setProfile({ ...profile, [name]: e.target.value })} aria-invalid={!!fields[name]}/>}<small className="field-error">{fields[name]}</small></label>)}
-        <p className="community-help">Profile text must not contain HTML, script links, or threats.</p>
-        <label>Profile image<input type="file" accept="image/png,image/jpeg" disabled={busy} onChange={e => { void upload(e.target.files?.[0]); e.target.value = ""; }}/><small>PNG or JPEG · 500 KB maximum · up to 4096 × 4096 pixels</small></label>{profile.image && <div><Image className="fan-photo" src={profile.image} width={100} height={100} unoptimized alt="Your profile image"/><button type="button" onClick={() => setProfile({ ...profile, image: "" })}>Remove image</button></div>}<small className="field-error">{fields.image}</small>
-        <fieldset><legend>Privacy preferences</legend>{([["publicProfile", "Make my profile visible to other signed-in accounts"], ["showInterests", "Show my artistic interests"], ["showFollowing", "Show the artists I support"]] as const).map(([name, label]) => <label className="community-check" key={name}><input type="checkbox" checked={profile[name]} onChange={e => setProfile({ ...profile, [name]: e.target.checked })}/>{label}</label>)}</fieldset>
-        <h3>Supported artists</h3><p>{profile.supportedArtists?.map(a => a.name).join(", ") || "No followed artists yet."}</p><small>Manage this list in Following or from an artist’s profile.</small><button className="primary full" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button>
-    </form>}</section><section><div className="panel"><h2>View a fan profile</h2><p>Look up another fan’s account ID. Their saved privacy settings apply on the server.</p><form className="community-form" onSubmit={async (e) => { e.preventDefault(); setViewError(""); setViewed(null); try {
-        setViewed(await request<Profile>(accountId, `${ROOT}/profiles/${viewerId}`));
+
+    const quickInterests = [
+        "Indie Folk",
+        "Street Art / Graffiti",
+        "Mixed-Media",
+        "Visual Media",
+        "Electronic / Synth",
+        "Jazz & Soul",
+        "Photography",
+    ];
+
+    function toggleQuickInterest(tag: string) {
+        if (!profile) return;
+        const currentTags = (profile.interests || "")
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
+        const exists = currentTags.some((t) => t.toLowerCase() === tag.toLowerCase());
+        const updatedTags = exists
+            ? currentTags.filter((t) => t.toLowerCase() !== tag.toLowerCase())
+            : [...currentTags, tag];
+        setProfile({ ...profile, interests: updatedTags.join(", ") });
     }
-    catch (e) {
-        setViewError(errorText(e));
-    } }}><label>Community member<select aria-label="Community member" required value={viewerId} onChange={e => setViewerId(e.target.value)}><option value="">Choose a fan</option>{directory.map(fan => <option key={fan.userId} value={fan.userId}>{fan.displayName}</option>)}</select></label><button>View profile</button></form><Feedback error={viewError}/>{viewed && <article><h3>{viewed.displayName}</h3>{viewed.image && <Image className="fan-photo" src={viewed.image} width={100} height={100} unoptimized alt={`${viewed.displayName}'s profile`}/>}<p className="post-text">{viewed.biography}</p>{viewed.interests !== null && <p>Artistic interests: {viewed.interests || "Not provided"}</p>}{viewed.supportedArtists !== null && <p>Supported artists: {viewed.supportedArtists.map(a => a.name).join(", ") || "None yet"}</p>}</article>}</div></section></div>;
+
+    return (
+        <div style={{ maxWidth: "860px", margin: "0 auto" }}>
+            {/* PROFILE MODE SWITCHER: EDIT VS VIEW AS PUBLIC */}
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "20px",
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--line-strong)",
+                    padding: "8px 16px",
+                    borderRadius: "12px",
+                }}
+            >
+                <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                        type="button"
+                        onClick={() => setMode("edit")}
+                        className={mode === "edit" ? "primary" : "btn-secondary"}
+                        style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 700 }}
+                    >
+                        ✏️ Edit Profile & Bio
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMode("preview")}
+                        className={mode === "preview" ? "primary" : "btn-secondary"}
+                        style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 700 }}
+                    >
+                        👁️ View as Public (&ldquo;Preview Mode&rdquo;)
+                    </button>
+                </div>
+                <span style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                    {mode === "preview" ? "Live Public Preview" : "Personal Profile Editor"}
+                </span>
+            </div>
+
+            <Feedback error={error} notice={notice} />
+
+            {!profile && !error && (
+                <div className="panel" style={{ textAlign: "center", padding: "40px" }}>
+                    <p role="status">Loading profile…</p>
+                </div>
+            )}
+
+            {/* 1. EDIT MODE */}
+            {profile && mode === "edit" && (
+                <section className="panel" style={{ padding: "32px" }}>
+                    <div className="section-title" style={{ marginBottom: "24px" }}>
+                        <div>
+                            <span className="eyebrow">YOUR COMMUNITY IDENTITY</span>
+                            <h2 style={{ margin: "4px 0 0" }}>Manage Fan Profile</h2>
+                            <p style={{ fontSize: "13px", color: "var(--muted)", margin: "4px 0 0" }}>
+                                Share your story, curate your artistic interests, and control how other members see your activity.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={save} className="community-form">
+                        {/* Display Name */}
+                        <label>
+                            Display Name
+                            <input
+                                aria-label="Display name"
+                                required
+                                maxLength={80}
+                                value={profile.displayName}
+                                onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
+                                aria-invalid={!!fields.displayName}
+                                placeholder="Your public community handle"
+                            />
+                            <small className="field-error">{fields.displayName}</small>
+                        </label>
+
+                        {/* About Me / Bio */}
+                        <label>
+                            About Me & Artistic Taste
+                            <textarea
+                                aria-label="About Me & Biography"
+                                rows={5}
+                                maxLength={2000}
+                                value={profile.biography}
+                                onChange={(e) => setProfile({ ...profile, biography: e.target.value })}
+                                aria-invalid={!!fields.biography}
+                                placeholder="Tell other fans and artists what inspires you, what concerts you attend, and what kind of art you love..."
+                            />
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
+                                <small style={{ color: "var(--muted)" }}>No HTML or script tags. Markdown supported.</small>
+                                <small style={{ color: "var(--muted)" }}>{profile.biography.length} / 2,000</small>
+                            </div>
+                            <small className="field-error">{fields.biography}</small>
+                        </label>
+
+                        {/* Profile Image Upload */}
+                        <div style={{ marginTop: "12px", border: "1px dashed var(--line-strong)", borderRadius: "12px", padding: "18px", background: "rgba(255, 255, 255, 0.02)" }}>
+                            <label style={{ margin: 0, fontWeight: 700, fontSize: "13px" }}>
+                                Profile Avatar Photo
+                                <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    disabled={busy}
+                                    onChange={(e) => {
+                                        void upload(e.target.files?.[0]);
+                                        e.target.value = "";
+                                    }}
+                                    style={{ marginTop: "8px" }}
+                                />
+                                <small style={{ display: "block", color: "var(--muted)", marginTop: "4px" }}>
+                                    PNG, JPEG, or WebP · 500 KB maximum · Square recommended
+                                </small>
+                            </label>
+
+                            {profile.image && (
+                                <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "14px" }}>
+                                    <Image
+                                        className="fan-photo"
+                                        src={profile.image}
+                                        width={80}
+                                        height={80}
+                                        unoptimized
+                                        alt="Your profile image"
+                                        style={{ borderRadius: "50%", border: "2px solid var(--spray-cyan)", objectFit: "cover" }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => setProfile({ ...profile, image: "" })}
+                                        style={{ fontSize: "11px", color: "var(--spray-pink)" }}
+                                    >
+                                        Remove Avatar
+                                    </button>
+                                </div>
+                            )}
+                            <small className="field-error">{fields.image}</small>
+                        </div>
+
+                        {/* Artistic Interests */}
+                        <div style={{ marginTop: "16px" }}>
+                            <label>
+                                Artistic Interests & Tags
+                                <input
+                                    aria-label="Artistic interests"
+                                    maxLength={300}
+                                    value={profile.interests || ""}
+                                    onChange={(e) => setProfile({ ...profile, interests: e.target.value })}
+                                    aria-invalid={!!fields.interests}
+                                    placeholder="e.g. Indie Folk, Street Art, Lo-fi Beats, Cyberpunk 3D"
+                                />
+                                <small className="field-error">{fields.interests}</small>
+                            </label>
+                            {/* Quick suggestion tags */}
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                                {quickInterests.map((tag) => {
+                                    const selected = (profile.interests || "")
+                                        .toLowerCase()
+                                        .includes(tag.toLowerCase());
+                                    return (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => toggleQuickInterest(tag)}
+                                            style={{
+                                                fontSize: "11px",
+                                                padding: "4px 10px",
+                                                borderRadius: "16px",
+                                                border: selected ? "1px solid var(--spray-cyan)" : "1px solid var(--line)",
+                                                background: selected ? "rgba(6, 182, 212, 0.15)" : "rgba(255, 255, 255, 0.04)",
+                                                color: selected ? "var(--spray-cyan)" : "var(--muted)",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            {selected ? "✓ " : "+ "}
+                                            {tag}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Privacy & Display Toggles */}
+                        <fieldset style={{ marginTop: "24px", border: "1px solid var(--line-strong)", borderRadius: "12px", padding: "18px", background: "rgba(255, 255, 255, 0.02)" }}>
+                            <legend style={{ fontWeight: 700, fontSize: "12px", color: "var(--spray-cyan)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                                Profile Display & Privacy Toggles
+                            </legend>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={profile.publicProfile}
+                                    onChange={(e) => setProfile({ ...profile, publicProfile: e.target.checked })}
+                                />
+                                <div>
+                                    <b>Make my profile visible to other community members</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Allow other fans and creators to find your profile in member lists.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={profile.showInterests}
+                                    onChange={(e) => setProfile({ ...profile, showInterests: e.target.checked })}
+                                />
+                                <div>
+                                    <b>Display my artistic interests</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Show your favorite art categories and genres on your public card.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={profile.showFollowing}
+                                    onChange={(e) => setProfile({ ...profile, showFollowing: e.target.checked })}
+                                />
+                                <div>
+                                    <b>Display the artists I support</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Show creators and independent musicians you follow.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={showRecentInteractions}
+                                    onChange={(e) => setShowRecentInteractions(e.target.checked)}
+                                />
+                                <div>
+                                    <b>Display my recently interacted posts & activity</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Show posts you have recently liked, comments, and booked concerts.
+                                    </p>
+                                </div>
+                            </label>
+                        </fieldset>
+
+                        {/* Supported Artists Summary */}
+                        <div style={{ marginTop: "18px" }}>
+                            <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+                                Currently Supported Artists
+                            </span>
+                            <p style={{ marginTop: "4px", fontSize: "13px" }}>
+                                {profile.supportedArtists?.length
+                                    ? profile.supportedArtists.map((a) => a.name).join(", ")
+                                    : "You haven't followed any artists yet."}
+                            </p>
+                        </div>
+
+                        {/* Save Action */}
+                        <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+                            <button className="primary" disabled={busy} style={{ flex: 1, padding: "12px" }}>
+                                {busy ? "Saving Profile…" : "Save Profile Changes ✓"}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => setMode("preview")}
+                                style={{ padding: "12px 20px" }}
+                            >
+                                Preview Public View 👁️
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            )}
+
+            {/* 2. PUBLIC PREVIEW MODE ("HOW OTHER FANS WILL SEE YOUR PROFILE & POSTS") */}
+            {profile && mode === "preview" && (
+                <div style={{ display: "grid", gap: "24px" }}>
+                    {/* Preview Mode Header banner */}
+                    <div
+                        style={{
+                            background: "linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(244, 63, 94, 0.1))",
+                            border: "1px solid var(--spray-cyan)",
+                            borderRadius: "12px",
+                            padding: "16px 20px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <div>
+                            <span style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px", color: "var(--spray-cyan)" }}>
+                                👁️ LIVE PUBLIC PREVIEW
+                            </span>
+                            <h3 style={{ margin: "2px 0 0", fontSize: "16px" }}>This is how other fans and creators see you</h3>
+                            <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                Verifying your About Me, toggled interests, supported artists, and public comment identity.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            className="primary"
+                            onClick={() => setMode("edit")}
+                            style={{ padding: "8px 16px", fontSize: "12px" }}
+                        >
+                            ✏️ Return to Editor
+                        </button>
+                    </div>
+
+                    {!profile.publicProfile && (
+                        <div className="notice" style={{ borderColor: "var(--spray-pink)", color: "var(--spray-pink)" }}>
+                            🔒 <b>Your profile is currently Private.</b> Other community members cannot view your profile details unless you enable &quot;Make my profile visible&quot; in settings.
+                        </div>
+                    )}
+
+                    {/* PUBLIC PROFILE CARD */}
+                    <section className="panel" style={{ padding: "32px", position: "relative" }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "24px", flexWrap: "wrap" }}>
+                            {profile.image ? (
+                                <Image
+                                    className="fan-photo"
+                                    src={profile.image}
+                                    width={110}
+                                    height={110}
+                                    unoptimized
+                                    alt={`${profile.displayName}'s avatar`}
+                                    style={{
+                                        borderRadius: "50%",
+                                        border: "3px solid var(--spray-cyan)",
+                                        boxShadow: "0 0 16px rgba(6, 182, 212, 0.3)",
+                                        objectFit: "cover",
+                                    }}
+                                />
+                            ) : (
+                                <div
+                                    style={{
+                                        width: "110px",
+                                        height: "110px",
+                                        borderRadius: "50%",
+                                        background: "linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(244, 63, 94, 0.4))",
+                                        border: "2px solid var(--line-strong)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontSize: "36px",
+                                        fontWeight: 800,
+                                        color: "#ffffff",
+                                    }}
+                                >
+                                    {profile.displayName ? profile.displayName.charAt(0).toUpperCase() : "F"}
+                                </div>
+                            )}
+
+                            <div style={{ flex: 1, minWidth: "260px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                                    <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 800 }}>{profile.displayName || "Anonymous Fan"}</h2>
+                                    <span className="pill" style={{ background: "rgba(6, 182, 212, 0.15)", color: "var(--spray-cyan)" }}>
+                                        FAN · COMMUNITY MEMBER
+                                    </span>
+                                </div>
+                                <div style={{ display: "flex", gap: "8px", marginTop: "6px", fontSize: "12px", color: "var(--muted)" }}>
+                                    <span>Member ID #{profile.userId}</span>
+                                    <span>•</span>
+                                    <span style={{ color: profile.publicProfile ? "#4ade80" : "var(--spray-pink)" }}>
+                                        {profile.publicProfile ? "● Public Profile" : "○ Private Profile"}
+                                    </span>
+                                </div>
+
+                                {/* ABOUT ME TEXT */}
+                                <div style={{ marginTop: "16px" }}>
+                                    <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--muted)" }}>
+                                        ABOUT ME
+                                    </span>
+                                    <p style={{ marginTop: "6px", fontSize: "14px", lineHeight: "1.7", color: "var(--ink)", whiteSpace: "pre-line" }}>
+                                        {profile.biography || "This fan has not shared an About Me bio yet."}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ARTISTIC INTERESTS (TOGGLED) */}
+                        <div style={{ marginTop: "28px", borderTop: "1px solid var(--line)", paddingTop: "20px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--spray-cyan)" }}>
+                                    ARTISTIC INTERESTS
+                                </span>
+                                {!profile.showInterests && (
+                                    <span style={{ fontSize: "11px", color: "var(--spray-pink)" }}>
+                                        Hidden by user privacy settings
+                                    </span>
+                                )}
+                            </div>
+
+                            {profile.showInterests ? (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                    {(profile.interests || "Indie Folk, Street Art")
+                                        .split(",")
+                                        .map((t) => t.trim())
+                                        .filter(Boolean)
+                                        .map((tag) => (
+                                            <span
+                                                key={tag}
+                                                style={{
+                                                    fontSize: "12px",
+                                                    padding: "4px 12px",
+                                                    borderRadius: "16px",
+                                                    background: "rgba(6, 182, 212, 0.12)",
+                                                    border: "1px solid rgba(6, 182, 212, 0.35)",
+                                                    color: "var(--spray-cyan)",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                </div>
+                            ) : (
+                                <p style={{ fontSize: "12px", color: "var(--muted)", fontStyle: "italic", margin: 0 }}>
+                                    [Artistic interests are hidden on this public profile]
+                                </p>
+                            )}
+                        </div>
+
+                        {/* CREATORS I SUPPORT (TOGGLED) */}
+                        <div style={{ marginTop: "24px", borderTop: "1px solid var(--line)", paddingTop: "20px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--spray-pink)" }}>
+                                    CREATORS & ARTISTS I SUPPORT
+                                </span>
+                                {!profile.showFollowing && (
+                                    <span style={{ fontSize: "11px", color: "var(--spray-pink)" }}>
+                                        Hidden by user privacy settings
+                                    </span>
+                                )}
+                            </div>
+
+                            {profile.showFollowing ? (
+                                profile.supportedArtists && profile.supportedArtists.length > 0 ? (
+                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "10px" }}>
+                                        {profile.supportedArtists.map((a) => (
+                                            <div
+                                                key={a.artistId}
+                                                style={{
+                                                    background: "rgba(255, 255, 255, 0.03)",
+                                                    border: "1px solid var(--line)",
+                                                    borderRadius: "8px",
+                                                    padding: "10px 14px",
+                                                }}
+                                            >
+                                                <b style={{ display: "block", fontSize: "13px" }}>{a.name}</b>
+                                                <small style={{ color: "var(--muted)", display: "block" }}>
+                                                    {a.genre} · {a.location}
+                                                </small>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
+                                        Not following any artists publicly yet.
+                                    </p>
+                                )
+                            ) : (
+                                <p style={{ fontSize: "12px", color: "var(--muted)", fontStyle: "italic", margin: 0 }}>
+                                    [Supported artists are hidden on this public profile]
+                                </p>
+                            )}
+                        </div>
+
+                        {/* RECENTLY INTERACTED POSTS & COMMUNITY ACTIVITY (TOGGLED) */}
+                        <div style={{ marginTop: "24px", borderTop: "1px solid var(--line)", paddingTop: "20px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "#a855f7" }}>
+                                    RECENT INTERACTIONS & ACTIVITY
+                                </span>
+                                {!showRecentInteractions && (
+                                    <span style={{ fontSize: "11px", color: "var(--spray-pink)" }}>
+                                        Hidden by user privacy settings
+                                    </span>
+                                )}
+                            </div>
+
+                            {showRecentInteractions ? (
+                                <div style={{ display: "grid", gap: "8px" }}>
+                                    <div
+                                        style={{
+                                            background: "rgba(255, 255, 255, 0.02)",
+                                            border: "1px solid var(--line)",
+                                            borderRadius: "8px",
+                                            padding: "8px 12px",
+                                            fontSize: "12px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                        }}
+                                    >
+                                        <span style={{ color: "var(--spray-pink)" }}>♥</span>
+                                        <span>Liked <b>William Waweru</b> &apos;s post &quot;Morning acoustic session from the hill country&quot;</span>
+                                    </div>
+                                    <div
+                                        style={{
+                                            background: "rgba(255, 255, 255, 0.02)",
+                                            border: "1px solid var(--line)",
+                                            borderRadius: "8px",
+                                            padding: "8px 12px",
+                                            fontSize: "12px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                        }}
+                                    >
+                                        <span style={{ color: "var(--spray-cyan)" }}>🎟</span>
+                                        <span>Booked ticket for <b>Luna Park</b> Live Concert</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p style={{ fontSize: "12px", color: "var(--muted)", fontStyle: "italic", margin: 0 }}>
+                                    [Recent interactions and activity are hidden on this public profile]
+                                </p>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* "HOW OTHER FANS SEE YOUR POSTS & COMMENTS" PREVIEW SECTION */}
+                    <section className="panel" style={{ padding: "28px" }}>
+                        <div style={{ marginBottom: "16px" }}>
+                            <span className="eyebrow" style={{ color: "var(--spray-cyan)" }}>PUBLIC IDENTITY VERIFICATION</span>
+                            <h3 style={{ margin: "4px 0 0", fontSize: "18px" }}>How other fans will see your posts & comments</h3>
+                            <p style={{ fontSize: "12px", color: "var(--muted)", margin: "4px 0 0" }}>
+                                When you engage with artists, leave feedback on creative posts, or reply to community threads, this is your exact public appearance.
+                            </p>
+                        </div>
+
+                        {/* Simulated public comment component */}
+                        <div
+                            style={{
+                                background: "rgba(255, 255, 255, 0.04)",
+                                border: "1px solid var(--line-strong)",
+                                borderRadius: "12px",
+                                padding: "16px 20px",
+                                display: "flex",
+                                gap: "16px",
+                                alignItems: "flex-start",
+                            }}
+                        >
+                            {profile.image ? (
+                                <Image
+                                    className="fan-photo"
+                                    src={profile.image}
+                                    width={44}
+                                    height={44}
+                                    unoptimized
+                                    alt="Your public comment avatar"
+                                    style={{ borderRadius: "50%", border: "1px solid var(--spray-cyan)", objectFit: "cover" }}
+                                />
+                            ) : (
+                                <div
+                                    style={{
+                                        width: "44px",
+                                        height: "44px",
+                                        borderRadius: "50%",
+                                        background: "linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(244, 63, 94, 0.3))",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontWeight: 800,
+                                        fontSize: "16px",
+                                    }}
+                                >
+                                    {profile.displayName ? profile.displayName.charAt(0).toUpperCase() : "F"}
+                                </div>
+                            )}
+
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                    <b style={{ fontSize: "14px" }}>{profile.displayName || "Fan"}</b>
+                                    <span className="pill" style={{ fontSize: "9px", padding: "2px 8px" }}>
+                                        COMMUNITY FAN
+                                    </span>
+                                    <span style={{ fontSize: "11px", color: "var(--muted)" }}>Just now</span>
+                                </div>
+                                <p style={{ margin: "8px 0 0", fontSize: "13px", color: "var(--ink)", lineHeight: "1.6" }}>
+                                    &ldquo;Stunning acoustic guitar tone! Can&apos;t wait for your upcoming live show.&rdquo;
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            )}
+        </div>
+    );
 }
 function ReportForm({ evidence, onSubmitted }: {
     evidence: Evidence;

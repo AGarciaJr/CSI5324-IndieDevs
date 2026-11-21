@@ -14,6 +14,7 @@ interface ArtistProfileViewProps {
     isModal?: boolean;
     onCloseModal?: () => void;
     onTriggerLogin?: (message: string) => void;
+    onNavigateTab?: (tab: string) => void;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -23,10 +24,29 @@ export function ArtistProfileView({
     isModal = false,
     onCloseModal,
     onTriggerLogin,
+    onNavigateTab,
 }: ArtistProfileViewProps) {
     const { currentUser } = useAuth();
     const isGuest = !currentUser;
     const backendAccountId = currentUser ? getBackendAccountId(currentUser) : 0;
+    const isOwner = currentUser?.role === "Artist" && (
+        currentUser.email === "artist@test.com" ||
+        backendAccountId === artist.id ||
+        currentUser.name.toLowerCase() === artist.name.toLowerCase()
+    );
+
+    function handleDeletePost(postId: string) {
+        if (!confirm("Are you sure you want to remove this post from your artist feed?")) return;
+        setPosts((prev) => prev.filter((p) => p.id !== postId));
+        try {
+            const store = JSON.parse(localStorage.getItem("appStore") || "{}");
+            if (store.posts) {
+                store.posts = store.posts.filter((p: { id: string }) => p.id !== postId);
+                localStorage.setItem("appStore", JSON.stringify(store));
+            }
+        } catch {}
+        setNotice("Post removed from your artist showcase.");
+    }
 
     const [events, setEvents] = useState<ArtistEvent[]>([]);
     const [posts, setPosts] = useState<ArtistPost[]>(() => getPostsForArtist(artist.id));
@@ -236,7 +256,37 @@ export function ArtistProfileView({
                     marginBottom: "20px",
                 }}
             >
-                {isGuest ? (
+                {isOwner ? (
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center", width: "100%" }}>
+                        <button
+                            type="button"
+                            className="primary"
+                            onClick={() => onNavigateTab?.("Make a post")}
+                            style={{ fontSize: "12px", padding: "8px 16px", fontWeight: 700 }}
+                        >
+                            ＋ Create New Post
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => onNavigateTab?.("Manage Events")}
+                            style={{ fontSize: "12px", padding: "8px 16px", fontWeight: 700 }}
+                        >
+                            ▦ Curate Events
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => onNavigateTab?.("Settings")}
+                            style={{ fontSize: "12px", padding: "8px 16px" }}
+                        >
+                            ⚙ Workspace Preferences
+                        </button>
+                        <span className="pill" style={{ marginLeft: "auto", background: "rgba(6, 182, 212, 0.15)", color: "var(--spray-cyan)" }}>
+                            ✦ YOUR ARTIST SHOWCASE
+                        </span>
+                    </div>
+                ) : isGuest ? (
                     <>
                         <button
                             type="button"
@@ -508,9 +558,29 @@ export function ArtistProfileView({
                                         </div>
                                     </div>
 
-                                    <span className="pill" style={{ fontSize: "9px" }}>
-                                        ✦ ARTIST POST
-                                    </span>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="pill" style={{ fontSize: "9px" }}>
+                                            ✦ ARTIST POST
+                                        </span>
+                                        {isOwner && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeletePost(p.id)}
+                                                style={{
+                                                    background: "none",
+                                                    border: "none",
+                                                    color: "var(--spray-pink)",
+                                                    cursor: "pointer",
+                                                    fontSize: "11px",
+                                                    fontWeight: 600,
+                                                    padding: "2px 6px",
+                                                }}
+                                                title="Delete this post from your feed"
+                                            >
+                                                🗑 Delete
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <p style={{ fontSize: "14px", color: "var(--ink)", lineHeight: "1.7", margin: "10px 0" }}>
@@ -529,11 +599,27 @@ export function ArtistProfileView({
                                                         style={{ width: "100%", maxHeight: "420px", objectFit: "cover", borderRadius: "10px", border: "1px solid var(--line)" }}
                                                     />
                                                 ) : file.type.startsWith("audio/") || file.data.startsWith("data:audio") || file.data.match(/\.(mp3|wav|ogg|m4a)($|\?)/i) ? (
-                                                    <div style={{ padding: "12px 16px", background: "rgba(0, 0, 0, 0.4)", borderRadius: "10px", border: "1px solid var(--line)" }}>
-                                                        <div style={{ fontSize: "11px", color: "var(--spray-cyan)", marginBottom: "6px", fontWeight: 600 }}>
-                                                            🎵 {file.name || "Audio Track Preview"}
+                                                    <div
+                                                        style={{
+                                                            padding: "16px",
+                                                            background: "linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(168, 85, 247, 0.12))",
+                                                            borderRadius: "12px",
+                                                            border: "1px solid var(--spray-cyan)",
+                                                            boxShadow: "0 4px 16px rgba(6, 182, 212, 0.15)",
+                                                        }}
+                                                    >
+                                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                                <span style={{ fontSize: "16px" }}>🎵</span>
+                                                                <span style={{ fontSize: "13px", color: "var(--spray-cyan)", fontWeight: 700 }}>
+                                                                    {file.name || "Original Music Recording"}
+                                                                </span>
+                                                            </div>
+                                                            <span className="pill" style={{ fontSize: "9px", background: "rgba(6, 182, 212, 0.2)", color: "var(--spray-cyan)" }}>
+                                                                AUDIO STREAM
+                                                            </span>
                                                         </div>
-                                                        <audio controls src={file.data} style={{ width: "100%" }} />
+                                                        <audio controls src={file.data} style={{ width: "100%", height: "40px" }} />
                                                     </div>
                                                 ) : file.type.startsWith("video/") || file.data.startsWith("data:video") || file.data.match(/\.(mp4|webm|mov)($|\?)/i) ? (
                                                     <video

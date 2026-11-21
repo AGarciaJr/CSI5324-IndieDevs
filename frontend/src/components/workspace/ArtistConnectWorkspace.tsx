@@ -1062,14 +1062,13 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
           ]
         : currentUser.role === "Artist"
         ? [
-              { label: "Artist Home", icon: "⌂", tabName: "Artist Home" },
+              { label: "My Profile", icon: "⌂", tabName: "Artist Home" },
               { label: "For You", icon: "✳", tabName: "Recommendations" },
               { label: "Discover", icon: "⌕", tabName: "Discover" },
               { label: "Following", icon: "♡", tabName: "Following" },
               { label: "Create Post", icon: "＋", tabName: "Make a post" },
               { label: "Manage Events", icon: "▦", tabName: "Manage Events" },
               { label: "Messages", icon: "✉", tabName: "Messages" },
-              { label: "My profile", icon: "◎", tabName: "Fan Profile" },
               { label: "Settings", icon: "⚙", tabName: "Settings" },
           ]
         : [
@@ -1242,12 +1241,60 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                         {error && <div className="error" role="alert">{error}</div>}
 
                         {/* TAB: ARTIST HOME (CONTINUOUS STREAM OF EVENTS & POSTS) */}
-                        {tab === "Artist Home" && currentUser?.role === "Artist" && (
-                            <div className="panel" style={{ padding: "32px" }}>
-                                <ArtistProfileView
-                                    artist={sampleArtists.find((a) => a.id === effectiveUser.id) || sampleArtists.find((a) => a.id === 9) || sampleArtists[8]}
-                                    isModal={false}
-                                />
+                        {((tab === "Artist Home" && currentUser?.role === "Artist") || (tab === "Fan Profile" && currentUser?.role === "Artist")) && (
+                            <div style={{ display: "grid", gap: "20px" }}>
+                                <div
+                                    style={{
+                                        background: "linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(244, 63, 94, 0.1))",
+                                        border: "1px solid var(--line-strong)",
+                                        backdropFilter: "blur(16px)",
+                                        borderRadius: "14px",
+                                        padding: "20px 24px",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        flexWrap: "wrap",
+                                        gap: "16px",
+                                    }}
+                                >
+                                    <div>
+                                        <span className="eyebrow" style={{ color: "var(--spray-cyan)" }}>
+                                            ARTIST STUDIO & SHOWCASE
+                                        </span>
+                                        <h2 style={{ margin: "2px 0 0", fontSize: "20px" }}>
+                                            {currentUser.name} — Artist Profile
+                                        </h2>
+                                        <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--muted)" }}>
+                                            Your live artist showcase, continuous media feed, and event curator workspace.
+                                        </p>
+                                    </div>
+                                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                                        <button
+                                            type="button"
+                                            className="primary"
+                                            onClick={() => setTab("Make a post")}
+                                            style={{ padding: "10px 18px", fontSize: "13px", fontWeight: 700 }}
+                                        >
+                                            ＋ Create Post
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn-secondary"
+                                            onClick={() => setTab("Manage Events")}
+                                            style={{ padding: "10px 18px", fontSize: "13px", fontWeight: 700 }}
+                                        >
+                                            ▦ Manage Events
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="panel" style={{ padding: "32px" }}>
+                                    <ArtistProfileView
+                                        artist={sampleArtists.find((a) => a.id === effectiveUser.id) || sampleArtists.find((a) => a.id === 9) || sampleArtists[8]}
+                                        isModal={false}
+                                        onNavigateTab={(targetTab) => setTab(targetTab)}
+                                    />
+                                </div>
                             </div>
                         )}
 
@@ -1395,7 +1442,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                 (currentUser?.role === "Fan" || currentUser?.role === "Artist") && <FollowingPanel />
                             )
                         )}
-                        {!isGuest && (currentUser?.role === "Fan" || currentUser?.role === "Artist") && tab === "Fan Profile" && <FanProfilePanel />}
+                        {!isGuest && currentUser?.role === "Fan" && tab === "Fan Profile" && <FanProfilePanel />}
                         {!isGuest && currentUser?.role === "Fan" && tab === "Fan Reports" && <FanReportsPanel />}
                         {!isGuest && currentUser?.role === "Admin" && tab === "Report Queue" && <AdminReportsPanel />}
 
@@ -2230,22 +2277,45 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                     type="file"
                                                     id="post-media-uploader"
                                                     multiple
-                                                    accept="image/*,audio/*,video/*"
+                                                    accept="image/*,audio/*,video/*,.mp3,.wav,.ogg,.m4a"
                                                     onChange={handleFileSelect}
                                                     style={{ display: "none" }}
                                                 />
-                                                <label
-                                                    htmlFor="post-media-uploader"
-                                                    className="upload"
-                                                    style={{ cursor: "pointer", display: "block", margin: "0 0 14px", padding: "18px", border: "1px dashed var(--spray-pink)", background: "rgba(244, 63, 94, 0.05)" }}
-                                                >
-                                                    <span style={{ color: "var(--spray-pink)", fontWeight: 700, fontSize: "13px" }}>
-                                                        📁 Click to Browse Artwork, Audio Tracks, or Video Files
-                                                    </span>
-                                                    <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
-                                                        Supports PNG, JPEG, WebP, MP3, WAV, MP4, WebM directly attached to your post
-                                                    </small>
-                                                </label>
+                                                <input
+                                                    type="file"
+                                                    id="post-audio-uploader"
+                                                    multiple
+                                                    accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                                                    onChange={handleFileSelect}
+                                                    style={{ display: "none" }}
+                                                />
+                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", margin: "0 0 14px" }}>
+                                                    <label
+                                                        htmlFor="post-media-uploader"
+                                                        className="upload"
+                                                        style={{ cursor: "pointer", display: "block", margin: 0, padding: "16px", border: "1px dashed var(--spray-pink)", background: "rgba(244, 63, 94, 0.05)", borderRadius: "10px", textAlign: "center" }}
+                                                    >
+                                                        <span style={{ color: "var(--spray-pink)", fontWeight: 700, fontSize: "13px", display: "block" }}>
+                                                            📁 Upload Artwork / Images
+                                                        </span>
+                                                        <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
+                                                            PNG, JPEG, WebP, MP4 video
+                                                        </small>
+                                                    </label>
+
+                                                    <label
+                                                        htmlFor="post-audio-uploader"
+                                                        className="upload"
+                                                        style={{ cursor: "pointer", display: "block", margin: 0, padding: "16px", border: "1px dashed var(--spray-cyan)", background: "rgba(6, 182, 212, 0.05)", borderRadius: "10px", textAlign: "center" }}
+                                                    >
+                                                        <span style={{ color: "var(--spray-cyan)", fontWeight: 700, fontSize: "13px", display: "block" }}>
+                                                            🎵 Upload Music & Audio Track
+                                                        </span>
+                                                        <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
+                                                            MP3, WAV, OGG, M4A audio files
+                                                        </small>
+                                                    </label>
+                                                </div>
 
                                                 {/* Media URL shortcut */}
                                                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -2268,34 +2338,69 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                                                 {/* Preview of attached media files */}
                                                 {mediaFiles.length > 0 && (
-                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "14px" }}>
+                                                    <div style={{ display: "grid", gap: "10px", marginTop: "14px" }}>
                                                         {mediaFiles.map((file, idx) => (
-                                                            <div
-                                                                key={idx}
-                                                                style={{
-                                                                    display: "flex",
-                                                                    alignItems: "center",
-                                                                    gap: "8px",
-                                                                    background: "rgba(255, 255, 255, 0.06)",
-                                                                    border: "1px solid var(--line-strong)",
-                                                                    borderRadius: "8px",
-                                                                    padding: "6px 10px",
-                                                                    fontSize: "11px",
-                                                                }}
-                                                            >
-                                                                <span>{file.type.startsWith("image/") ? "🖼️" : file.type.startsWith("audio/") ? "🎵" : "🎬"}</span>
-                                                                <span style={{ maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                                    {file.name}
-                                                                </span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setMediaFiles((prev) => prev.filter((_, i) => i !== idx))}
-                                                                    style={{ background: "none", border: "none", color: "var(--spray-pink)", cursor: "pointer", padding: "0 4px", fontSize: "13px" }}
-                                                                    title="Remove attachment"
+                                                            file.type.startsWith("audio/") || file.data.startsWith("data:audio") || file.name.match(/\.(mp3|wav|ogg|m4a)($|\?)/i) ? (
+                                                                <div
+                                                                    key={idx}
+                                                                    style={{
+                                                                        background: "linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(168, 85, 247, 0.08))",
+                                                                        border: "1px solid var(--spray-cyan)",
+                                                                        borderRadius: "10px",
+                                                                        padding: "12px 16px",
+                                                                    }}
                                                                 >
-                                                                    ✕
-                                                                </button>
-                                                            </div>
+                                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                                            <span style={{ fontSize: "14px" }}>🎵</span>
+                                                                            <b style={{ fontSize: "12px", color: "var(--spray-cyan)" }}>
+                                                                                {file.name}
+                                                                            </b>
+                                                                            <span className="pill" style={{ fontSize: "9px" }}>
+                                                                                AUDIO TRACK PREVIEW
+                                                                            </span>
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setMediaFiles((prev) => prev.filter((_, i) => i !== idx))}
+                                                                            style={{ background: "none", border: "none", color: "var(--spray-pink)", cursor: "pointer", fontSize: "14px", fontWeight: 700 }}
+                                                                            title="Remove audio track"
+                                                                        >
+                                                                            ✕
+                                                                        </button>
+                                                                    </div>
+                                                                    <audio controls src={file.data} style={{ width: "100%", height: "36px" }} />
+                                                                </div>
+                                                            ) : (
+                                                                <div
+                                                                    key={idx}
+                                                                    style={{
+                                                                        display: "flex",
+                                                                        alignItems: "center",
+                                                                        justifyContent: "space-between",
+                                                                        background: "rgba(255, 255, 255, 0.06)",
+                                                                        border: "1px solid var(--line-strong)",
+                                                                        borderRadius: "8px",
+                                                                        padding: "8px 12px",
+                                                                        fontSize: "12px",
+                                                                    }}
+                                                                >
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                                        <span>{file.type.startsWith("image/") ? "🖼️" : "🎬"}</span>
+                                                                        <span style={{ maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                                            {file.name}
+                                                                        </span>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setMediaFiles((prev) => prev.filter((_, i) => i !== idx))}
+                                                                        style={{ background: "none", border: "none", color: "var(--spray-pink)", cursor: "pointer", padding: "0 4px", fontSize: "13px" }}
+                                                                        title="Remove attachment"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                            )
                                                         ))}
                                                     </div>
                                                 )}
