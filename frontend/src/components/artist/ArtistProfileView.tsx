@@ -151,34 +151,39 @@ export function ArtistProfileView({
             {/* Profile Art / Hero banner */}
             <div
                 style={{
-                    background: "linear-gradient(135deg, #2d3b36 0%, #3e524b 100%)",
-                    borderRadius: "12px",
+                    background: "linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(168, 85, 247, 0.3) 50%, rgba(6, 182, 212, 0.25) 100%), rgba(16, 20, 32, 0.75)",
+                    border: "1px solid var(--line-strong)",
+                    backdropFilter: "blur(24px)",
+                    borderRadius: "16px",
                     padding: "32px 24px",
                     color: "white",
                     display: "flex",
                     alignItems: "center",
                     gap: "20px",
                     marginBottom: "20px",
+                    boxShadow: "var(--glass-specular), 0 16px 36px -10px rgba(0,0,0,0.6)",
                 }}
             >
                 <div
                     style={{
-                        width: "64px",
-                        height: "64px",
+                        width: "68px",
+                        height: "68px",
                         borderRadius: "50%",
-                        background: "rgba(255,255,255,0.15)",
+                        background: "linear-gradient(135deg, rgba(244, 63, 94, 0.4), rgba(6, 182, 212, 0.4))",
+                        border: "2px solid rgba(255, 255, 255, 0.3)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         fontSize: "24px",
                         fontWeight: 700,
+                        boxShadow: "0 0 20px rgba(244, 63, 94, 0.4)",
                     }}
                 >
                     {artist.name.split(" ").map((s) => s[0]).slice(0, 2).join("")}
                 </div>
                 <div>
-                    <h3 style={{ margin: 0, color: "white", fontSize: "20px" }}>{artist.name}</h3>
-                    <p style={{ margin: "4px 0 0", color: "#d2ded8", fontSize: "13px" }}>
+                    <h3 style={{ margin: 0, color: "white", fontSize: "22px", fontFamily: '"Didot", "Bodoni MT", Georgia, serif' }}>{artist.name}</h3>
+                    <p style={{ margin: "4px 0 0", color: "var(--spray-cyan)", fontSize: "13px", fontWeight: 600 }}>
                         {artist.genre} · ⌖ {artist.location}
                     </p>
                 </div>
@@ -187,10 +192,10 @@ export function ArtistProfileView({
             {/* Bio and Tags */}
             {artist.bio && (
                 <div style={{ marginBottom: "18px" }}>
-                    <h4 style={{ fontSize: "13px", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)", marginBottom: "6px" }}>
+                    <h4 style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--muted)", marginBottom: "8px" }}>
                         About the Artist
                     </h4>
-                    <p style={{ fontSize: "14px", color: "#3e4d44", lineHeight: "1.6", margin: 0 }}>
+                    <p style={{ fontSize: "14px", color: "var(--ink-secondary)", lineHeight: "1.7", margin: 0 }}>
                         {artist.bio}
                     </p>
                 </div>
@@ -299,7 +304,7 @@ export function ArtistProfileView({
             {action && (
                 <form
                     onSubmit={handleSubmitAction}
-                    style={{ background: "#fcfaf7", border: "1px solid var(--line)", borderRadius: "8px", padding: "16px", marginBottom: "24px" }}
+                    style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid var(--line-strong)", borderRadius: "12px", padding: "18px", marginBottom: "24px", backdropFilter: "blur(16px)" }}
                 >
                     <h4 style={{ margin: "0 0 10px", fontSize: "14px" }}>
                         {action === "chat" ? `Send message to ${artist.name}` : action === "book" ? `Book ${artist.name}` : `Leave a comment on ${artist.name}'s artwork`}

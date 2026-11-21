@@ -49,7 +49,8 @@ export default function DedicatedArtistContent({ id }: { id: string }) {
                     alignItems: "center",
                     padding: "16px 32px",
                     borderBottom: "1px solid var(--line)",
-                    background: "#fbfcf8",
+                    background: "rgba(12, 16, 26, 0.65)",
+                    backdropFilter: "blur(20px)",
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
