@@ -1047,35 +1047,34 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
     const navItems = isGuest
         ? [
-              { label: "Discover", icon: "⌕", tabName: "Discover" },
-              { label: "Following", icon: "♡", tabName: "Following" },
-              { label: "For You", icon: "✳", tabName: "Recommendations" },
+              { label: "Discover", icon: "", tabName: "Discover" },
+              { label: "Following", icon: "", tabName: "Following" },
+              { label: "For You", icon: "", tabName: "Recommendations" },
           ]
         : currentUser.role === "Fan"
         ? [
-              { label: "For You", icon: "✳", tabName: "Recommendations" },
-              { label: "Discover", icon: "⌕", tabName: "Discover" },
-              { label: "Following", icon: "♡", tabName: "Following" },
-              { label: "My profile", icon: "◎", tabName: "Fan Profile" },
-              { label: "Settings", icon: "⚙", tabName: "Settings" },
-              { label: "Report content", icon: "⚑", tabName: "Fan Reports" },
+              { label: "For You", icon: "", tabName: "Recommendations" },
+              { label: "Discover", icon: "", tabName: "Discover" },
+              { label: "Following", icon: "", tabName: "Following" },
+              { label: "My Profile", icon: "", tabName: "Fan Profile" },
+              { label: "Settings", icon: "", tabName: "Settings" },
           ]
         : currentUser.role === "Artist"
         ? [
-              { label: "My Profile", icon: "⌂", tabName: "Artist Home" },
-              { label: "For You", icon: "✳", tabName: "Recommendations" },
-              { label: "Discover", icon: "⌕", tabName: "Discover" },
-              { label: "Following", icon: "♡", tabName: "Following" },
-              { label: "Create Post", icon: "＋", tabName: "Make a post" },
-              { label: "Manage Events", icon: "▦", tabName: "Manage Events" },
-              { label: "Messages", icon: "✉", tabName: "Messages" },
-              { label: "Settings", icon: "⚙", tabName: "Settings" },
+              { label: "My Profile", icon: "", tabName: "Artist Home" },
+              { label: "For You", icon: "", tabName: "Recommendations" },
+              { label: "Discover", icon: "", tabName: "Discover" },
+              { label: "Following", icon: "", tabName: "Following" },
+              { label: "Create Post", icon: "", tabName: "Make a post" },
+              { label: "Manage Events", icon: "", tabName: "Manage Events" },
+              { label: "Messages", icon: "", tabName: "Messages" },
+              { label: "Settings", icon: "", tabName: "Settings" },
           ]
         : [
-              { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
-              { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" },
-              { label: "Verifications", icon: "✓", tabName: "Verifications" },
-              { label: "Report queue", icon: "⚑", tabName: "Report Queue" },
+              { label: "Ban Appeals", icon: "", tabName: "Ban Appeals" },
+              { label: "Artist Directory", icon: "", tabName: "Artist Directory" },
+              { label: "Verifications", icon: "", tabName: "Verifications" },
+              { label: "Report Queue", icon: "", tabName: "Report Queue" },
           ];
 
     return (
@@ -1187,13 +1186,13 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     setNotice("");
                                 }}
                             >
-                                <span>{item.icon}</span>{item.label}
+                                {item.icon ? <span>{item.icon}</span> : null}{item.label}
                             </button>
                         ))}
                     </nav>
 
                     <div className="sidebar-note">
-                        <span className="spark">✳</span>
+                        
                         <h3>Good art starts<br />with connection.</h3>
                         <p>Designed for independent artists, fans, and administrators.</p>
                     </div>
@@ -1283,7 +1282,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                             onClick={() => setTab("Manage Events")}
                                             style={{ padding: "10px 18px", fontSize: "13px", fontWeight: 700 }}
                                         >
-                                            ▦ Manage Events
+                                            Manage Events
                                         </button>
                                     </div>
                                 </div>
@@ -1351,9 +1350,9 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                 value={settings.messagingPermission}
                                                 onChange={(e) => setSettings({ ...settings, messagingPermission: e.target.value })}
                                             >
-                                                <option value="everyone">🌐 Everyone (Fans, Artists, and Community Members)</option>
-                                                <option value="followed">👥 Only Followed Creators & Booked Contacts</option>
-                                                <option value="nobody">🔒 Nobody (Disable Incoming Direct Messages)</option>
+                                                <option value="everyone">Everyone (Fans, Artists, and Community Members)</option>
+                                                <option value="followed">Only Followed Creators & Booked Contacts</option>
+                                                <option value="nobody">Nobody (Disable Incoming Direct Messages)</option>
                                             </select>
                                             <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
                                                 Control message requests and unsolicited artist inquiries.
@@ -1372,7 +1371,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                     style={{ flex: 1, padding: "12px", borderRadius: "10px", fontSize: "13px" }}
                                                     onClick={() => setSettings({ ...settings, theme: "dark" })}
                                                 >
-                                                    🌙 Dark Mode (Obsidian & Neon Glow)
+                                                    Dark Mode (Obsidian & Neon Glow)
                                                 </button>
                                                 <button
                                                     type="button"
@@ -1380,7 +1379,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                     style={{ flex: 1, padding: "12px", borderRadius: "10px", fontSize: "13px" }}
                                                     onClick={() => setSettings({ ...settings, theme: "light" })}
                                                 >
-                                                    ☀️ Light Mode (Studio White Canvas)
+                                                    Light Mode (Studio White Canvas)
                                                 </button>
                                             </div>
                                         </div>
@@ -1413,9 +1412,26 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                         </div>
 
                                         <button type="submit" className="primary" style={{ padding: "12px 24px", marginTop: "10px" }}>
-                                            Save Settings & Preferences ↗
+                                            Save Settings & Preferences
                                         </button>
                                     </form>
+
+                                    {/* Moderation & Active Reports Section */}
+                                    <div style={{ borderTop: "1px solid var(--line)", paddingTop: "24px", marginTop: "24px" }}>
+                                        <span className="eyebrow" style={{ color: "var(--spray-pink)" }}>SAFETY & MODERATION</span>
+                                        <h3 style={{ margin: "4px 0 0", fontSize: "16px" }}>Active Moderation Reports</h3>
+                                        <p style={{ fontSize: "13px", color: "var(--muted)", margin: "4px 0 14px" }}>
+                                            View the status and administrator outcomes of reports you have submitted for comments or posts.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            className="btn-secondary"
+                                            onClick={() => setTab("Fan Reports")}
+                                            style={{ padding: "8px 16px", fontSize: "12px" }}
+                                        >
+                                            View Active Reports Tracker &rarr;
+                                        </button>
+                                    </div>
                                 </section>
                             </div>
                         )}
@@ -1424,7 +1440,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                         {tab === "Following" && (
                             isGuest ? (
                                 <div className="panel" style={{ textAlign: "center", padding: "48px 24px" }}>
-                                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>⭐</div>
+                                    
                                     <h2>Sign In to View Favorites & Following</h2>
                                     <p style={{ color: "var(--muted)", maxWidth: "440px", margin: "8px auto 20px", fontSize: "14px", lineHeight: "1.6" }}>
                                         You must be signed in with an account to view your followed artists, liked tracks, and personalized favorites list.
@@ -1443,14 +1459,26 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                             )
                         )}
                         {!isGuest && currentUser?.role === "Fan" && tab === "Fan Profile" && <FanProfilePanel />}
-                        {!isGuest && currentUser?.role === "Fan" && tab === "Fan Reports" && <FanReportsPanel />}
+                        {!isGuest && currentUser?.role === "Fan" && tab === "Fan Reports" && (
+                            <div style={{ display: "grid", gap: "16px" }}>
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => setTab("Settings")}
+                                    style={{ width: "fit-content", padding: "6px 14px", fontSize: "12px" }}
+                                >
+                                    &larr; Back to Settings
+                                </button>
+                                <FanReportsPanel />
+                            </div>
+                        )}
                         {!isGuest && currentUser?.role === "Admin" && tab === "Report Queue" && <AdminReportsPanel />}
 
                         {/* TAB: RECOMMENDATIONS (USE CASE: RECEIVE RECOMMENDATION) */}
                         {tab === "Recommendations" && (
                             isGuest ? (
                                 <div className="panel" style={{ textAlign: "center", padding: "48px 24px" }}>
-                                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>✳</div>
+                                    
                                     <h2>Personalized Recommendations</h2>
                                     <p style={{ color: "var(--muted)", maxWidth: "440px", margin: "8px auto 20px", fontSize: "14px", lineHeight: "1.6" }}>
                                         Sign in to receive algorithmic recommendations tailored to your taste profile based on your follows, likes, and bookings.
@@ -1963,7 +1991,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                                                 {selectedAppeal.banningAdminId === effectiveUser.id && (
                                                     <div className="conflict-warning">
-                                                        ⚠️ <b>Conflict of Interest Warning:</b> You were the administrator who issued this initial ban ({selectedAppeal.banningAdminName}). Under system rules, another administrator must review and process this appeal.
+                                                        <b>Conflict of Interest Warning:</b> You were the administrator who issued this initial ban ({selectedAppeal.banningAdminName}). Under system rules, another administrator must review and process this appeal.
                                                     </div>
                                                 )}
 
@@ -1989,7 +2017,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                 </div>
 
                                                 <div className="ai-box">
-                                                    <h4><span>✳</span> Automated AI ToS Evaluation</h4>
+                                                    <h4>Automated AI ToS Evaluation</h4>
                                                     <p>{selectedAppeal.aiRecommendation}</p>
                                                 </div>
 
@@ -2019,7 +2047,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                                 disabled={selectedAppeal.banningAdminId === effectiveUser.id}
                                                                 onClick={() => handleInvalidateAppeal(selectedAppeal.id)}
                                                             >
-                                                                Mark Appeal Invalid & Uphold Ban ✕
+                                                                Mark Appeal Invalid & Uphold Ban
                                                             </button>
                                                         </div>
                                                     </div>
@@ -2046,7 +2074,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                             if (res.ok) setArtistResults(await res.json());
                                         }}
                                     >
-                                        Refresh Directory ↻
+                                        Refresh Directory
                                     </button>
                                 </div>
 
@@ -2054,7 +2082,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     {artistResults.map((a, i) => (
                                         <div className="artist-card" key={a.id} style={{ display: "flex", flexDirection: "column", opacity: a.suspended ? 0.6 : 1 }}>
                                             <div className={`art-cover art-${i % 6}`}>
-                                                <span>{["◒", "〰", "◐", "✳", "◬", "◎"][i % 6]}</span>
+                                                <span>{a.name.slice(0, 2).toUpperCase()}</span>
                                             </div>
                                             <div className="artist-info" style={{ flex: 1 }}>
                                                 <h3>{a.name}</h3>
@@ -2067,7 +2095,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                     disabled={a.suspended}
                                                     onClick={() => handleSuspendArtist(a.id)}
                                                 >
-                                                    {a.suspended ? "Account Suspended ✕" : "Suspend Artist ⚠"}
+                                                    {a.suspended ? "Account Suspended" : "Suspend Artist"}
                                                 </button>
                                             </div>
                                         </div>
@@ -2137,7 +2165,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                         boxShadow: selectedTag === tag ? "0 0 14px rgba(244, 63, 94, 0.3)" : "none",
                                                     }}
                                                 >
-                                                    {tag === "All Tags" ? "✦ All Media" : `#${tag}`}
+                                                    {tag === "All Tags" ? "All Media" : `#${tag}`}
                                                 </button>
                                             ))}
                                         </div>
@@ -2173,7 +2201,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                             style={{ cursor: "pointer", textAlign: "left" }}
                                         >
                                             <div className={`art-cover art-${i % 6}`}>
-                                                <span>{["◒", "〰", "◐", "✳", "◬", "◎"][i % 6]}</span>
+                                                <span>{a.name.slice(0, 2).toUpperCase()}</span>
                                                 <small>{a.genre}</small>
                                             </div>
                                             <div className="artist-info">
@@ -2181,7 +2209,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                 <h3>{a.name}</h3>
                                                 <p>{a.genre}</p>
                                                 <div className="card-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                                    <span>⌖ {a.location}</span>
+                                                    <span>{a.location}</span>
                                                     <span style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                                                         <Link
                                                             href={`/artist/${a.id}`}
@@ -2190,7 +2218,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                         >
                                                             Artist Page ↗
                                                         </Link>
-                                                        <b>Quick View ◒</b>
+                                                        <b>Quick View</b>
                                                     </span>
                                                 </div>
                                             </div>
@@ -2296,7 +2324,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                         style={{ cursor: "pointer", display: "block", margin: 0, padding: "16px", border: "1px dashed var(--spray-pink)", background: "rgba(244, 63, 94, 0.05)", borderRadius: "10px", textAlign: "center" }}
                                                     >
                                                         <span style={{ color: "var(--spray-pink)", fontWeight: 700, fontSize: "13px", display: "block" }}>
-                                                            📁 Upload Artwork / Images
+                                                            Upload Artwork / Images
                                                         </span>
                                                         <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
                                                             PNG, JPEG, WebP, MP4 video
@@ -2309,7 +2337,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                         style={{ cursor: "pointer", display: "block", margin: 0, padding: "16px", border: "1px dashed var(--spray-cyan)", background: "rgba(6, 182, 212, 0.05)", borderRadius: "10px", textAlign: "center" }}
                                                     >
                                                         <span style={{ color: "var(--spray-cyan)", fontWeight: 700, fontSize: "13px", display: "block" }}>
-                                                            🎵 Upload Music & Audio Track
+                                                            Upload Music & Audio Track
                                                         </span>
                                                         <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
                                                             MP3, WAV, OGG, M4A audio files
@@ -2352,7 +2380,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                                 >
                                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                                                                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                                            <span style={{ fontSize: "14px" }}>🎵</span>
+                                                                            
                                                                             <b style={{ fontSize: "12px", color: "var(--spray-cyan)" }}>
                                                                                 {file.name}
                                                                             </b>
@@ -2366,7 +2394,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                                             style={{ background: "none", border: "none", color: "var(--spray-pink)", cursor: "pointer", fontSize: "14px", fontWeight: 700 }}
                                                                             title="Remove audio track"
                                                                         >
-                                                                            ✕
+                                                                            x
                                                                         </button>
                                                                     </div>
                                                                     <audio controls src={file.data} style={{ width: "100%", height: "36px" }} />
@@ -2386,7 +2414,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                                     }}
                                                                 >
                                                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                                        <span>{file.type.startsWith("image/") ? "🖼️" : "🎬"}</span>
+                                                                        <span>[{file.type.startsWith("image/") ? "Image" : "Video"}]</span>
                                                                         <span style={{ maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                                             {file.name}
                                                                         </span>
@@ -2397,7 +2425,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                                         style={{ background: "none", border: "none", color: "var(--spray-pink)", cursor: "pointer", padding: "0 4px", fontSize: "13px" }}
                                                                         title="Remove attachment"
                                                                     >
-                                                                        ✕
+                                                                        x
                                                                     </button>
                                                                 </div>
                                                             )
@@ -2453,7 +2481,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                         </p>
                                     </div>
                                     <button className="btn-secondary" onClick={loadApplications}>
-                                        Refresh Queue ↻
+                                        Refresh Queue
                                     </button>
                                 </div>
 
@@ -2491,14 +2519,14 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                         className="primary"
                                                         onClick={() => handleApproveApplication(app.id, app.applicantName)}
                                                     >
-                                                        Approve & Provision Artist Profile ✓
+                                                        Approve & Provision Artist Profile
                                                     </button>
                                                     <button
                                                         className="btn-secondary"
                                                         onClick={() => handleRejectApplication(app.id, app.applicantName)}
                                                         style={{ color: "#9e3926", borderColor: "#eccdc6" }}
                                                     >
-                                                        Reject Application ✕
+                                                        Reject Application
                                                     </button>
                                                 </div>
                                             </div>
@@ -2592,7 +2620,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                 }}
                                 aria-label="Close"
                             >
-                                ✕
+                                x
                             </button>
 
                             <div style={{ textAlign: "center", marginBottom: "20px" }}>

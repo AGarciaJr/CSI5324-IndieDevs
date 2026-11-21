@@ -7,7 +7,7 @@ import { Artist, ArtistEvent, ArtistPost } from "../../types/artist";
 import { getPostsForArtist } from "../../lib/artists";
 import { useAuth } from "../../context/AuthContext";
 import { getBackendAccountId } from "../../lib/auth";
-import { FollowButton, ReportArtistButton } from "../fan-community";
+import { FollowButton, ReportArtistButton, ReportContentModal } from "../fan-community";
 
 interface ArtistProfileViewProps {
     artist: Artist;
@@ -56,6 +56,22 @@ export function ArtistProfileView({
     const [notice, setNotice] = useState("");
     const [error, setError] = useState("");
     const [liked, setLiked] = useState(false);
+    const [reportingComment, setReportingComment] = useState<{ id: string; authorName: string; text: string } | null>(null);
+    const [reportingPost, setReportingPost] = useState<ArtistPost | null>(null);
+    const [postComments, setPostComments] = useState<Record<string, { id: string; authorName: string; text: string; createdAt: string }[]>>({
+        "post-ww-1": [
+            { id: "c1", authorName: "Alex Fan", text: "Love the warm acoustic guitar tone on this track!", createdAt: "2 hours ago" },
+            { id: "c2", authorName: "Jordan T.", text: "Can not wait for the vinyl release.", createdAt: "1 hour ago" },
+        ],
+        "post-ww-2": [
+            { id: "c3", authorName: "Taylor M.", text: "The Waco live session was magical, thank you for sharing!", createdAt: "Yesterday" },
+        ],
+        "post-lp-1": [
+            { id: "c4", authorName: "Morgan K.", text: "Hill Country Echoes sounds like an instant classic.", createdAt: "3 hours ago" },
+        ]
+    });
+    const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
+    const [commentInput, setCommentInput] = useState("");
 
     useEffect(() => {
         const controller = new AbortController();
@@ -118,6 +134,22 @@ export function ArtistProfileView({
                 );
                 if (!res.ok) throw new Error("Could not submit comment.");
                 setNotice(`Comment posted on ${artist.name}'s profile!`);
+                // Also add to active post comments if on a post
+                if (posts.length > 0) {
+                    const targetId = posts[0].id;
+                    setPostComments((prev) => ({
+                        ...prev,
+                        [targetId]: [
+                            ...(prev[targetId] || []),
+                            {
+                                id: `c-${Date.now()}`,
+                                authorName: currentUser?.name || "Fan",
+                                text: message.trim(),
+                                createdAt: "Just now",
+                            },
+                        ],
+                    }));
+                }
                 setMessage("");
                 setAction("");
             } catch (err: unknown) {
@@ -152,7 +184,7 @@ export function ArtistProfileView({
                                 className="primary"
                                 style={{ fontSize: "12px", padding: "6px 14px", textDecoration: "none" }}
                             >
-                                Visit Page ↗
+                                Visit Page
                             </Link>
                             {onCloseModal && (
                                 <button
@@ -161,7 +193,7 @@ export function ArtistProfileView({
                                     style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "var(--muted)", padding: "4px 8px" }}
                                     aria-label="Close modal"
                                 >
-                                    ✕
+                                    x
                                 </button>
                             )}
                         </>
@@ -171,7 +203,7 @@ export function ArtistProfileView({
                             className="btn-secondary"
                             style={{ fontSize: "12px", padding: "6px 14px", textDecoration: "none" }}
                         >
-                            ← Back to Discover
+                            Back to Discover
                         </Link>
                     )}
                 </div>
@@ -217,7 +249,7 @@ export function ArtistProfileView({
                 <div>
                     <h3 style={{ margin: 0, color: "white", fontSize: "22px", fontFamily: '"Didot", "Bodoni MT", Georgia, serif' }}>{artist.name}</h3>
                     <p style={{ margin: "4px 0 0", color: "var(--spray-cyan)", fontSize: "13px", fontWeight: 600 }}>
-                        {artist.genre} · ⌖ {artist.location}
+                        {artist.genre} · {artist.location}
                     </p>
                 </div>
             </div>
@@ -264,7 +296,7 @@ export function ArtistProfileView({
                             onClick={() => onNavigateTab?.("Make a post")}
                             style={{ fontSize: "12px", padding: "8px 16px", fontWeight: 700 }}
                         >
-                            ＋ Create New Post
+                            + Create New Post
                         </button>
                         <button
                             type="button"
@@ -272,7 +304,7 @@ export function ArtistProfileView({
                             onClick={() => onNavigateTab?.("Manage Events")}
                             style={{ fontSize: "12px", padding: "8px 16px", fontWeight: 700 }}
                         >
-                            ▦ Curate Events
+                            Curate Events
                         </button>
                         <button
                             type="button"
@@ -280,10 +312,10 @@ export function ArtistProfileView({
                             onClick={() => onNavigateTab?.("Settings")}
                             style={{ fontSize: "12px", padding: "8px 16px" }}
                         >
-                            ⚙ Workspace Preferences
+                            Workspace Preferences
                         </button>
                         <span className="pill" style={{ marginLeft: "auto", background: "rgba(6, 182, 212, 0.15)", color: "var(--spray-cyan)" }}>
-                            ✦ YOUR ARTIST SHOWCASE
+                            YOUR ARTIST SHOWCASE
                         </span>
                     </div>
                 ) : isGuest ? (
@@ -300,7 +332,7 @@ export function ArtistProfileView({
                             className="btn-secondary"
                             onClick={() => onTriggerLogin?.("Sign in as a Fan to like this artist.")}
                         >
-                            ♡ Like
+                            Like
                         </button>
                         <button
                             type="button"
@@ -314,14 +346,14 @@ export function ArtistProfileView({
                             className="primary"
                             onClick={() => onTriggerLogin?.("Sign in as a Fan to book this artist.")}
                         >
-                            Book artist ↗
+                            Book Artist
                         </button>
                         <button
                             type="button"
                             className="btn-secondary"
                             onClick={() => onTriggerLogin?.("Sign in to file a community report.")}
                         >
-                            ⚑ Report
+                            Report
                         </button>
                     </>
                 ) : (
@@ -332,7 +364,7 @@ export function ArtistProfileView({
                             className={liked ? "primary" : "btn-secondary"}
                             onClick={handleLike}
                         >
-                            {liked ? "♥ Liked" : "♡ Like"}
+                            {liked ? "Liked" : "Like"}
                         </button>
                         <button
                             type="button"
@@ -346,7 +378,7 @@ export function ArtistProfileView({
                             className="primary"
                             onClick={() => { setAction("book"); setMessage(""); }}
                         >
-                            Book artist ↗
+                            Book Artist
                         </button>
                         {currentUser?.role === "Fan" && (
                             <button
@@ -355,7 +387,7 @@ export function ArtistProfileView({
                                 style={{ background: "#4a5b66", borderColor: "#4a5b66" }}
                                 onClick={() => { setAction("comment"); setMessage(""); }}
                             >
-                                Comment on Artwork 💬
+                                Comment on Artwork
                             </button>
                         )}
                         <ReportArtistButton artistId={artist.id} />
@@ -478,7 +510,7 @@ export function ArtistProfileView({
                                             color: "var(--spray-cyan)",
                                         }}
                                     >
-                                        ▦ UPCOMING {ev.eventType.toUpperCase()}
+                                        UPCOMING {ev.eventType.toUpperCase()}
                                     </span>
                                     <span className="pill" style={{ fontSize: "10px" }}>
                                         {ev.capacity} spots
@@ -490,7 +522,7 @@ export function ArtistProfileView({
                                 </h5>
 
                                 <p style={{ fontSize: "12px", color: "var(--spray-cyan)", margin: "4px 0 10px", fontWeight: 600 }}>
-                                    📅 {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "Date TBA"} · ⌖ {ev.location} {ev.virtual && "(Virtual Stream)"}
+                                    {ev.eventDate ? new Date(ev.eventDate).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "Date TBA"} · {ev.location} {ev.virtual && "(Virtual Stream)"}
                                 </p>
 
                                 {ev.description && (
@@ -560,7 +592,7 @@ export function ArtistProfileView({
 
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="pill" style={{ fontSize: "9px" }}>
-                                            ✦ ARTIST POST
+                                            ARTIST POST
                                         </span>
                                         {isOwner && (
                                             <button
@@ -577,7 +609,7 @@ export function ArtistProfileView({
                                                 }}
                                                 title="Delete this post from your feed"
                                             >
-                                                🗑 Delete
+                                                Delete
                                             </button>
                                         )}
                                     </div>
@@ -610,7 +642,7 @@ export function ArtistProfileView({
                                                     >
                                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                                                             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                                <span style={{ fontSize: "16px" }}>🎵</span>
+                                                                
                                                                 <span style={{ fontSize: "13px", color: "var(--spray-cyan)", fontWeight: 700 }}>
                                                                     {file.name || "Original Music Recording"}
                                                                 </span>
@@ -635,7 +667,7 @@ export function ArtistProfileView({
                                                         className="btn-secondary"
                                                         style={{ display: "inline-block", fontSize: "11px", padding: "8px 12px" }}
                                                     >
-                                                        📎 View Attachment: {file.name}
+                                                        View Attachment: {file.name}
                                                     </a>
                                                 )}
                                             </div>
@@ -643,7 +675,7 @@ export function ArtistProfileView({
                                     </div>
                                 )}
 
-                                <div style={{ display: "flex", gap: "12px", alignItems: "center", borderTop: "1px solid var(--line)", paddingTop: "12px", marginTop: "14px" }}>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "center", borderTop: "1px solid var(--line)", paddingTop: "12px", marginTop: "14px", flexWrap: "wrap" }}>
                                     <button
                                         type="button"
                                         className="btn-secondary"
@@ -656,7 +688,7 @@ export function ArtistProfileView({
                                             }
                                         }}
                                     >
-                                        ♡ Like
+                                        Like
                                     </button>
                                     <button
                                         type="button"
@@ -666,13 +698,137 @@ export function ArtistProfileView({
                                             if (isGuest) {
                                                 onTriggerLogin?.("Sign in to comment on posts.");
                                             } else {
-                                                setAction("comment");
+                                                setActiveCommentPostId(activeCommentPostId === p.id ? null : p.id);
                                             }
                                         }}
                                     >
-                                        💬 Comment
+                                        {activeCommentPostId === p.id ? "Hide Comments" : `Comments (${(postComments[p.id] || []).length})`}
                                     </button>
+                                    {!isOwner && (
+                                        <button
+                                            type="button"
+                                            className="btn-secondary"
+                                            style={{ fontSize: "11px", padding: "5px 12px", color: "var(--spray-pink)", marginLeft: "auto" }}
+                                            onClick={() => {
+                                                if (isGuest) {
+                                                    onTriggerLogin?.("Sign in to report content.");
+                                                } else {
+                                                    setReportingPost(p);
+                                                }
+                                            }}
+                                        >
+                                            Report Post
+                                        </button>
+                                    )}
                                 </div>
+
+                                {/* Comments Section for Post */}
+                                {(activeCommentPostId === p.id || (postComments[p.id] && postComments[p.id].length > 0)) && (
+                                    <div style={{ marginTop: "14px", borderTop: "1px dashed var(--line)", paddingTop: "12px", display: "grid", gap: "10px" }}>
+                                        <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+                                            Community Comments
+                                        </span>
+                                        {(postComments[p.id] || []).map((c) => (
+                                            <div
+                                                key={c.id}
+                                                style={{
+                                                    background: "rgba(255, 255, 255, 0.02)",
+                                                    border: "1px solid var(--line)",
+                                                    borderRadius: "8px",
+                                                    padding: "10px 14px",
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "flex-start",
+                                                    gap: "12px",
+                                                }}
+                                            >
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
+                                                        <b style={{ fontSize: "12px", color: "#ffffff" }}>{c.authorName}</b>
+                                                        <span style={{ fontSize: "10px", color: "var(--muted)" }}>{c.createdAt}</span>
+                                                    </div>
+                                                    <p style={{ margin: 0, fontSize: "13px", color: "var(--ink)", lineHeight: "1.5" }}>
+                                                        {c.text}
+                                                    </p>
+                                                </div>
+                                                {!isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (isGuest) {
+                                                                onTriggerLogin?.("Sign in to report comments.");
+                                                            } else {
+                                                                setReportingComment({ id: c.id, authorName: c.authorName, text: c.text });
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            background: "none",
+                                                            border: "1px solid var(--line)",
+                                                            borderRadius: "4px",
+                                                            color: "var(--spray-pink)",
+                                                            fontSize: "10px",
+                                                            cursor: "pointer",
+                                                            padding: "2px 8px",
+                                                            whiteSpace: "nowrap",
+                                                        }}
+                                                        title="Report inappropriate comment"
+                                                    >
+                                                        Report
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+
+                                        {/* New Comment Input */}
+                                        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Write a comment on this artwork..."
+                                                value={activeCommentPostId === p.id ? commentInput : ""}
+                                                onFocus={() => setActiveCommentPostId(p.id)}
+                                                onChange={(e) => {
+                                                    setActiveCommentPostId(p.id);
+                                                    setCommentInput(e.target.value);
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" && commentInput.trim()) {
+                                                        const text = commentInput.trim();
+                                                        setPostComments((prev) => ({
+                                                            ...prev,
+                                                            [p.id]: [
+                                                                ...(prev[p.id] || []),
+                                                                { id: `c-${Date.now()}`, authorName: currentUser?.name || "Fan", text, createdAt: "Just now" },
+                                                            ],
+                                                        }));
+                                                        setCommentInput("");
+                                                        setNotice("Comment posted!");
+                                                    }
+                                                }}
+                                                style={{ flex: 1, margin: 0, padding: "8px 12px", fontSize: "12px" }}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="primary"
+                                                style={{ padding: "8px 14px", fontSize: "12px" }}
+                                                onClick={() => {
+                                                    if (!commentInput.trim()) return;
+                                                    const text = commentInput.trim();
+                                                    setPostComments((prev) => ({
+                                                        ...prev,
+                                                        [p.id]: [
+                                                            ...(prev[p.id] || []),
+                                                            { id: `c-${Date.now()}`, authorName: currentUser?.name || "Fan", text, createdAt: "Just now" },
+                                                        ],
+                                                    }));
+                                                    setCommentInput("");
+                                                    setNotice("Comment posted!");
+                                                }}
+                                            >
+                                                Post
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
 
@@ -683,6 +839,26 @@ export function ArtistProfileView({
                     )}
                 </div>
             </div>
+            {reportingComment && (
+                <ReportContentModal
+                    targetType="POST"
+                    targetId={artist.id}
+                    contentSummary={reportingComment.text}
+                    authorName={reportingComment.authorName}
+                    onClose={() => setReportingComment(null)}
+                    onSuccess={() => setNotice("Report submitted for administrator review.")}
+                />
+            )}
+            {reportingPost && (
+                <ReportContentModal
+                    targetType="POST"
+                    targetId={artist.id}
+                    contentSummary={reportingPost.text}
+                    authorName={reportingPost.authorName}
+                    onClose={() => setReportingPost(null)}
+                    onSuccess={() => setNotice("Report submitted for administrator review.")}
+                />
+            )}
         </div>
     );
 }

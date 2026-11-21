@@ -122,7 +122,7 @@ export function FollowButton({ artistId }: {
         }
     }
     return <div className="community-follow"><button disabled={busy || (!state?.available && !state?.following && !!state)} onClick={toggle}>
-        {busy ? "Saving…" : state?.following ? "Following ✓ · Unfollow" : state && !state.available ? "Artist unavailable" : "Follow artist +"}
+        {busy ? "Saving…" : state?.following ? "Following - Unfollow" : state && !state.available ? "Artist unavailable" : "Follow artist +"}
     </button>{state && <small>{state.followerCount} {state.followerCount === 1 ? "follower" : "followers"}</small>}<Feedback error={error} notice={notice}/></div>;
 }
 export function FollowingPanel() {
@@ -266,7 +266,7 @@ export function FanProfilePanel() {
                         className={mode === "edit" ? "primary" : "btn-secondary"}
                         style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 700 }}
                     >
-                        ✏️ Edit Profile & Bio
+                        Edit Profile & Bio
                     </button>
                     <button
                         type="button"
@@ -274,7 +274,7 @@ export function FanProfilePanel() {
                         className={mode === "preview" ? "primary" : "btn-secondary"}
                         style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 700 }}
                     >
-                        👁️ View as Public (&ldquo;Preview Mode&rdquo;)
+                        View as Public (Preview Mode)
                     </button>
                 </div>
                 <span style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "1px" }}>
@@ -416,7 +416,7 @@ export function FanProfilePanel() {
                                                 cursor: "pointer",
                                             }}
                                         >
-                                            {selected ? "✓ " : "+ "}
+                                            {selected ? "[x] " : "+ "}
                                             {tag}
                                         </button>
                                     );
@@ -502,7 +502,7 @@ export function FanProfilePanel() {
                         {/* Save Action */}
                         <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
                             <button className="primary" disabled={busy} style={{ flex: 1, padding: "12px" }}>
-                                {busy ? "Saving Profile…" : "Save Profile Changes ✓"}
+                                {busy ? "Saving Profile…" : "Save Profile Changes"}
                             </button>
                             <button
                                 type="button"
@@ -510,7 +510,7 @@ export function FanProfilePanel() {
                                 onClick={() => setMode("preview")}
                                 style={{ padding: "12px 20px" }}
                             >
-                                Preview Public View 👁️
+                                Preview Public View
                             </button>
                         </div>
                     </form>
@@ -534,7 +534,7 @@ export function FanProfilePanel() {
                     >
                         <div>
                             <span style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px", color: "var(--spray-cyan)" }}>
-                                👁️ LIVE PUBLIC PREVIEW
+                                LIVE PUBLIC PREVIEW
                             </span>
                             <h3 style={{ margin: "2px 0 0", fontSize: "16px" }}>This is how other fans and creators see you</h3>
                             <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
@@ -547,13 +547,13 @@ export function FanProfilePanel() {
                             onClick={() => setMode("edit")}
                             style={{ padding: "8px 16px", fontSize: "12px" }}
                         >
-                            ✏️ Return to Editor
+                            Return to Editor
                         </button>
                     </div>
 
                     {!profile.publicProfile && (
                         <div className="notice" style={{ borderColor: "var(--spray-pink)", color: "var(--spray-pink)" }}>
-                            🔒 <b>Your profile is currently Private.</b> Other community members cannot view your profile details unless you enable &quot;Make my profile visible&quot; in settings.
+                            <b>Your profile is currently Private.</b> Other community members cannot view your profile details unless you enable &quot;Make my profile visible&quot; in settings.
                         </div>
                     )}
 
@@ -606,7 +606,7 @@ export function FanProfilePanel() {
                                     <span>Member ID #{profile.userId}</span>
                                     <span>•</span>
                                     <span style={{ color: profile.publicProfile ? "#4ade80" : "var(--spray-pink)" }}>
-                                        {profile.publicProfile ? "● Public Profile" : "○ Private Profile"}
+                                        {profile.publicProfile ? "Public Profile" : "Private Profile"}
                                     </span>
                                 </div>
 
@@ -737,7 +737,7 @@ export function FanProfilePanel() {
                                             gap: "8px",
                                         }}
                                     >
-                                        <span style={{ color: "var(--spray-pink)" }}>♥</span>
+                                        <span style={{ color: "var(--spray-pink)" }}>[Liked]</span>
                                         <span>Liked <b>William Waweru</b> &apos;s post &quot;Morning acoustic session from the hill country&quot;</span>
                                     </div>
                                     <div
@@ -752,7 +752,7 @@ export function FanProfilePanel() {
                                             gap: "8px",
                                         }}
                                     >
-                                        <span style={{ color: "var(--spray-cyan)" }}>🎟</span>
+                                        <span style={{ color: "var(--spray-cyan)" }}>[Booked]</span>
                                         <span>Booked ticket for <b>Luna Park</b> Live Concert</span>
                                     </div>
                                 </div>
@@ -882,35 +882,275 @@ export function ReportArtistButton({ artistId }: {
         setBusy(false);
     } }}>{busy ? "Opening report…" : "Report artist account"}</button><Feedback error={error}/>{evidence && <div><button onClick={() => setEvidence(null)}>Cancel report</button><ReportForm evidence={evidence} onSubmitted={changed}/></div>}</div>;
 }
+export function ReportContentModal({
+    targetType,
+    targetId,
+    contentSummary,
+    authorName,
+    onClose,
+    onSuccess,
+}: {
+    targetType: "POST" | "EVENT" | "USER";
+    targetId: number;
+    contentSummary: string;
+    authorName?: string;
+    onClose: () => void;
+    onSuccess?: () => void;
+}) {
+    const { accountId } = useContext(AccountContext);
+    const [reason, setReason] = useState("Inappropriate or offensive content");
+    const [details, setDetails] = useState("");
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState("");
+    const [notice, setNotice] = useState("");
+
+    const reasons = [
+        "Inappropriate or offensive content",
+        "Harassment or hate speech",
+        "Spam, bot, or commercial advertising",
+        "Threatening or violent language",
+        "Impersonation or deceptive behavior",
+        "Copyright or intellectual property violation",
+    ];
+
+    async function handleSubmit(e: FormEvent) {
+        e.preventDefault();
+        setBusy(true);
+        setError("");
+        setNotice("");
+        try {
+            await request<Report>(accountId, `${ROOT}/reports`, {
+                method: "POST",
+                body: JSON.stringify({
+                    targetType,
+                    targetId,
+                    reason,
+                    details: details.trim() || `Report on comment by ${authorName || "user"}: "${contentSummary}"`,
+                }),
+            });
+            setNotice("Report submitted. An administrator will review this content.");
+            changed();
+            onSuccess?.();
+            setTimeout(() => {
+                onClose();
+            }, 1200);
+        } catch (err) {
+            setError(errorText(err));
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    return (
+        <div
+            style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0, 0, 0, 0.75)",
+                backdropFilter: "blur(12px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+                padding: "20px",
+            }}
+        >
+            <div
+                className="panel"
+                style={{
+                    maxWidth: "520px",
+                    width: "100%",
+                    padding: "28px",
+                    background: "rgba(18, 22, 34, 0.95)",
+                    border: "1px solid var(--line-strong)",
+                    boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
+                    borderRadius: "14px",
+                }}
+            >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <div>
+                        <span className="eyebrow" style={{ color: "var(--spray-pink)" }}>CONTENT MODERATION</span>
+                        <h3 style={{ margin: "2px 0 0", fontSize: "18px" }}>Report Inappropriate Comment</h3>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="btn-secondary"
+                        style={{ padding: "4px 10px", fontSize: "12px" }}
+                    >
+                        Close
+                    </button>
+                </div>
+
+                <div
+                    style={{
+                        background: "rgba(255, 255, 255, 0.03)",
+                        border: "1px solid var(--line)",
+                        borderRadius: "8px",
+                        padding: "12px 14px",
+                        marginBottom: "16px",
+                        fontSize: "12px",
+                    }}
+                >
+                    <span style={{ color: "var(--muted)", display: "block", marginBottom: "4px", fontSize: "11px", textTransform: "uppercase" }}>
+                        Reported Comment by {authorName || "Community Member"}
+                    </span>
+                    <p style={{ margin: 0, color: "var(--ink)", fontStyle: "italic", lineHeight: "1.5" }}>
+                        &ldquo;{contentSummary}&rdquo;
+                    </p>
+                </div>
+
+                <Feedback error={error} notice={notice} />
+
+                {!notice && (
+                    <form onSubmit={handleSubmit} className="community-form">
+                        <label>
+                            Violation Reason
+                            <select
+                                aria-label="Violation Reason"
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                required
+                            >
+                                {reasons.map((r) => (
+                                    <option key={r} value={r}>
+                                        {r}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label>
+                            Additional Details (Optional)
+                            <textarea
+                                aria-label="Additional Details"
+                                rows={3}
+                                maxLength={500}
+                                placeholder="Explain why this content violates community guidelines..."
+                                value={details}
+                                onChange={(e) => setDetails(e.target.value)}
+                            />
+                        </label>
+
+                        <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={onClose}
+                                disabled={busy}
+                                style={{ flex: 1, padding: "10px" }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="primary"
+                                disabled={busy}
+                                style={{ flex: 1, padding: "10px", background: "var(--spray-pink)", borderColor: "var(--spray-pink)" }}
+                            >
+                                {busy ? "Submitting..." : "Submit Report"}
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export function FanReportsPanel() {
     const { accountId } = useContext(AccountContext);
-    const [targets, setTargets] = useState<Target[]>([]);
     const [reports, setReports] = useState<Report[]>([]);
-    const [selected, setSelected] = useState("");
-    const [evidence, setEvidence] = useState<Evidence | null>(null);
     const [error, setError] = useState("");
-    const [busy, setBusy] = useState(false);
-    const load = useCallback(async () => { try {
-        const [t, r] = await Promise.all([request<Target[]>(accountId, `${ROOT}/report-targets`), request<Report[]>(accountId, `${ROOT}/reports`)]);
-        setTargets(t);
-        setReports(r);
-        setError("");
-    }
-    catch (e) {
-        setError(errorText(e));
-    } }, [accountId]);
-    useEffect(() => { const timer = setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);
-    return <div className="community-grid"><section className="panel"><h2>Report inappropriate content</h2><p>Select a public post, published event, or visible account. Reports go directly to the administrator review queue.</p><Feedback error={error}/><button onClick={load}>Refresh available content</button><form className="community-form" onSubmit={async (e) => { e.preventDefault(); const target = targets.find(t => `${t.type}:${t.id}` === selected); if (!target)
-        return; setBusy(true); setError(""); setEvidence(null); try {
-        setEvidence(await request<Evidence>(accountId, `${ROOT}/report-evidence`, { method: "POST", body: JSON.stringify({ targetType: target.type, targetId: target.id }) }));
-    }
-    catch (e) {
-        setError(errorText(e));
-    }
-    finally {
-        setBusy(false);
-    } }}><label>Content or account<select aria-label="Content or account" required value={selected} onChange={e => { setSelected(e.target.value); setEvidence(null); }}><option value="">Select content to report</option>{targets.map(t => <option key={`${t.type}:${t.id}`} value={`${t.type}:${t.id}`}>{t.type} #{t.id} · {t.title.slice(0, 120)}</option>)}</select></label><button disabled={busy || !selected}>{busy ? "Checking availability…" : "Continue to report"}</button></form>{evidence && <ReportForm key={evidence.evidenceId} evidence={evidence} onSubmitted={() => void load()}/>}</section><section className="panel"><h2>Your reports</h2>{reports.length === 0 && <p>No reports submitted yet.</p>}{reports.map(r => <article className="community-report" key={r.id}><span className="pill">{r.status}</span><h3>Report #{r.id} · {r.targetType} #{r.targetId}</h3><p>{r.reason}</p>{r.details && <p>{r.details}</p>}{r.status === "RESOLVED" && <p>Outcome: {r.action?.replaceAll("_", " ")}{r.resolutionNotes && ` · ${r.resolutionNotes}`}</p>}</article>)}</section></div>;
+    const [loading, setLoading] = useState(false);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const r = await request<Report[]>(accountId, `${ROOT}/reports`);
+            setReports(r);
+            setError("");
+        } catch (e) {
+            setError(errorText(e));
+        } finally {
+            setLoading(false);
+        }
+    }, [accountId]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => void load(), 0);
+        window.addEventListener("fan-community-changed", load);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener("fan-community-changed", load);
+        };
+    }, [load]);
+
+    return (
+        <section className="panel" style={{ padding: "32px", maxWidth: "860px", margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <div>
+                    <span className="eyebrow">MODERATION TRACKER</span>
+                    <h2 style={{ margin: "4px 0 0" }}>Active Moderation Reports</h2>
+                    <p style={{ fontSize: "13px", color: "var(--muted)", margin: "4px 0 0" }}>
+                        Status and resolution logs for reports you have submitted for comments or posts.
+                    </p>
+                </div>
+                <button type="button" onClick={load} disabled={loading} className="btn-secondary" style={{ fontSize: "12px", padding: "8px 16px" }}>
+                    {loading ? "Refreshing..." : "Refresh Reports"}
+                </button>
+            </div>
+
+            <Feedback error={error} />
+
+            {reports.length === 0 && !error && (
+                <div style={{ padding: "36px", textAlign: "center", border: "1px dashed var(--line)", borderRadius: "12px", background: "rgba(255, 255, 255, 0.02)" }}>
+                    <p style={{ color: "var(--muted)", margin: 0, fontSize: "13px" }}>
+                        You have no active reports. To report inappropriate comments or posts, click the Report button directly on that content.
+                    </p>
+                </div>
+            )}
+
+            <div style={{ display: "grid", gap: "12px", marginTop: "16px" }}>
+                {reports.map((r) => (
+                    <article
+                        className="community-report"
+                        key={r.id}
+                        style={{
+                            background: "rgba(255, 255, 255, 0.03)",
+                            border: "1px solid var(--line-strong)",
+                            borderRadius: "10px",
+                            padding: "16px 20px",
+                        }}
+                    >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                            <span className="pill" style={{ fontSize: "10px", fontWeight: 700 }}>
+                                {r.status}
+                            </span>
+                            <span style={{ fontSize: "11px", color: "var(--muted)" }}>
+                                Report #{r.id} · Target: {r.targetType} #{r.targetId}
+                            </span>
+                        </div>
+                        <h3 style={{ margin: "4px 0", fontSize: "15px" }}>{r.reason}</h3>
+                        {r.details && <p style={{ fontSize: "13px", color: "var(--ink)", margin: "6px 0" }}>{r.details}</p>}
+                        {r.targetSnapshot && (
+                            <blockquote style={{ fontSize: "12px", color: "var(--muted)", background: "rgba(0,0,0,0.3)", padding: "8px 12px", borderRadius: "6px", margin: "8px 0" }}>
+                                Preserved snapshot: {r.targetSnapshot}
+                            </blockquote>
+                        )}
+                        {r.status === "RESOLVED" && (
+                            <div style={{ marginTop: "8px", fontSize: "12px", color: "var(--spray-cyan)" }}>
+                                Admin Outcome: {r.action?.replaceAll("_", " ")}
+                                {r.resolutionNotes && ` — ${r.resolutionNotes}`}
+                            </div>
+                        )}
+                    </article>
+                ))}
+            </div>
+        </section>
+    );
 }
+
 export function AdminReportsPanel() {
     const { accountId } = useContext(AccountContext);
     const [reports, setReports] = useState<Report[]>([]);

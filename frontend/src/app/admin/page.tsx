@@ -31,7 +31,6 @@ export default function AdminPage() {
             <div className="app-shell" style={{ justifyContent: "center", alignItems: "center", padding: "40px 20px", minHeight: "100vh" }}>
                 <div className="panel" style={{ maxWidth: "580px", width: "100%", padding: "36px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                        <span style={{ fontSize: "32px" }}>⛔</span>
                         <div>
                             <span className="pill" style={{ background: "#fff3f0", color: "#9e3926", borderColor: "#f1cfc6" }}>
                                 HTTP 403: FORBIDDEN
