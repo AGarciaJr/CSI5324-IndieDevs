@@ -163,6 +163,33 @@ export function registerFanUser(data: FanRegistrationData): UserPersona {
                 publicProfile: true,
             };
             localStorage.setItem(profileKey, JSON.stringify(initialProfile));
+
+            // Sync with backend database profile for active fan account 5
+            fetch("http://localhost:8080/api/fan-community/profile", {
+                headers: { "X-User-Id": "5" },
+            })
+                .then((res) => (res.ok ? res.json() : null))
+                .then((existing) => {
+                    const version = existing?.version ?? 0;
+                    fetch("http://localhost:8080/api/fan-community/profile", {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-User-Id": "5",
+                        },
+                        body: JSON.stringify({
+                            version,
+                            displayName: persona.name,
+                            biography: data.bio?.trim() || "Passionate supporter of independent art and grassroots music.",
+                            interests: data.interests && data.interests.length > 0 ? data.interests.join(", ") : "Indie Rock, Visual Media",
+                            image: "",
+                            publicProfile: true,
+                            showInterests: true,
+                            showFollowing: true,
+                        }),
+                    }).catch(() => {});
+                })
+                .catch(() => {});
         } catch {
             // Ignore storage errors
         }
@@ -350,7 +377,7 @@ export function mockAuthenticate(
  * Maps persona to backend UserAccount ID for header-based API authorization (X-User-Id).
  */
 export function getBackendAccountId(user: UserPersona): number {
-    return user.role === "Fan" ? (user.id === 1 ? 1 : user.id || 5) : user.role === "Artist" ? (user.id === 9 ? 2 : user.id || 2) : 3;
+    return user.role === "Fan" ? (user.id === 1 ? 1 : 5) : user.role === "Artist" ? 2 : 3;
 }
 
 /**
