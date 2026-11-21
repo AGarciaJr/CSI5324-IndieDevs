@@ -123,14 +123,13 @@ export function ArtistProfileView({
     const [events, setEvents] = useState<ArtistEvent[]>([]);
     const [posts, setPosts] = useState<ArtistPost[]>(() => getPostsForArtist(artist.id));
     const [filter, setFilter] = useState<"all" | "events" | "posts">("all");
-    const [action, setAction] = useState<"" | "chat" | "book" | "comment">("");
+    const [action, setAction] = useState<"" | "chat" | "book">("");
     const [message, setMessage] = useState("");
     const [notice, setNotice] = useState("");
     const [error, setError] = useState("");
-    const [liked, setLiked] = useState(false);
     const [reportingComment, setReportingComment] = useState<{ id: string; authorName: string; text: string } | null>(null);
     const [reportingPost, setReportingPost] = useState<ArtistPost | null>(null);
-    const [postComments, setPostComments] = useState<Record<string, { id: string; authorName: string; text: string; createdAt: string; authorId?: number; authorRole?: "Fan" | "Artist" }[]>>({
+    const [postComments, setPostComments] = useState<Record<string, { id: string; authorName: string; text: string; createdAt: string; authorId?: number; authorRole?: "Fan" | "Artist"; hidden?: boolean }[]>>({
         "post-ww-1": [
             { id: "c1", authorName: "Alex Fan", authorId: 5, authorRole: "Fan", text: "Love the warm acoustic guitar tone on this track!", createdAt: "2 hours ago" },
             { id: "c2", authorName: "Jordan T.", authorId: 2, authorRole: "Fan", text: "Can not wait for the vinyl release.", createdAt: "1 hour ago" },
@@ -146,6 +145,44 @@ export function ArtistProfileView({
     });
     const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
     const [commentInput, setCommentInput] = useState("");
+    const [postLikes, setPostLikes] = useState<Record<string, { count: number; liked: boolean }>>({
+        "post-ww-1": { count: 24, liked: false },
+        "post-ww-2": { count: 18, liked: false },
+        "post-lp-1": { count: 31, liked: false },
+    });
+
+    function getPostLikeState(postId: string, baseLikesCount?: number) {
+        if (postLikes[postId]) {
+            return postLikes[postId];
+        }
+        const count = baseLikesCount !== undefined ? baseLikesCount : 0;
+        return { count, liked: false };
+    }
+
+    function handleTogglePostLike(postId: string, baseLikesCount?: number) {
+        if (isGuest) {
+            onTriggerLogin?.("Sign in to like this post.");
+            return;
+        }
+        const current = getPostLikeState(postId, baseLikesCount);
+        const nextLiked = !current.liked;
+        const nextCount = nextLiked ? current.count + 1 : Math.max(0, current.count - 1);
+
+        setPostLikes((prev) => ({
+            ...prev,
+            [postId]: { count: nextCount, liked: nextLiked },
+        }));
+
+        if (nextLiked) {
+            fetch(
+                `${API_BASE}/api/recommendations/interactions?fanId=${backendAccountId}&artistId=${artist.id}&interactionType=LIKE`,
+                { method: "POST" }
+            ).catch(() => {});
+            setNotice("Post liked!");
+        } else {
+            setNotice("Like removed.");
+        }
+    }
 
     function handleAuthorClick(c: { authorName: string; authorId?: number; authorRole?: "Fan" | "Artist" }) {
         if (isGuest) {
@@ -176,6 +213,55 @@ export function ArtistProfileView({
         }
     }
 
+    function handleToggleHideComment(postId: string, commentId: string, currentHidden: boolean) {
+        const newHidden = !currentHidden;
+        const numericCommentId = commentId.startsWith("c-") ? 100 : Number(commentId.replace("c", "")) || 100;
+
+        fetch(`${API_BASE}/api/posts/comments/${numericCommentId}/hide?hidden=${newHidden}`, {
+            method: "PUT",
+            headers: {
+                "X-User-Id": String(backendAccountId),
+            },
+        }).catch(() => {});
+
+        setPostComments((prev) => ({
+            ...prev,
+            [postId]: (prev[postId] || []).map((c) =>
+                c.id === commentId ? { ...c, hidden: newHidden } : c
+            ),
+        }));
+
+        setNotice(newHidden ? "Comment hidden from community view." : "Comment restored to community view.");
+    }
+
+    async function handleBlockUser(c: { authorName: string; authorId?: number; id: string }, postId: string) {
+        if (!c.authorId) {
+            setNotice(`Cannot block unidentified author.`);
+            return;
+        }
+
+        try {
+            await fetch(`${API_BASE}/api/posts/artists/${artist.id}/blocked-users`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-User-Id": String(backendAccountId),
+                },
+                body: JSON.stringify({
+                    userId: c.authorId,
+                    userName: c.authorName,
+                    reason: "Inappropriate comments on artwork",
+                }),
+            });
+
+            // Also hide the comment
+            handleToggleHideComment(postId, c.id, false);
+            setNotice(`User ${c.authorName} blocked. They can no longer comment on your posts.`);
+        } catch {
+            setError(`Could not block user ${c.authorName}.`);
+        }
+    }
+
     useEffect(() => {
         const controller = new AbortController();
         fetch(`${API_BASE}/api/events/artist/${artist.id}`, { signal: controller.signal })
@@ -200,23 +286,6 @@ export function ArtistProfileView({
         };
     }, [artist.id]);
 
-    async function handleLike() {
-        if (isGuest) {
-            onTriggerLogin?.("Sign in as a Fan to like this artist and save them to your taste profile.");
-            return;
-        }
-        try {
-            await fetch(
-                `${API_BASE}/api/recommendations/interactions?fanId=${backendAccountId}&artistId=${artist.id}&interactionType=LIKE`,
-                { method: "POST" }
-            );
-            setLiked(true);
-            setNotice(`You liked ${artist.name}!`);
-        } catch {
-            setError("Could not register like. Please try again.");
-        }
-    }
-
     async function handleSubmitAction(e: FormEvent) {
         e.preventDefault();
         setError("");
@@ -224,42 +293,7 @@ export function ArtistProfileView({
 
         if (!message.trim()) return;
 
-        if (action === "comment") {
-            try {
-                const dummyPostId = 101;
-                const res = await fetch(
-                    `${API_BASE}/api/posts/${dummyPostId}/comments?fanId=${backendAccountId}&artistId=${artist.id}&genre=${encodeURIComponent(artist.genre)}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "text/plain" },
-                        body: message.trim(),
-                    }
-                );
-                if (!res.ok) throw new Error("Could not submit comment.");
-                setNotice(`Comment posted on ${artist.name}'s profile!`);
-                // Also add to active post comments if on a post
-                if (posts.length > 0) {
-                    const targetId = posts[0].id;
-                    setPostComments((prev) => ({
-                        ...prev,
-                        [targetId]: [
-                            ...(prev[targetId] || []),
-                            {
-                                id: `c-${Date.now()}`,
-                                authorName: currentUser?.name || "Fan",
-                                text: message.trim(),
-                                createdAt: "Just now",
-                            },
-                        ],
-                    }));
-                }
-                setMessage("");
-                setAction("");
-            } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : String(err);
-                setError(`Failed to post comment: ${msg}`);
-            }
-        } else if (action === "book") {
+        if (action === "book") {
             setNotice(`Booking request submitted to ${artist.name}! The artist will be notified.`);
             setMessage("");
             setAction("");
@@ -618,13 +652,6 @@ export function ArtistProfileView({
                         <button
                             type="button"
                             className="btn-secondary"
-                            onClick={() => onTriggerLogin?.("Sign in as a Fan to like this artist.")}
-                        >
-                            Like
-                        </button>
-                        <button
-                            type="button"
-                            className="btn-secondary"
                             onClick={() => onTriggerLogin?.("Sign in to chat with this artist.")}
                         >
                             Start chat
@@ -649,13 +676,6 @@ export function ArtistProfileView({
                         <FollowButton artistId={artist.id} />
                         <button
                             type="button"
-                            className={liked ? "primary" : "btn-secondary"}
-                            onClick={handleLike}
-                        >
-                            {liked ? "Liked" : "Like"}
-                        </button>
-                        <button
-                            type="button"
                             className="btn-secondary"
                             onClick={() => { setAction("chat"); setMessage(""); }}
                         >
@@ -668,16 +688,6 @@ export function ArtistProfileView({
                         >
                             Book Artist
                         </button>
-                        {currentUser?.role === "Fan" && (
-                            <button
-                                type="button"
-                                className="primary"
-                                style={{ background: "#4a5b66", borderColor: "#4a5b66" }}
-                                onClick={() => { setAction("comment"); setMessage(""); }}
-                            >
-                                Comment on Artwork
-                            </button>
-                        )}
                         <ReportArtistButton artistId={artist.id} />
                     </>
                 )}
@@ -690,7 +700,7 @@ export function ArtistProfileView({
                     style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid var(--line-strong)", borderRadius: "12px", padding: "18px", marginBottom: "24px", backdropFilter: "blur(16px)" }}
                 >
                     <h4 style={{ margin: "0 0 10px", fontSize: "14px" }}>
-                        {action === "chat" ? `Send message to ${artist.name}` : action === "book" ? `Book ${artist.name}` : `Leave a comment on ${artist.name}'s artwork`}
+                        {action === "chat" ? `Send message to ${artist.name}` : `Book ${artist.name}`}
                     </h4>
                     <textarea
                         rows={3}
@@ -700,15 +710,13 @@ export function ArtistProfileView({
                         placeholder={
                             action === "chat"
                                 ? "Write your message here..."
-                                : action === "book"
-                                ? "Provide event details, proposed date, and contact information..."
-                                : "Leave feedback or appreciation for this artist's work..."
+                                : "Provide event details, proposed date, and contact information..."
                         }
                         style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--line)", fontSize: "13px" }}
                     />
                     <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
                         <button type="submit" className="primary" style={{ padding: "8px 16px" }}>
-                            {action === "chat" ? "Send Message ↗" : action === "book" ? "Submit Booking Request ↗" : "Post Comment ↗"}
+                            {action === "chat" ? "Send Message ↗" : "Submit Booking Request ↗"}
                         </button>
                         <button type="button" className="btn-secondary" onClick={() => setAction("")}>
                             Cancel
@@ -851,7 +859,11 @@ export function ArtistProfileView({
 
                     {/* Posts items with uploaded media */}
                     {(filter === "all" || filter === "posts") &&
-                        posts.map((p) => (
+                        posts.map((p) => {
+                            const likesState = getPostLikeState(p.id, p.likesCount);
+                            const commentsCount = (postComments[p.id] || []).filter((c) => isOwner || !c.hidden).length;
+
+                            return (
                             <div
                                 key={`post-${p.id}`}
                                 style={{
@@ -873,7 +885,7 @@ export function ArtistProfileView({
                                                 {p.authorName || artist.name}
                                             </b>
                                             <small style={{ color: "var(--muted)", fontSize: "11px" }}>
-                                                {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "Recent update"} · {p.public ? "Public" : "Subscribers only"}
+                                                {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "Recent update"} · {p.public ? "Public" : "Subscribers only"} · {likesState.count} like{likesState.count !== 1 ? "s" : ""} · {commentsCount} comment{commentsCount !== 1 ? "s" : ""}
                                             </small>
                                         </div>
                                     </div>
@@ -1016,17 +1028,18 @@ export function ArtistProfileView({
                                 <div style={{ display: "flex", gap: "10px", alignItems: "center", borderTop: "1px solid var(--line)", paddingTop: "12px", marginTop: "14px", flexWrap: "wrap" }}>
                                     <button
                                         type="button"
-                                        className="btn-secondary"
-                                        style={{ fontSize: "11px", padding: "5px 12px" }}
-                                        onClick={() => {
-                                            if (isGuest) {
-                                                onTriggerLogin?.("Sign in to like this post.");
-                                            } else {
-                                                setNotice("Post liked!");
-                                            }
+                                        className={likesState.liked ? "primary" : "btn-secondary"}
+                                        style={{
+                                            fontSize: "11px",
+                                            padding: "5px 12px",
+                                            background: likesState.liked ? "rgba(244, 63, 94, 0.2)" : undefined,
+                                            borderColor: likesState.liked ? "var(--spray-pink)" : undefined,
+                                            color: likesState.liked ? "var(--spray-pink)" : undefined,
+                                            fontWeight: likesState.liked ? 700 : 500,
                                         }}
+                                        onClick={() => handleTogglePostLike(p.id, p.likesCount)}
                                     >
-                                        Like
+                                        {likesState.liked ? "Liked" : "Like"} ({likesState.count})
                                     </button>
                                     <button
                                         type="button"
@@ -1040,7 +1053,7 @@ export function ArtistProfileView({
                                             }
                                         }}
                                     >
-                                        {activeCommentPostId === p.id ? "Hide Comments" : `Comments (${(postComments[p.id] || []).length})`}
+                                        {activeCommentPostId === p.id ? "Hide Comments" : "Comments"} ({commentsCount})
                                     </button>
                                     {!isOwner && (
                                         <button
@@ -1066,12 +1079,14 @@ export function ArtistProfileView({
                                         <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
                                             Community Comments
                                         </span>
-                                        {(postComments[p.id] || []).map((c) => (
+                                        {(postComments[p.id] || [])
+                                            .filter((c) => isOwner || !c.hidden)
+                                            .map((c) => (
                                             <div
                                                 key={c.id}
                                                 style={{
-                                                    background: "rgba(255, 255, 255, 0.02)",
-                                                    border: "1px solid var(--line)",
+                                                    background: c.hidden ? "rgba(244, 63, 94, 0.08)" : "rgba(255, 255, 255, 0.02)",
+                                                    border: c.hidden ? "1px solid rgba(244, 63, 94, 0.4)" : "1px solid var(--line)",
                                                     borderRadius: "8px",
                                                     padding: "10px 14px",
                                                     display: "flex",
@@ -1134,6 +1149,12 @@ export function ArtistProfileView({
                                                             </span>
                                                             <span style={{ fontSize: "10px", color: "var(--muted)" }}>{c.createdAt}</span>
 
+                                                            {c.hidden && (
+                                                                <span className="pill" style={{ fontSize: "9px", background: "rgba(244, 63, 94, 0.2)", color: "var(--spray-pink)", borderColor: "var(--spray-pink)" }}>
+                                                                    HIDDEN BY ARTIST
+                                                                </span>
+                                                            )}
+
                                                             {/* Contextual Actions */}
                                                             <div style={{ display: "flex", gap: "6px", marginLeft: "auto", flexWrap: "wrap" }}>
                                                                 <button
@@ -1175,34 +1196,76 @@ export function ArtistProfileView({
                                                                     </button>
                                                                 )}
 
-                                                                {!isOwner && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            if (isGuest) {
-                                                                                onTriggerLogin?.("Sign in to report comments.");
-                                                                            } else {
-                                                                                setReportingComment({ id: c.id, authorName: c.authorName, text: c.text });
-                                                                            }
-                                                                        }}
-                                                                        style={{
-                                                                            background: "none",
-                                                                            border: "1px solid var(--line)",
-                                                                            borderRadius: "4px",
-                                                                            color: "var(--spray-pink)",
-                                                                            fontSize: "10px",
-                                                                            cursor: "pointer",
-                                                                            padding: "2px 8px",
-                                                                            whiteSpace: "nowrap",
-                                                                        }}
-                                                                        title="Report inappropriate comment"
-                                                                    >
-                                                                        Report
-                                                                    </button>
+                                                                {/* Monitor Comments Options for Artist */}
+                                                                {isOwner && (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleToggleHideComment(p.id, c.id, !!c.hidden)}
+                                                                            style={{
+                                                                                background: c.hidden ? "rgba(6, 182, 212, 0.15)" : "rgba(244, 63, 94, 0.15)",
+                                                                                border: c.hidden ? "1px solid var(--spray-cyan)" : "1px solid var(--spray-pink)",
+                                                                                borderRadius: "4px",
+                                                                                fontSize: "10px",
+                                                                                padding: "2px 8px",
+                                                                                color: c.hidden ? "var(--spray-cyan)" : "var(--spray-pink)",
+                                                                                cursor: "pointer",
+                                                                                fontWeight: 600,
+                                                                                whiteSpace: "nowrap",
+                                                                            }}
+                                                                            title={c.hidden ? "Unhide comment to community" : "Hide comment from public view"}
+                                                                        >
+                                                                            {c.hidden ? "Unhide" : "Hide"}
+                                                                        </button>
+                                                                        {c.authorId && c.authorId !== backendAccountId && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleBlockUser(c, p.id)}
+                                                                                style={{
+                                                                                    background: "rgba(244, 63, 94, 0.15)",
+                                                                                    border: "1px solid var(--spray-pink)",
+                                                                                    borderRadius: "4px",
+                                                                                    fontSize: "10px",
+                                                                                    padding: "2px 8px",
+                                                                                    color: "var(--spray-pink)",
+                                                                                    cursor: "pointer",
+                                                                                    fontWeight: 600,
+                                                                                    whiteSpace: "nowrap",
+                                                                                }}
+                                                                                title={`Block ${c.authorName} from commenting on your posts`}
+                                                                            >
+                                                                                Block
+                                                                            </button>
+                                                                        )}
+                                                                    </>
                                                                 )}
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (isGuest) {
+                                                                            onTriggerLogin?.("Sign in to report comments.");
+                                                                        } else {
+                                                                            setReportingComment({ id: c.id, authorName: c.authorName, text: c.text });
+                                                                        }
+                                                                    }}
+                                                                    style={{
+                                                                        background: "none",
+                                                                        border: "1px solid var(--line)",
+                                                                        borderRadius: "4px",
+                                                                        color: "var(--spray-pink)",
+                                                                        fontSize: "10px",
+                                                                        cursor: "pointer",
+                                                                        padding: "2px 8px",
+                                                                        whiteSpace: "nowrap",
+                                                                    }}
+                                                                    title="Report inappropriate comment"
+                                                                >
+                                                                    Report
+                                                                </button>
                                                             </div>
                                                         </div>
-                                                        <p style={{ margin: 0, fontSize: "13px", color: "var(--ink)", lineHeight: "1.5" }}>
+                                                        <p style={{ margin: 0, fontSize: "13px", color: c.hidden ? "var(--muted)" : "var(--ink)", lineHeight: "1.5" }}>
                                                             {c.text}
                                                         </p>
                                                     </div>
@@ -1224,6 +1287,26 @@ export function ArtistProfileView({
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter" && commentInput.trim()) {
                                                         const text = commentInput.trim();
+                                                        const numericPostId = p.id.startsWith("post-") ? (p.id.includes("lp") ? 1000 : 101) : Number(p.id) || 101;
+                                                        fetch(
+                                                            `${API_BASE}/api/posts/${numericPostId}/comments?fanId=${backendAccountId}&artistId=${artist.id}&genre=${encodeURIComponent(artist.genre)}`,
+                                                            {
+                                                                method: "POST",
+                                                                headers: { "Content-Type": "application/json" },
+                                                                body: JSON.stringify({
+                                                                    content: text,
+                                                                    authorName: currentUser?.name || "Fan",
+                                                                    authorRole: currentUser?.role || "Fan",
+                                                                    fanId: backendAccountId,
+                                                                    artistId: artist.id,
+                                                                }),
+                                                            }
+                                                        ).then((res) => {
+                                                            if (res.status === 403) {
+                                                                setError("You are blocked by this artist from commenting on their posts.");
+                                                            }
+                                                        }).catch(() => {});
+
                                                         setPostComments((prev) => ({
                                                             ...prev,
                                                             [p.id]: [
@@ -1251,6 +1334,26 @@ export function ArtistProfileView({
                                                 onClick={() => {
                                                     if (!commentInput.trim()) return;
                                                     const text = commentInput.trim();
+                                                    const numericPostId = p.id.startsWith("post-") ? (p.id.includes("lp") ? 1000 : 101) : Number(p.id) || 101;
+                                                    fetch(
+                                                        `${API_BASE}/api/posts/${numericPostId}/comments?fanId=${backendAccountId}&artistId=${artist.id}&genre=${encodeURIComponent(artist.genre)}`,
+                                                        {
+                                                            method: "POST",
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify({
+                                                                content: text,
+                                                                authorName: currentUser?.name || "Fan",
+                                                                authorRole: currentUser?.role || "Fan",
+                                                                fanId: backendAccountId,
+                                                                artistId: artist.id,
+                                                            }),
+                                                        }
+                                                    ).then((res) => {
+                                                        if (res.status === 403) {
+                                                            setError("You are blocked by this artist from commenting on their posts.");
+                                                        }
+                                                    }).catch(() => {});
+
                                                     setPostComments((prev) => ({
                                                         ...prev,
                                                         [p.id]: [
@@ -1275,7 +1378,8 @@ export function ArtistProfileView({
                                     </div>
                                 )}
                             </div>
-                        ))}
+                        );
+                    })}
 
                     {events.length === 0 && posts.length === 0 && (
                         <div className="panel" style={{ textAlign: "center", padding: "40px 20px" }}>

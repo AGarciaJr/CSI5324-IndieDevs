@@ -41,4 +41,5 @@ export type ArtistPost = {
     comments: boolean;
     createdAt?: string;
     files?: MediaFile[];
+    likesCount?: number;
 };

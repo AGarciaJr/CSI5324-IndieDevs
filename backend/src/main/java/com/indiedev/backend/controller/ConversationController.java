@@ -20,20 +20,37 @@ import java.util.List;
 public class ConversationController {
 
     private final ConversationService conversationService;
+    private final com.indiedev.backend.service.AccessControlService accessControlService;
 
-    public ConversationController(ConversationService conversationService) {
+    public ConversationController(
+            ConversationService conversationService,
+            com.indiedev.backend.service.AccessControlService accessControlService) {
         this.conversationService = conversationService;
+        this.accessControlService = accessControlService;
     }
 
     // Send a message to an artist or fan by account name or ID (creates conversation if not existing)
     @PostMapping("/send")
-    public Message sendMessage(@RequestBody SendMessageRequest request) {
+    public Message sendMessage(
+            @RequestBody SendMessageRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        Long effectiveSenderId = callerId != null ? callerId : request.getSenderId();
+        if (effectiveSenderId != null) {
+            accessControlService.requireAnyRole(effectiveSenderId, com.indiedev.backend.model.Role.FAN, com.indiedev.backend.model.Role.ARTIST, com.indiedev.backend.model.Role.ADMIN);
+        }
         return conversationService.sendMessage(request);
     }
 
     // Get all conversations for a specific user (Fan or Artist)
     @GetMapping("/user/{userId}")
-    public List<Conversation> getConversationsForUser(@PathVariable Long userId) {
+    public List<Conversation> getConversationsForUser(
+            @PathVariable Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null && !callerId.equals(userId)) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        } else if (callerId != null) {
+            accessControlService.requireAnyRole(callerId, com.indiedev.backend.model.Role.FAN, com.indiedev.backend.model.Role.ARTIST, com.indiedev.backend.model.Role.ADMIN);
+        }
         return conversationService.getConversationsForUser(userId);
     }
 

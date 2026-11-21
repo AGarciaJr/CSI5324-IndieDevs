@@ -1068,6 +1068,28 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
             files: mediaFiles,
         };
         persistStore({ ...store, posts: [newPost, ...store.posts] });
+
+        // Sync with backend API
+        fetch("http://localhost:8080/api/posts", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-User-Id": String(backendAccountId),
+            },
+            body: JSON.stringify({
+                post: {
+                    posterId: backendAccountId,
+                    postText: postText.trim(),
+                    isPublic: isPublic,
+                    commentsAllowed: commentsAllowed,
+                },
+                files: mediaFiles.map((m) => ({
+                    type: m.type,
+                    content: m.data,
+                })),
+            }),
+        }).catch(() => {});
+
         setPostText("");
         setMediaFiles([]);
         setNotice("Your creative post has been published to your artist feed!");

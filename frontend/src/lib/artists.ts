@@ -125,6 +125,7 @@ export const SAMPLE_ARTIST_POSTS: ArtistPost[] = [
         text: "Late night acoustic session in the studio. Working on a new single exploring the Texas sunset and warm analog tape warmth. Here is a preview snapshot of the setup!",
         public: true,
         comments: true,
+        likesCount: 24,
         createdAt: "2026-11-20T22:30:00Z",
         files: [
             {
@@ -142,6 +143,7 @@ export const SAMPLE_ARTIST_POSTS: ArtistPost[] = [
         text: "Thank you to everyone who joined us for the Waco acoustic night! Grateful for this community and our shared love for grassroots storytelling.",
         public: true,
         comments: true,
+        likesCount: 18,
         createdAt: "2026-11-18T19:15:00Z",
         files: [
             {
@@ -159,6 +161,7 @@ export const SAMPLE_ARTIST_POSTS: ArtistPost[] = [
         text: "New EP artwork unveiling: 'Hill Country Echoes'. Recorded live in a cedar cabin in Dripping Springs.",
         public: true,
         comments: true,
+        likesCount: 31,
         createdAt: "2026-11-19T14:00:00Z",
         files: [
             {
