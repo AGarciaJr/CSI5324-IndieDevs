@@ -31,7 +31,7 @@ export default function LoginPage() {
         const trimmed = username.trim().toLowerCase();
         // Check if user is attempting admin access on the member screen
         const isAdminAttempt = MOCK_USERS.some(
-            (u) => u.role === "Admin" && (u.username === trimmed || u.name.toLowerCase() === trimmed)
+            (u) => u.role === "Admin" && (u.email === trimmed || u.username === trimmed || u.name.toLowerCase() === trimmed || trimmed === "admin")
         );
 
         if (isAdminAttempt) {
@@ -79,7 +79,7 @@ export default function LoginPage() {
                 )}
 
                 {/* Card Container */}
-                <div className="panel" style={{ padding: "32px", background: "white" }}>
+                <div className="panel" style={{ padding: "32px" }}>
                     {/* Actor Role Tabs: Fan & Artist */}
                     <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid var(--line)", paddingBottom: "16px", marginBottom: "24px" }}>
                         {MEMBER_ROLES.map((r) => (
@@ -117,13 +117,13 @@ export default function LoginPage() {
                     <form onSubmit={handleSubmit} style={{ display: "grid", gap: "16px" }}>
                         <div>
                             <label style={{ display: "block", fontWeight: 600, fontSize: "13px", marginBottom: "6px" }}>
-                                {selectedRole} Username
+                                {selectedRole} Email Address
                             </label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder={`Enter your ${selectedRole.toLowerCase()} username`}
+                                placeholder={selectedRole === "Fan" ? "fan@test.com" : "artist@test.com"}
                                 style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
                             />
                         </div>

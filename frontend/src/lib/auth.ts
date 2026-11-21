@@ -26,6 +26,7 @@ export type Role = "Fan" | "Artist" | "Admin";
 export interface UserPersona {
     id: number;
     username: string;
+    email: string;
     name: string;
     role: Role;
     avatar: string;
@@ -33,17 +34,16 @@ export interface UserPersona {
 }
 
 /**
- * Pre-configured personas matching project documentation and test scenarios:
- * - Nicholas Nolen (Fan, id: 1)
- * - Jordan Smith (Fan, id: 2)
- * - William Waweru (Artist, id: 9)
- * - Admin Alex (Admin, id: 101)
- * - Admin Garrett (Admin, id: 102)
+ * Standard testing accounts per specifications:
+ * - Fan: fan@test.com (Nicholas Nolen, id: 1)
+ * - Artist: artist@test.com (William Waweru, id: 9)
+ * - Admin: admin@test.com (Admin Alex, id: 101)
  */
 export const MOCK_USERS: UserPersona[] = [
     {
         id: 1,
-        username: "nicholas",
+        username: "fan@test.com",
+        email: "fan@test.com",
         name: "Nicholas Nolen",
         role: "Fan",
         avatar: "NN",
@@ -51,7 +51,8 @@ export const MOCK_USERS: UserPersona[] = [
     },
     {
         id: 2,
-        username: "jordan",
+        username: "jordan@test.com",
+        email: "jordan@test.com",
         name: "Jordan Smith",
         role: "Fan",
         avatar: "JS",
@@ -59,7 +60,8 @@ export const MOCK_USERS: UserPersona[] = [
     },
     {
         id: 9,
-        username: "william",
+        username: "artist@test.com",
+        email: "artist@test.com",
         name: "William Waweru",
         role: "Artist",
         avatar: "WW",
@@ -67,7 +69,8 @@ export const MOCK_USERS: UserPersona[] = [
     },
     {
         id: 101,
-        username: "alex",
+        username: "admin@test.com",
+        email: "admin@test.com",
         name: "Admin Alex",
         role: "Admin",
         avatar: "AA",
@@ -75,7 +78,8 @@ export const MOCK_USERS: UserPersona[] = [
     },
     {
         id: 102,
-        username: "garrett",
+        username: "garrett@test.com",
+        email: "garrett@test.com",
         name: "Admin Garrett",
         role: "Admin",
         avatar: "AG",
@@ -123,22 +127,31 @@ export function clearStoredUser(): void {
  * Allows login via username and optional role check.
  */
 export function mockAuthenticate(
-    usernameOrId: string | number,
+    usernameOrEmailOrId: string | number,
     _password?: string,
     requiredRole?: Role
 ): { user: UserPersona | null; error?: string } {
-    const trimmed = String(usernameOrId).trim().toLowerCase();
+    const trimmed = String(usernameOrEmailOrId).trim().toLowerCase();
     const user = MOCK_USERS.find(
         (u) =>
+            u.email.toLowerCase() === trimmed ||
             u.username.toLowerCase() === trimmed ||
             u.name.toLowerCase() === trimmed ||
-            String(u.id) === trimmed
+            String(u.id) === trimmed ||
+            (trimmed === "fan" && u.email === "fan@test.com") ||
+            (trimmed === "nicholas" && u.id === 1) ||
+            (trimmed === "jordan" && u.id === 2) ||
+            (trimmed === "artist" && u.email === "artist@test.com") ||
+            (trimmed === "william" && u.id === 9) ||
+            (trimmed === "admin" && u.email === "admin@test.com") ||
+            (trimmed === "alex" && u.id === 101) ||
+            (trimmed === "garrett" && u.id === 102)
     );
 
     if (!user) {
         return {
             user: null,
-            error: `User "${usernameOrId}" not found.`,
+            error: `User "${usernameOrEmailOrId}" not found. Test with fan@test.com, artist@test.com, or admin@test.com.`,
         };
     }
 

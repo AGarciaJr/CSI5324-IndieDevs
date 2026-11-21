@@ -1,4 +1,4 @@
-import { Artist } from "../types/artist";
+import { Artist, ArtistPost } from "../types/artist";
 
 export const SAMPLE_ARTISTS: Artist[] = [
     {
@@ -90,4 +90,91 @@ export async function fetchArtistById(id: number | string): Promise<Artist | nul
     }
     const numId = Number(id);
     return SAMPLE_ARTISTS.find((a) => a.id === numId) || null;
+}
+
+export const SAMPLE_ARTIST_POSTS: ArtistPost[] = [
+    {
+        id: "post-ww-1",
+        artistId: 9,
+        authorName: "William Waweru",
+        authorAvatar: "WW",
+        text: "Late night acoustic session in the studio. Working on a new single exploring the Texas sunset and warm analog tape warmth. Here is a preview snapshot of the setup!",
+        public: true,
+        comments: true,
+        createdAt: "2026-11-20T22:30:00Z",
+        files: [
+            {
+                name: "acoustic-session-sunset.png",
+                type: "image/png",
+                data: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
+            },
+        ],
+    },
+    {
+        id: "post-ww-2",
+        artistId: 9,
+        authorName: "William Waweru",
+        authorAvatar: "WW",
+        text: "Thank you to everyone who joined us for the Waco acoustic night! Grateful for this community and our shared love for grassroots storytelling.",
+        public: true,
+        comments: true,
+        createdAt: "2026-11-18T19:15:00Z",
+        files: [
+            {
+                name: "live-session-crowd.png",
+                type: "image/png",
+                data: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=800&q=80",
+            },
+        ],
+    },
+    {
+        id: "post-lp-1",
+        artistId: 1,
+        authorName: "Luna Park",
+        authorAvatar: "LP",
+        text: "New EP artwork unveiling: 'Hill Country Echoes'. Recorded live in a cedar cabin in Dripping Springs.",
+        public: true,
+        comments: true,
+        createdAt: "2026-11-19T14:00:00Z",
+        files: [
+            {
+                name: "ep-artwork.png",
+                type: "image/png",
+                data: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+            },
+        ],
+    },
+];
+
+export function getPostsForArtist(artistId: number): ArtistPost[] {
+    if (typeof window === "undefined") {
+        return SAMPLE_ARTIST_POSTS.filter((p) => p.artistId === artistId);
+    }
+    try {
+        const stored = localStorage.getItem("artistconnect-ui-v2");
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && Array.isArray(parsed.posts)) {
+                const userPosts: ArtistPost[] = parsed.posts
+                    .filter((p: { artistId?: number }) => !p.artistId || p.artistId === artistId)
+                    .map((p: ArtistPost) => ({
+                        ...p,
+                        artistId: p.artistId || artistId,
+                        authorName: p.authorName || (artistId === 9 ? "William Waweru" : "Artist"),
+                        authorAvatar: p.authorAvatar || "WW",
+                    }));
+                const samples = SAMPLE_ARTIST_POSTS.filter((p) => p.artistId === artistId);
+                const combined = [...userPosts, ...samples];
+                const seen = new Set<string>();
+                return combined.filter((p) => {
+                    if (seen.has(p.id)) return false;
+                    seen.add(p.id);
+                    return true;
+                });
+            }
+        }
+    } catch {
+        // Ignore parse error
+    }
+    return SAMPLE_ARTIST_POSTS.filter((p) => p.artistId === artistId);
 }

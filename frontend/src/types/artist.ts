@@ -24,3 +24,21 @@ export type ArtistEvent = {
     ticketTiers?: string;
     status: string;
 };
+
+export type MediaFile = {
+    name: string;
+    type: string;
+    data: string;
+};
+
+export type ArtistPost = {
+    id: string;
+    artistId?: number;
+    authorName?: string;
+    authorAvatar?: string;
+    text: string;
+    public: boolean;
+    comments: boolean;
+    createdAt?: string;
+    files?: MediaFile[];
+};

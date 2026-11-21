@@ -101,7 +101,7 @@ export default function AdminPage() {
                     </p>
                 </div>
 
-                <div className="panel" style={{ padding: "32px", background: "white" }}>
+                <div className="panel" style={{ padding: "32px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                         <h2 style={{ margin: 0, fontSize: "19px" }}>Administrator Sign In</h2>
                         <span className="role-badge admin">ADMIN</span>
@@ -117,13 +117,13 @@ export default function AdminPage() {
                     <form onSubmit={handleAdminSubmit} style={{ display: "grid", gap: "16px" }}>
                         <div>
                             <label style={{ display: "block", fontWeight: 600, fontSize: "13px", marginBottom: "6px" }}>
-                                Admin Username
+                                Admin Email Address
                             </label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder="Enter administrator username"
+                                placeholder="admin@test.com"
                                 style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
                             />
                         </div>

@@ -83,9 +83,13 @@ type RecommendationData = {
 
 type Post = {
     id: string;
+    artistId?: number;
+    authorName?: string;
+    authorAvatar?: string;
     text: string;
     public: boolean;
     comments: boolean;
+    createdAt?: string;
     files: {
         name: string;
         type: string;
@@ -171,6 +175,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     const guestPersona: UserPersona = {
         id: 0,
         username: "guest",
+        email: "guest@test.com",
         name: "Guest Visitor",
         role: guestRole || "Fan",
         avatar: "?",
@@ -221,7 +226,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     }
 
     // Active Navigation Tab
-    const [tab, setTab] = useState(() => (currentUser?.role === "Artist" ? "Manage Events" : currentUser?.role === "Admin" ? "Ban Appeals" : "Discover"));
+    const [tab, setTab] = useState(() => (currentUser?.role === "Artist" ? "Artist Home" : currentUser?.role === "Admin" ? "Ban Appeals" : "Discover"));
 
     // General app state
     const [store, setStore] = useState<LocalStore>(initialStore);
@@ -240,6 +245,37 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     const [postText, setPostText] = useState("");
     const [isPublic, setPublic] = useState(true);
     const [commentsAllowed, setCommentsAllowed] = useState(true);
+    const [mediaFiles, setMediaFiles] = useState<{ name: string; type: string; data: string }[]>([]);
+    const [mediaUrlInput, setMediaUrlInput] = useState("");
+
+    function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        Array.from(files).forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const data = event.target?.result as string;
+                setMediaFiles((prev) => [
+                    ...prev,
+                    { name: file.name, type: file.type || "image/png", data },
+                ]);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function handleAddMediaUrl() {
+        if (!mediaUrlInput.trim()) return;
+        const url = mediaUrlInput.trim();
+        const isAudio = /\.(mp3|wav|ogg|m4a)($|\?)/i.test(url);
+        const isVideo = /\.(mp4|webm|mov)($|\?)/i.test(url);
+        const type = isAudio ? "audio/mpeg" : isVideo ? "video/mp4" : "image/jpeg";
+        setMediaFiles((prev) => [
+            ...prev,
+            { name: url.split("/").pop() || "media-attachment", type, data: url },
+        ]);
+        setMediaUrlInput("");
+    }
 
     // Use Case 3: Admin Verifications State
     const [applicationsList, setApplicationsList] = useState<ArtistApplication[]>([]);
@@ -295,11 +331,11 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                     setTab("Recommendations");
                 }
             } else if (currentUser?.role === "Artist") {
-                if (["Recommendations", "Ban Appeals", "Following", "Fan Profile", "Fan Reports", "Report Queue", "Artist Directory", "Verifications"].includes(tab)) {
-                    setTab("Manage Events");
+                if (["Ban Appeals", "Report Queue", "Artist Directory", "Verifications"].includes(tab)) {
+                    setTab("Artist Home");
                 }
             } else if (currentUser?.role === "Admin") {
-                if (["Recommendations", "Manage Events", "Make a post", "Discover", "Following", "Fan Profile", "Fan Reports"].includes(tab)) {
+                if (["Artist Home", "Recommendations", "Manage Events", "Make a post", "Discover", "Following", "Fan Profile", "Fan Reports"].includes(tab)) {
                     setTab("Ban Appeals");
                 }
             }
@@ -307,9 +343,9 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
         return () => clearTimeout(timer);
     }, [currentUser, tab]);
 
-    // Load recommendations when on Recommendations tab or fan changes
+    // Load recommendations when on Recommendations tab or member changes
     useEffect(() => {
-        if (tab === "Recommendations" && currentUser?.role === "Fan") {
+        if (tab === "Recommendations" && (currentUser?.role === "Fan" || currentUser?.role === "Artist")) {
             loadRecommendations(backendAccountId);
         }
     }, [tab, currentUser, backendAccountId]);
@@ -876,20 +912,28 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
     function handlePublishPost(e: FormEvent) {
         e.preventDefault();
-        if (!postText.trim()) {
-            setError("Please write some text before publishing.");
+        if (!postText.trim() && mediaFiles.length === 0) {
+            setError("Please write some text or attach media before publishing.");
             return;
         }
         const newPost: Post = {
             id: crypto.randomUUID(),
+            artistId: effectiveUser.role === "Artist" ? effectiveUser.id : undefined,
+            authorName: effectiveUser.name,
+            authorAvatar: effectiveUser.avatar,
             text: postText.trim(),
             public: isPublic,
             comments: commentsAllowed,
-            files: [],
+            createdAt: new Date().toISOString(),
+            files: mediaFiles,
         };
         persistStore({ ...store, posts: [newPost, ...store.posts] });
         setPostText("");
-        setNotice("Your post has been published to your profile!");
+        setMediaFiles([]);
+        setNotice("Your creative post has been published to your artist feed!");
+        if (effectiveUser.role === "Artist") {
+            setTab("Artist Home");
+        }
     }
 
     async function startConversation(e: FormEvent) {
@@ -930,10 +974,14 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
           ]
         : currentUser.role === "Artist"
         ? [
+              { label: "Artist Home", icon: "⌂", tabName: "Artist Home" },
+              { label: "For You", icon: "✳", tabName: "Recommendations" },
               { label: "Discover", icon: "⌕", tabName: "Discover" },
-              { label: "Make a post", icon: "＋", tabName: "Make a post" },
+              { label: "Following", icon: "♡", tabName: "Following" },
+              { label: "Create Post", icon: "＋", tabName: "Make a post" },
               { label: "Manage Events", icon: "▦", tabName: "Manage Events" },
               { label: "Messages", icon: "✉", tabName: "Messages" },
+              { label: "My profile", icon: "◎", tabName: "Fan Profile" },
           ]
         : [
               { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
@@ -1039,6 +1087,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                         <div className="page-heading">
                             <div>
                                 <h1>
+                                    {tab === "Artist Home" && "Your creative sanctuary."}
                                     {tab === "Following" && "Your creative community."}
                                     {tab === "Fan Profile" && "Make yourself at home."}
                                     {tab === "Fan Reports" && "Help keep the community safe."}
@@ -1050,9 +1099,10 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     {tab === "Ban Appeals" && "Moderation & appeal reviews."}
                                 </h1>
                                 <p>
+                                    {tab === "Artist Home" && "Your continuous feed of live events, exhibitions, and media-rich creative posts."}
                                     {tab === "Recommendations" && "Personalized artist matches constructed from your platform interaction history and genre affinities."}
                                     {tab === "Discover" && "Discover independent artists, view profiles, and engage with emerging communities."}
-                                    {tab === "Make a post" && "Share your art, creative process, and updates with your followers."}
+                                    {tab === "Make a post" && "Share your art, creative process, and multimedia updates with your community."}
                                     {tab === "Manage Events" && "Create, review, and update your upcoming concerts, workshops, and exhibitions."}
                                     {tab === "Ban Appeals" && "Review fan ban appeals, inspect report evidence, and evaluate automated AI Terms of Service recommendations."}
                                 </p>
@@ -1062,6 +1112,16 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                         {notice && <div className="notice" role="status">{notice}</div>}
                         {error && <div className="error" role="alert">{error}</div>}
 
+                        {/* TAB: ARTIST HOME (CONTINUOUS STREAM OF EVENTS & POSTS) */}
+                        {tab === "Artist Home" && currentUser?.role === "Artist" && (
+                            <div className="panel" style={{ padding: "32px" }}>
+                                <ArtistProfileView
+                                    artist={sampleArtists.find((a) => a.id === effectiveUser.id) || sampleArtists.find((a) => a.id === 9) || sampleArtists[8]}
+                                    isModal={false}
+                                />
+                            </div>
+                        )}
+
                         {/* TAB: FOLLOWING / FAVORITES */}
                         {tab === "Following" && (
                             isGuest ? (
@@ -1069,7 +1129,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     <div style={{ fontSize: "36px", marginBottom: "12px" }}>⭐</div>
                                     <h2>Sign In to View Favorites & Following</h2>
                                     <p style={{ color: "var(--muted)", maxWidth: "440px", margin: "8px auto 20px", fontSize: "14px", lineHeight: "1.6" }}>
-                                        You must be signed in with a Fan account to view your followed artists, liked tracks, and personalized favorites list.
+                                        You must be signed in with an account to view your followed artists, liked tracks, and personalized favorites list.
                                     </p>
                                     <button
                                         type="button"
@@ -1081,14 +1141,14 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     </button>
                                 </div>
                             ) : (
-                                currentUser?.role === "Fan" && <FollowingPanel />
+                                (currentUser?.role === "Fan" || currentUser?.role === "Artist") && <FollowingPanel />
                             )
                         )}
-                        {!isGuest && currentUser?.role === "Fan" && tab === "Fan Profile" && <FanProfilePanel />}
+                        {!isGuest && (currentUser?.role === "Fan" || currentUser?.role === "Artist") && tab === "Fan Profile" && <FanProfilePanel />}
                         {!isGuest && currentUser?.role === "Fan" && tab === "Fan Reports" && <FanReportsPanel />}
                         {!isGuest && currentUser?.role === "Admin" && tab === "Report Queue" && <AdminReportsPanel />}
 
-                        {/* TAB: RECOMMENDATIONS (USE CASE: RECEIVE RECOMMENDATION - FAN) */}
+                        {/* TAB: RECOMMENDATIONS (USE CASE: RECEIVE RECOMMENDATION) */}
                         {tab === "Recommendations" && (
                             isGuest ? (
                                 <div className="panel" style={{ textAlign: "center", padding: "48px 24px" }}>
@@ -1100,7 +1160,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     <button
                                         type="button"
                                         className="primary"
-                                        onClick={() => triggerGuestLogin("Sign in as a Fan to receive personalized recommendations.")}
+                                        onClick={() => triggerGuestLogin("Sign in to receive personalized recommendations.")}
                                         style={{ padding: "10px 24px" }}
                                     >
                                         Sign In as Fan →
@@ -1845,34 +1905,126 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     </button>
                                 </div>
                             ) : (
-                                <div className="studio-grid">
+                                <div style={{ maxWidth: "800px", margin: "0 auto" }}>
                                     <section className="panel">
-                                        <h2>Create a post</h2>
+                                        <div className="section-title">
+                                            <div>
+                                                <span className="eyebrow">CREATIVE STUDIO</span>
+                                                <h2 style={{ margin: "4px 0 0" }}>Create a Post</h2>
+                                            </div>
+                                        </div>
+
                                         <div className="byline">
                                             <div className="avatar">{effectiveUser.avatar}</div>
                                             <div>
                                                 <b>{effectiveUser.name}</b>
-                                                <small>Sharing from your {effectiveUser.role.toLowerCase()} profile</small>
+                                                <small>Sharing to your artist profile and continuous community stream</small>
                                             </div>
                                         </div>
 
                                         <form onSubmit={handlePublishPost}>
                                             <label>
-                                                Your story
+                                                Your Story & Creative Process
                                                 <textarea
-                                                    rows={7}
+                                                    rows={6}
                                                     maxLength={5000}
-                                                    placeholder="What have you been creating?"
+                                                    placeholder="Share your latest artwork updates, behind-the-scenes recording sessions, or creative story..."
                                                     value={postText}
                                                     onChange={(e) => setPostText(e.target.value)}
                                                 />
                                             </label>
                                             <small>{postText.length} / 5,000 characters</small>
 
+                                            {/* Media File Upload Area */}
+                                            <div style={{ marginTop: "18px", border: "1px dashed var(--line-strong)", borderRadius: "12px", padding: "20px", background: "rgba(255, 255, 255, 0.02)" }}>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                                    <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "var(--spray-cyan)" }}>
+                                                        ATTACH MEDIA (IMAGES, AUDIO CLIPS, VIDEO)
+                                                    </span>
+                                                    <span style={{ fontSize: "11px", color: "var(--muted)" }}>
+                                                        {mediaFiles.length} item{mediaFiles.length !== 1 ? "s" : ""} attached
+                                                    </span>
+                                                </div>
+
+                                                <input
+                                                    type="file"
+                                                    id="post-media-uploader"
+                                                    multiple
+                                                    accept="image/*,audio/*,video/*"
+                                                    onChange={handleFileSelect}
+                                                    style={{ display: "none" }}
+                                                />
+                                                <label
+                                                    htmlFor="post-media-uploader"
+                                                    className="upload"
+                                                    style={{ cursor: "pointer", display: "block", margin: "0 0 14px", padding: "18px", border: "1px dashed var(--spray-pink)", background: "rgba(244, 63, 94, 0.05)" }}
+                                                >
+                                                    <span style={{ color: "var(--spray-pink)", fontWeight: 700, fontSize: "13px" }}>
+                                                        📁 Click to Browse Artwork, Audio Tracks, or Video Files
+                                                    </span>
+                                                    <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
+                                                        Supports PNG, JPEG, WebP, MP3, WAV, MP4, WebM directly attached to your post
+                                                    </small>
+                                                </label>
+
+                                                {/* Media URL shortcut */}
+                                                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Or paste media URL (e.g. image link, audio track link)"
+                                                        value={mediaUrlInput}
+                                                        onChange={(e) => setMediaUrlInput(e.target.value)}
+                                                        style={{ flex: 1, margin: 0, padding: "8px 12px", fontSize: "12px" }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="btn-secondary"
+                                                        onClick={handleAddMediaUrl}
+                                                        style={{ padding: "8px 14px", fontSize: "11px", whiteSpace: "nowrap" }}
+                                                    >
+                                                        + Add Media URL
+                                                    </button>
+                                                </div>
+
+                                                {/* Preview of attached media files */}
+                                                {mediaFiles.length > 0 && (
+                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "14px" }}>
+                                                        {mediaFiles.map((file, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    gap: "8px",
+                                                                    background: "rgba(255, 255, 255, 0.06)",
+                                                                    border: "1px solid var(--line-strong)",
+                                                                    borderRadius: "8px",
+                                                                    padding: "6px 10px",
+                                                                    fontSize: "11px",
+                                                                }}
+                                                            >
+                                                                <span>{file.type.startsWith("image/") ? "🖼️" : file.type.startsWith("audio/") ? "🎵" : "🎬"}</span>
+                                                                <span style={{ maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                                    {file.name}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setMediaFiles((prev) => prev.filter((_, i) => i !== idx))}
+                                                                    style={{ background: "none", border: "none", color: "var(--spray-pink)", cursor: "pointer", padding: "0 4px", fontSize: "13px" }}
+                                                                    title="Remove attachment"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <div className="setting" style={{ marginTop: "16px" }}>
                                                 <div>
-                                                    <b>Public post</b>
-                                                    <p>Visible to everyone. Turn off for a private post.</p>
+                                                    <b>Public Post</b>
+                                                    <p>Visible to everyone on your endless scroll feed.</p>
                                                 </div>
                                                 <input
                                                     aria-label="Public post"
@@ -1884,8 +2036,8 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                                             <div className="setting">
                                                 <div>
-                                                    <b>Allow comments</b>
-                                                    <p>Make room for a conversation around your work.</p>
+                                                    <b>Allow Comments</b>
+                                                    <p>Make room for a conversation around your artwork.</p>
                                                 </div>
                                                 <input
                                                     aria-label="Allow comments"
@@ -1895,22 +2047,10 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                 />
                                             </div>
 
-                                            <button className="primary full">Publish post ↗</button>
+                                            <button type="submit" className="primary full" style={{ padding: "12px", marginTop: "12px" }}>
+                                                Publish to Artist Feed ↗
+                                            </button>
                                         </form>
-                                    </section>
-
-                                    <section>
-                                        <h2 className="preview-heading">YOUR POSTS · {store.posts.length}</h2>
-                                        {store.posts.length === 0 ? (
-                                            <div className="panel"><p>Your published posts will appear here.</p></div>
-                                        ) : (
-                                            store.posts.map((p) => (
-                                                <article key={p.id} className="panel saved-post">
-                                                    <small>{effectiveUser.name} · {p.public ? "Public" : "Private"}</small>
-                                                    <p className="post-text">{p.text}</p>
-                                                </article>
-                                            ))
-                                        )}
                                     </section>
                                 </div>
                             )
@@ -2106,13 +2246,13 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                             <form onSubmit={handleModalLogin} style={{ display: "grid", gap: "14px" }}>
                                 <div>
                                     <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "4px" }}>
-                                        {modalRole} Username
+                                        {modalRole} Email Address
                                     </label>
                                     <input
                                         type="text"
                                         value={modalUsername}
                                         onChange={(e) => setModalUsername(e.target.value)}
-                                        placeholder={`Enter your ${modalRole.toLowerCase()} username`}
+                                        placeholder={modalRole === "Fan" ? "fan@test.com" : "artist@test.com"}
                                         style={{ width: "100%", padding: "9px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
                                         autoFocus
                                     />
