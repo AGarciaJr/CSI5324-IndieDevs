@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import Image from "next/image";
 import { createContext, useCallback, useContext, useEffect, useState, type FormEvent, type ReactNode } from "react";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -138,7 +139,7 @@ export function FollowingPanel() {
         }
     }, [accountId]);
     useEffect(() => { const timer = setTimeout(() => void load(), 0); window.addEventListener("fan-community-changed", load); return () => { clearTimeout(timer); window.removeEventListener("fan-community-changed", load); }; }, [load]);
-    return <section className="community-section"><h2>Artists you support</h2><p>Your follows are saved to your account and feed your artist recommendations.</p><Feedback error={error}/><button onClick={load}>Refresh following</button>{items === null && !error && <p role="status">Loading following…</p>}{items?.length === 0 && <div className="panel">You aren’t following any artists yet. Find someone in Discover or For You.</div>}<div className="community-grid">{items?.map(a => <article className="panel" key={a.artistId}><h3>{a.name}</h3><p>{a.genre} · {a.location}</p>{!a.available && <p>This artist is currently unavailable.</p>}<FollowButton artistId={a.artistId}/></article>)}</div></section>;
+    return <section className="community-section"><h2>Artists you support</h2><p>Your follows are saved to your account and feed your artist recommendations.</p><Feedback error={error}/><button onClick={load}>Refresh following</button>{items === null && !error && <p role="status">Loading following…</p>}{items?.length === 0 && <div className="panel">You aren’t following any artists yet. Find someone in Discover or For You.</div>}<div className="community-grid">{items?.map(a => <article className="panel" key={a.artistId}><h3>{a.name}</h3><p>{a.genre} · {a.location}</p>{!a.available && <p>This artist is currently unavailable.</p>}<div style={{ display: "flex", gap: "8px", marginTop: "12px", alignItems: "center" }}><FollowButton artistId={a.artistId}/><Link href={`/artist/${a.artistId}`} className="btn-secondary" style={{ fontSize: "11px", padding: "6px 12px", textDecoration: "none" }}>View profile ↗</Link></div></article>)}</div></section>;
 }
 export function FanProfilePanel() {
     const { accountId } = useContext(AccountContext);

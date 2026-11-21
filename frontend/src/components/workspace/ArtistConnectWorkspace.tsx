@@ -8,12 +8,12 @@ import {
     FollowingPanel,
     FanProfilePanel,
     FanReportsPanel,
-    ReportArtistButton,
     AdminReportsPanel,
 } from "../fan-community";
 import { useEffect, useState, type FormEvent } from "react";
 import { Role, UserPersona, getBackendAccountId, getActorHomePage } from "../../lib/auth";
 import { useAuth } from "../../context/AuthContext";
+import { ArtistProfileView } from "../artist/ArtistProfileView";
 
 type Artist = {
     id: number;
@@ -235,8 +235,6 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     const [searched, setSearched] = useState(false);
     const source = "api";
     const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
-    const [modalAction, setModalAction] = useState("");
-    const [modalMessage, setModalMessage] = useState("");
 
     // Make a Post Tab State
     const [postText, setPostText] = useState("");
@@ -1205,8 +1203,6 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                                 style={{ fontSize: "11px", padding: "6px 10px" }}
                                                                 onClick={() => {
                                                                     setSelectedArtist(artist);
-                                                                    setModalAction("");
-                                                                    setModalMessage("");
                                                                 }}
                                                             >
                                                                 View Profile ↗
@@ -1771,17 +1767,23 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                                 <div className="artist-grid">
                                     {artistResults.map((a, i) => (
-                                        <button
+                                        <div
+                                            role="button"
+                                            tabIndex={0}
                                             className="artist-card"
                                             key={a.id}
                                             onClick={async () => {
                                                 setSelectedArtist(a);
-                                                setModalAction("");
-                                                setModalMessage("");
                                                 if (!isGuest && effectiveUser.role === "Fan") {
                                                     await recordFanInteraction(a.id, "VIEW");
                                                 }
                                             }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                    setSelectedArtist(a);
+                                                }
+                                            }}
+                                            style={{ cursor: "pointer", textAlign: "left" }}
                                         >
                                             <div className={`art-cover art-${i % 6}`}>
                                                 <span>{["◒", "〰", "◐", "✳", "◬", "◎"][i % 6]}</span>
@@ -1791,12 +1793,21 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                 <div className="avatar">{a.name.split(" ").map((s) => s[0]).slice(0, 2).join("")}</div>
                                                 <h3>{a.name}</h3>
                                                 <p>{a.genre}</p>
-                                                <div className="card-footer">
+                                                <div className="card-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                                     <span>⌖ {a.location}</span>
-                                                    <b>View profile ↗</b>
+                                                    <span style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                                        <Link
+                                                            href={`/artist/${a.id}`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            style={{ fontSize: "11px", color: "var(--primary)", textDecoration: "underline" }}
+                                                        >
+                                                            Artist Page ↗
+                                                        </Link>
+                                                        <b>Quick View ◒</b>
+                                                    </span>
                                                 </div>
                                             </div>
-                                        </button>
+                                        </div>
                                     ))}
                                 </div>
                             </>
@@ -2005,159 +2016,19 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                 {/* ARTIST PROFILE MODAL */}
                 {selectedArtist && (
-                    <dialog open aria-modal="true" aria-labelledby="profile-title" className="modal">
-                        <div className="modal-heading">
-                            <span className="eyebrow">ARTIST PROFILE</span>
-                            <button aria-label="Close artist profile" onClick={() => setSelectedArtist(null)}>×</button>
-                        </div>
-
-                        <div className="profile-art">✳</div>
-                        <h2 id="profile-title">{selectedArtist.name}</h2>
-                        <p>{selectedArtist.genre} · {selectedArtist.location}</p>
-                        {selectedArtist.bio && <p style={{ fontSize: "13px", color: "#3e4d44" }}>{selectedArtist.bio}</p>}
-                        {selectedArtist.tags && (
-                            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", margin: "10px 0" }}>
-                                {selectedArtist.tags.split(",").map((t, idx) => (
-                                    <span key={idx} className="pill" style={{ fontSize: "9px" }}>#{t.trim()}</span>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="profile-actions">
-                            {isGuest ? (
-                                <>
-                                    <button
-                                        type="button"
-                                        className="primary"
-                                        onClick={() => triggerGuestLogin("Sign in as a Fan to follow this artist and view favorites.")}
-                                    >
-                                        + Follow / Favorite
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn-secondary"
-                                        onClick={() => triggerGuestLogin("Sign in as a Fan to like this artist.")}
-                                    >
-                                        ♡ Like
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn-secondary"
-                                        onClick={() => triggerGuestLogin("Sign in to start a chat with this artist.")}
-                                    >
-                                        Start chat
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="primary"
-                                        onClick={() => triggerGuestLogin("Sign in as a Fan to book this artist.")}
-                                    >
-                                        Book artist ↗
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <FollowButton artistId={selectedArtist.id} />
-                                    <button onClick={() => { setModalAction("chat"); setModalMessage(""); }}>Start chat</button>
-                                    <button className="primary" onClick={() => { setModalAction("book"); setModalMessage(""); }}>Book artist ↗</button>
-
-                                    {currentUser?.role === "Fan" && (
-                                        <button
-                                            className="primary"
-                                            style={{ background: "#4a5b66", borderColor: "#4a5b66" }}
-                                            onClick={() => { setModalAction("comment"); setModalMessage(""); }}
-                                        >
-                                            Comment on Artwork 💬
-                                        </button>
-                                    )}
-                                </>
-                            )}
-                        </div>
-
-                        {isGuest ? (
-                            <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => triggerGuestLogin("Sign in to submit a community moderation report.")}
-                                style={{ marginTop: "12px", fontSize: "11px" }}
-                            >
-                                ⚑ Report Artist
-                            </button>
-                        ) : (
-                            <ReportArtistButton artistId={selectedArtist.id} />
-                        )}
-
-                        {modalAction && (
-                            <form
-                                onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    if (!modalMessage.trim()) return;
-                                    if (modalAction === "chat") {
-                                        const nextChats = {
-                                            ...store.chats,
-                                            [selectedArtist.id]: [...(store.chats[selectedArtist.id] || []), modalMessage.trim()],
-                                        };
-                                        persistStore({ ...store, chats: nextChats });
-                                    } else if (modalAction === "book") {
-                                        const nextBookings = [...store.bookings, { artistId: selectedArtist.id, details: modalMessage.trim() }];
-                                        persistStore({ ...store, bookings: nextBookings });
-                                        await recordFanInteraction(selectedArtist.id, "BOOKING");
-                                    } else if (modalAction === "comment") {
-                                        try {
-                                            const dummyPostId = 101;
-                                            const res = await fetch(
-                                                `${API_BASE}/api/posts/${dummyPostId}/comments?fanId=${backendAccountId}&artistId=${selectedArtist.id}&genre=${encodeURIComponent(selectedArtist.genre)}`,
-                                                {
-                                                    method: "POST",
-                                                    headers: { "Content-Type": "text/plain" },
-                                                    body: modalMessage.trim(),
-                                                }
-                                            );
-
-                                            if (!res.ok) throw new Error("Failed to post comment.");
-
-                                            loadRecommendations(backendAccountId);
-                                            setModalMessage("");
-                                            setModalAction("");
-                                            setNotice(`Comment posted on ${selectedArtist.name}'s artwork! Your taste profile affinity for ${selectedArtist.genre} has increased.`);
-                                        } catch (err: unknown) {
-                                            const msg = err instanceof Error ? err.message : String(err);
-                                            setError(`Could not post comment: ${msg}`);
-                                        }
-                                    }
-                                    setModalMessage("");
-                                    setNotice(modalAction === "chat" ? "Message saved." : "Booking request recorded!");
-                                }}
-                            >
-                                <h3>
-                                    {modalAction === "chat"
-                                        ? "Your conversation"
-                                        : modalAction === "book"
-                                        ? "Booking request"
-                                        : "Comment on featured artwork"}
-                                </h3>
-                                <label>
-                                    {modalAction === "chat"
-                                        ? "Message"
-                                        : modalAction === "book"
-                                        ? "Event details, date, and contact information"
-                                        : "Leave a comment on this artist's recent post"}
-                                    <textarea
-                                        required
-                                        value={modalMessage}
-                                        onChange={(e) => setModalMessage(e.target.value)}
-                                        rows={3}
-                                    />
-                                </label>
-                                <button className="primary">
-                                    {modalAction === "chat"
-                                        ? "Send message"
-                                        : modalAction === "book"
-                                        ? "Submit booking request"
-                                        : "Post comment ↗"}
-                                </button>
-                            </form>
-                        )}
+                    <dialog
+                        open
+                        aria-modal="true"
+                        aria-labelledby="profile-title"
+                        className="modal"
+                        style={{ maxWidth: "640px", width: "95%", padding: "28px" }}
+                    >
+                        <ArtistProfileView
+                            artist={selectedArtist}
+                            isModal={true}
+                            onCloseModal={() => setSelectedArtist(null)}
+                            onTriggerLogin={triggerGuestLogin}
+                        />
                     </dialog>
                 )}
 
