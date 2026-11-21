@@ -12,7 +12,7 @@ import {
     AdminReportsPanel,
 } from "../fan-community";
 import { useEffect, useState, type FormEvent } from "react";
-import { UserPersona, getBackendAccountId } from "../../lib/auth";
+import { Role, UserPersona, getBackendAccountId, getActorHomePage } from "../../lib/auth";
 import { useAuth } from "../../context/AuthContext";
 
 type Artist = {
@@ -137,25 +137,91 @@ const STORE_KEY = "artistconnect-ui-v2";
 
 interface ArtistConnectWorkspaceProps {
     currentPath?: string;
+    initialFlashLogin?: boolean;
+    guestRole?: Role;
 }
 
-export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspaceProps) {
-    const { currentUser, logout } = useAuth();
-    if (!currentUser) return null;
-    return <ArtistConnectWorkspaceInner currentUser={currentUser} logout={logout} currentPath={currentPath} />;
+export function ArtistConnectWorkspace({ currentPath, initialFlashLogin, guestRole }: ArtistConnectWorkspaceProps) {
+    const { currentUser, login, logout } = useAuth();
+    return (
+        <ArtistConnectWorkspaceInner
+            currentUser={currentUser}
+            login={login}
+            logout={logout}
+            currentPath={currentPath}
+            initialFlashLogin={initialFlashLogin}
+            guestRole={guestRole}
+        />
+    );
 }
 
 interface InnerWorkspaceProps {
-    currentUser: UserPersona;
+    currentUser: UserPersona | null;
+    login: (username: string, password?: string, requiredRole?: Role) => { success: boolean; error?: string };
     logout: () => void;
     currentPath?: string;
+    initialFlashLogin?: boolean;
+    guestRole?: Role;
 }
 
-function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: InnerWorkspaceProps) {
+function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, initialFlashLogin, guestRole }: InnerWorkspaceProps) {
     const router = useRouter();
 
+    const isGuest = !currentUser;
+    const guestPersona: UserPersona = {
+        id: 0,
+        username: "guest",
+        name: "Guest Visitor",
+        role: guestRole || "Fan",
+        avatar: "?",
+        description: "Guest Visitor",
+    };
+    const effectiveUser: UserPersona = currentUser || guestPersona;
+    const backendAccountId = currentUser ? getBackendAccountId(currentUser) : 0;
+
+    // Flash Login Modal state
+    const [showLoginModal, setShowLoginModal] = useState(() => (isGuest && (initialFlashLogin ?? true)));
+    const [loginModalMessage, setLoginModalMessage] = useState("");
+    const [modalRole, setModalRole] = useState<Role>(guestRole || "Fan");
+    const [modalUsername, setModalUsername] = useState("");
+    const [modalPassword, setModalPassword] = useState("");
+    const [modalError, setModalError] = useState("");
+    const [modalNotice, setModalNotice] = useState("");
+
+    function triggerGuestLogin(message: string, role: Role = "Fan") {
+        setModalRole(role);
+        setLoginModalMessage(message);
+        setModalError("");
+        setModalNotice("");
+        setShowLoginModal(true);
+    }
+
+    function handleModalLogin(e: FormEvent) {
+        e.preventDefault();
+        setModalError("");
+        setModalNotice("");
+
+        if (!modalUsername.trim()) {
+            setModalError("Please enter your username.");
+            return;
+        }
+
+        const result = login(modalUsername.trim(), modalPassword, modalRole);
+        if (result.success) {
+            setModalNotice(`Signed in as ${modalUsername}! Redirecting…`);
+            setTimeout(() => {
+                setShowLoginModal(false);
+                if (currentPath === "/fan" || currentPath === "/artist" || currentPath === "/") {
+                    router.push(getActorHomePage(modalRole));
+                }
+            }, 300);
+        } else {
+            setModalError(result.error || `Invalid credentials for ${modalRole} sign in.`);
+        }
+    }
+
     // Active Navigation Tab
-    const [tab, setTab] = useState(() => (currentUser.role === "Artist" ? "Manage Events" : currentUser.role === "Admin" ? "Ban Appeals" : "Discover"));
+    const [tab, setTab] = useState(() => (currentUser?.role === "Artist" ? "Manage Events" : currentUser?.role === "Admin" ? "Ban Appeals" : "Discover"));
 
     // General app state
     const [store, setStore] = useState<LocalStore>(initialStore);
@@ -235,15 +301,15 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
     // When active persona or tab changes, load appropriate data
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (currentUser.role === "Fan") {
+            if (currentUser?.role === "Fan") {
                 if (["Manage Events", "Ban Appeals", "Report Queue", "Artist Directory", "Verifications", "Make a post"].includes(tab)) {
                     setTab("Recommendations");
                 }
-            } else if (currentUser.role === "Artist") {
+            } else if (currentUser?.role === "Artist") {
                 if (["Recommendations", "Ban Appeals", "Following", "Fan Profile", "Fan Reports", "Report Queue", "Artist Directory", "Verifications"].includes(tab)) {
                     setTab("Manage Events");
                 }
-            } else if (currentUser.role === "Admin") {
+            } else if (currentUser?.role === "Admin") {
                 if (["Recommendations", "Manage Events", "Make a post", "Discover", "Following", "Fan Profile", "Fan Reports"].includes(tab)) {
                     setTab("Ban Appeals");
                 }
@@ -254,20 +320,20 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
     // Load recommendations when on Recommendations tab or fan changes
     useEffect(() => {
-        if (tab === "Recommendations" && currentUser.role === "Fan") {
-            loadRecommendations(getBackendAccountId(currentUser));
+        if (tab === "Recommendations" && currentUser?.role === "Fan") {
+            loadRecommendations(backendAccountId);
         }
-    }, [tab, currentUser]);
+    }, [tab, currentUser, backendAccountId]);
 
     useEffect(() => {
         const refresh = () => {
-            if (currentUser.role === "Fan" && tab === "Recommendations") {
-                void loadRecommendations(getBackendAccountId(currentUser));
+            if (currentUser?.role === "Fan" && tab === "Recommendations") {
+                void loadRecommendations(backendAccountId);
             }
         };
         window.addEventListener("fan-community-changed", refresh);
         return () => window.removeEventListener("fan-community-changed", refresh);
-    }, [currentUser, tab]);
+    }, [currentUser, tab, backendAccountId]);
 
     // Load events when on Manage Events tab
     useEffect(() => {
@@ -278,7 +344,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
     // Load appeals when on Ban Appeals tab
     useEffect(() => {
-        if (tab === "Ban Appeals" && currentUser.role === "Admin") {
+        if (tab === "Ban Appeals" && currentUser?.role === "Admin") {
             loadAppeals();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,7 +354,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
     useEffect(() => {
         if (tab === "Discover") {
             loadDiscoverArtists();
-        } else if (tab === "Artist Directory" && currentUser.role === "Admin") {
+        } else if (tab === "Artist Directory" && currentUser?.role === "Admin") {
             const controller = new AbortController();
             fetch(`${API_BASE}/api/artists?includeSuspended=true`, { signal: controller.signal })
                 .then(async (response) => {
@@ -304,7 +370,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
     // Load pending applications when on Verifications tab (Admin)
     useEffect(() => {
-        if (tab === "Verifications" && currentUser.role === "Admin") {
+        if (tab === "Verifications" && currentUser?.role === "Admin") {
             loadApplications();
         }
     }, [tab, currentUser]);
@@ -353,29 +419,28 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
     }
 
     async function recordFanInteraction(artistId: number, type: string) {
-        if (currentUser.role !== "Fan") return;
+        if (!currentUser || currentUser.role !== "Fan") return;
         try {
             await fetch(
-                `${API_BASE}/api/recommendations/interactions?fanId=${getBackendAccountId(currentUser)}&artistId=${artistId}&interactionType=${type}`,
+                `${API_BASE}/api/recommendations/interactions?fanId=${backendAccountId}&artistId=${artistId}&interactionType=${type}`,
                 {
                     method: "POST",
                 }
             );
-            if (currentUser.role === "Fan") {
-                loadRecommendations(getBackendAccountId(currentUser));
-            }
+            loadRecommendations(backendAccountId);
         } catch {
             // ignore offline
         }
     }
 
     async function clearFanInteractions() {
+        if (!currentUser || currentUser.role !== "Fan") return;
         try {
-            await fetch(`${API_BASE}/api/recommendations/interactions/fan/${getBackendAccountId(currentUser)}`, {
+            await fetch(`${API_BASE}/api/recommendations/interactions/fan/${backendAccountId}`, {
                 method: "DELETE",
             });
             setNotice("Interaction history cleared! You are now experiencing the New Fan (cold-start) view.");
-            loadRecommendations(getBackendAccountId(currentUser));
+            loadRecommendations(backendAccountId);
         } catch {
             setError("Could not clear interactions on backend.");
         }
@@ -444,7 +509,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
         setEditingEventId(null);
         setEventForm({
             ...emptyEventForm(),
-            artistId: currentUser.id === 9 ? 9 : 1,
+            artistId: currentUser?.id === 9 ? 9 : 1,
         });
         setEventFormErrors({});
         setShowReviewStep(false);
@@ -498,7 +563,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
         try {
             const payload = {
-                artistId: eventForm.artistId || currentUser.id,
+                artistId: eventForm.artistId || currentUser?.id || 9,
                 eventType: eventForm.eventType,
                 title: eventForm.title,
                 description: eventForm.description,
@@ -515,7 +580,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "X-User-Id": String(getBackendAccountId(currentUser)),
+                    "X-User-Id": String(backendAccountId),
                 },
                 body: JSON.stringify(payload),
             });
@@ -546,7 +611,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
         try {
             const payload = {
-                artistId: currentUser.id === 9 ? 9 : 1,
+                artistId: currentUser?.id === 9 ? 9 : 1,
                 eventType: eventForm.eventType,
                 title: eventForm.title,
                 description: eventForm.description,
@@ -563,7 +628,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "X-User-Id": String(getBackendAccountId(currentUser)),
+                    "X-User-Id": String(backendAccountId),
                 },
                 body: JSON.stringify(payload),
             });
@@ -591,7 +656,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
         try {
             const url =
                 appealsViewMode === "eligible"
-                    ? `${API_BASE}/api/moderation/appeals/open?adminId=${currentUser.id}`
+                    ? `${API_BASE}/api/moderation/appeals/open?adminId=${effectiveUser.id}`
                     : `${API_BASE}/api/moderation/appeals`;
             const res = await fetch(url);
             if (!res.ok) throw new Error("Failed to fetch ban appeals");
@@ -642,7 +707,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
         setNotice("");
         try {
             const res = await fetch(
-                `${API_BASE}/api/moderation/appeals/${appealId}/unban?adminId=${currentUser.id}&notes=${encodeURIComponent(adminNotes || "Reviewed and approved by admin.")}`,
+                `${API_BASE}/api/moderation/appeals/${appealId}/unban?adminId=${effectiveUser.id}&notes=${encodeURIComponent(adminNotes || "Reviewed and approved by admin.")}`,
                 {
                     method: "POST",
                 }
@@ -666,7 +731,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
         setNotice("");
         try {
             const res = await fetch(
-                `${API_BASE}/api/moderation/appeals/${appealId}/invalidate?adminId=${currentUser.id}&notes=${encodeURIComponent(adminNotes || "Marked invalid per policy.")}`,
+                `${API_BASE}/api/moderation/appeals/${appealId}/invalidate?adminId=${effectiveUser.id}&notes=${encodeURIComponent(adminNotes || "Marked invalid per policy.")}`,
                 {
                     method: "POST",
                 }
@@ -785,12 +850,14 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                         .filter(([, v]) => v.trim())
                         .map(([k, v]) => [k, v.trim()])
                 );
-                const url = currentUser.role === "Fan" ? `${API_BASE}/api/artists/search?${params}` : `${API_BASE}/api/artists`;
-                const res = await fetch(url, { headers: { "X-User-Id": String(getBackendAccountId(currentUser)) } });
+                const url = currentUser?.role === "Fan" ? `${API_BASE}/api/artists/search?${params}` : `${API_BASE}/api/artists`;
+                const headers: Record<string, string> = {};
+                if (backendAccountId > 0) headers["X-User-Id"] = String(backendAccountId);
+                const res = await fetch(url, { headers });
                 if (!res.ok) throw new Error();
                 const found: Artist[] = await res.json();
                 setArtistResults(
-                    currentUser.role === "Fan"
+                    currentUser?.role === "Fan"
                         ? found
                         : found.filter((a) =>
                               Object.entries(criteria).every(
@@ -839,6 +906,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
     async function startConversation(e: FormEvent) {
         e.preventDefault();
         try {
+            if (!currentUser) return;
             const recipient_res = await fetch(`${API_BASE}/api/artists/${recipientId}`);
             if (!recipient_res.ok) throw new Error("Could not find recipient.");
             const recipient = await recipient_res.json();
@@ -857,33 +925,37 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
         } catch {}
     }
 
-    const backendAccountId = getBackendAccountId(currentUser);
-
-    const navItems =
-        currentUser.role === "Fan"
-            ? [
-                  { label: "For You", icon: "✳", tabName: "Recommendations" },
-                  { label: "Discover", icon: "⌕", tabName: "Discover" },
-                  { label: "Following", icon: "♡", tabName: "Following" },
-                  { label: "My profile", icon: "◎", tabName: "Fan Profile" },
-                  { label: "Report content", icon: "⚑", tabName: "Fan Reports" },
-              ]
-            : currentUser.role === "Artist"
-            ? [
-                  { label: "Discover", icon: "⌕", tabName: "Discover" },
-                  { label: "Make a post", icon: "＋", tabName: "Make a post" },
-                  { label: "Manage Events", icon: "▦", tabName: "Manage Events" },
-                  { label: "Messages", icon: "✉", tabName: "Messages" },
-              ]
-            : [
-                  { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
-                  { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" },
-                  { label: "Verifications", icon: "✓", tabName: "Verifications" },
-                  { label: "Report queue", icon: "⚑", tabName: "Report Queue" },
-              ];
+    const navItems = isGuest
+        ? [
+              { label: "Discover", icon: "⌕", tabName: "Discover" },
+              { label: "Upcoming Events", icon: "▦", tabName: "Manage Events" },
+              { label: "Following & Favorites", icon: "♡", tabName: "Following" },
+              { label: "For You", icon: "✳", tabName: "Recommendations" },
+          ]
+        : currentUser.role === "Fan"
+        ? [
+              { label: "For You", icon: "✳", tabName: "Recommendations" },
+              { label: "Discover", icon: "⌕", tabName: "Discover" },
+              { label: "Following", icon: "♡", tabName: "Following" },
+              { label: "My profile", icon: "◎", tabName: "Fan Profile" },
+              { label: "Report content", icon: "⚑", tabName: "Fan Reports" },
+          ]
+        : currentUser.role === "Artist"
+        ? [
+              { label: "Discover", icon: "⌕", tabName: "Discover" },
+              { label: "Make a post", icon: "＋", tabName: "Make a post" },
+              { label: "Manage Events", icon: "▦", tabName: "Manage Events" },
+              { label: "Messages", icon: "✉", tabName: "Messages" },
+          ]
+        : [
+              { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
+              { label: "Artist Directory", icon: "🛡️", tabName: "Artist Directory" },
+              { label: "Verifications", icon: "✓", tabName: "Verifications" },
+              { label: "Report queue", icon: "⚑", tabName: "Report Queue" },
+          ];
 
     return (
-        <FanCommunityProvider key={`${backendAccountId}-${currentUser.role}`} accountId={backendAccountId} role={currentUser.role}>
+        <FanCommunityProvider key={`${backendAccountId}-${isGuest ? "Guest" : currentUser.role}`} accountId={backendAccountId} role={isGuest ? "Guest" : currentUser.role}>
             <div className="app-shell">
                 {/* SIDEBAR */}
                 <aside>
@@ -891,35 +963,55 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                         a<span>ArtistConnect</span><i>●</i>
                     </Link>
 
-                    {/* AUTHENTICATED USER PROFILE CARD */}
-                    <div className="account-switcher" style={{ background: "#fbfcf8", border: "1px solid var(--line)", borderRadius: "10px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                            <div className="avatar">{currentUser.avatar}</div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "13px" }}>
-                                    {currentUser.name}
-                                </b>
-                                <span className={`role-badge ${currentUser.role.toLowerCase()}`} style={{ marginTop: "2px" }}>
-                                    {currentUser.role}
-                                </span>
+                    {/* AUTHENTICATED USER PROFILE OR GUEST CARD */}
+                    {isGuest ? (
+                        <div className="account-switcher" style={{ background: "#fbfcf8", border: "1px solid var(--line)", borderRadius: "10px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <div className="avatar" style={{ background: "#e8efe1", color: "#325c41" }}>?</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <b style={{ display: "block", fontSize: "13px" }}>Guest Visitor</b>
+                                    <small style={{ color: "var(--muted)", fontSize: "11px" }}>Browsing catalog</small>
+                                </div>
                             </div>
+                            <button
+                                type="button"
+                                className="primary"
+                                onClick={() => triggerGuestLogin("Sign in to follow creators, save favorites, and interact with the community.")}
+                                style={{ width: "100%", padding: "7px 10px", fontSize: "12px", textAlign: "center" }}
+                            >
+                                Sign In / Register →
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={() => {
-                                logout();
-                                router.push(currentUser.role === "Admin" ? "/admin" : "/login");
-                            }}
-                            style={{ width: "100%", padding: "6px 8px", fontSize: "11px", textAlign: "center" }}
-                            title="Sign out of your session"
-                        >
-                            Sign Out
-                        </button>
-                    </div>
+                    ) : (
+                        <div className="account-switcher" style={{ background: "#fbfcf8", border: "1px solid var(--line)", borderRadius: "10px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <div className="avatar">{currentUser.avatar}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "13px" }}>
+                                        {currentUser.name}
+                                    </b>
+                                    <span className={`role-badge ${currentUser.role.toLowerCase()}`} style={{ marginTop: "2px" }}>
+                                        {currentUser.role}
+                                    </span>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => {
+                                    logout();
+                                    router.push(currentUser.role === "Admin" ? "/admin" : "/login");
+                                }}
+                                style={{ width: "100%", padding: "6px 8px", fontSize: "11px", textAlign: "center" }}
+                                title="Sign out of your session"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    )}
 
                     <p className="nav-label">
-                        {currentUser.role.toUpperCase()} WORKSPACE
+                        {isGuest ? "PUBLIC DIRECTORY" : `${currentUser.role.toUpperCase()} WORKSPACE`}
                     </p>
 
                     <nav>
@@ -1026,7 +1118,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
                     <main>
                         <div className="eyebrow">
-                            LOGGED IN AS {currentUser.name.toUpperCase()} ({currentUser.role.toUpperCase()})
+                            {isGuest ? "BROWSING AS GUEST VISITOR" : `LOGGED IN AS ${currentUser.name.toUpperCase()} (${currentUser.role.toUpperCase()})`}
                             {currentPath && <span style={{ marginLeft: "10px", opacity: 0.8 }}>· ROUTE: {currentPath}</span>}
                         </div>
 
@@ -1066,13 +1158,51 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                         {notice && <div className="notice" role="status">{notice}</div>}
                         {error && <div className="error" role="alert">{error}</div>}
 
-                        {currentUser.role === "Fan" && tab === "Following" && <FollowingPanel />}
-                        {currentUser.role === "Fan" && tab === "Fan Profile" && <FanProfilePanel />}
-                        {currentUser.role === "Fan" && tab === "Fan Reports" && <FanReportsPanel />}
-                        {currentUser.role === "Admin" && tab === "Report Queue" && <AdminReportsPanel />}
+                        {/* TAB: FOLLOWING / FAVORITES */}
+                        {tab === "Following" && (
+                            isGuest ? (
+                                <div className="panel" style={{ textAlign: "center", padding: "48px 24px" }}>
+                                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>⭐</div>
+                                    <h2>Sign In to View Favorites & Following</h2>
+                                    <p style={{ color: "var(--muted)", maxWidth: "440px", margin: "8px auto 20px", fontSize: "14px", lineHeight: "1.6" }}>
+                                        You must be signed in with a Fan account to view your followed artists, liked tracks, and personalized favorites list.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className="primary"
+                                        onClick={() => triggerGuestLogin("Sign in to access your followed artists and favorites list.")}
+                                        style={{ padding: "10px 24px" }}
+                                    >
+                                        Sign In Now →
+                                    </button>
+                                </div>
+                            ) : (
+                                currentUser?.role === "Fan" && <FollowingPanel />
+                            )
+                        )}
+                        {!isGuest && currentUser?.role === "Fan" && tab === "Fan Profile" && <FanProfilePanel />}
+                        {!isGuest && currentUser?.role === "Fan" && tab === "Fan Reports" && <FanReportsPanel />}
+                        {!isGuest && currentUser?.role === "Admin" && tab === "Report Queue" && <AdminReportsPanel />}
 
                         {/* TAB: RECOMMENDATIONS (USE CASE: RECEIVE RECOMMENDATION - FAN) */}
                         {tab === "Recommendations" && (
+                            isGuest ? (
+                                <div className="panel" style={{ textAlign: "center", padding: "48px 24px" }}>
+                                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>✳</div>
+                                    <h2>Personalized Recommendations</h2>
+                                    <p style={{ color: "var(--muted)", maxWidth: "440px", margin: "8px auto 20px", fontSize: "14px", lineHeight: "1.6" }}>
+                                        Sign in to receive algorithmic recommendations tailored to your taste profile based on your follows, likes, and bookings.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className="primary"
+                                        onClick={() => triggerGuestLogin("Sign in as a Fan to receive personalized recommendations.")}
+                                        style={{ padding: "10px 24px" }}
+                                    >
+                                        Sign In as Fan →
+                                    </button>
+                                </div>
+                            ) : currentUser?.role === "Fan" ? (
                             <div>
                                 {loadingRecs ? (
                                     <div className="empty"><p>Calculating numerical genre affinities and latent AI features…</p></div>
@@ -1183,28 +1313,45 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                                     </>
                                 ) : null}
                             </div>
-                        )}
+                        ) : null)}
 
-                        {/* TAB: MANAGE EVENTS (USE CASE: UPDATE EVENT - ARTIST) */}
+                        {/* TAB: MANAGE EVENTS (ARTIST / GUEST UPCOMING EVENTS) */}
                         {tab === "Manage Events" && (
                             <div>
-                                <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-                                    <button
-                                        className={eventSubTab === "list" ? "primary" : "btn-secondary"}
-                                        onClick={() => {
-                                            setEventSubTab("list");
-                                            setShowReviewStep(false);
-                                        }}
-                                    >
-                                        My Events Directory ({eventsList.length})
-                                    </button>
-                                    <button
-                                        className={eventSubTab === "create" ? "primary" : "btn-secondary"}
-                                        onClick={startCreateEvent}
-                                    >
-                                        ＋ Create New Event
-                                    </button>
-                                </div>
+                                {isGuest ? (
+                                    <div className="panel" style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fbfcf8" }}>
+                                        <div>
+                                            <span className="eyebrow">UPCOMING LIVE EVENTS</span>
+                                            <h3 style={{ margin: "4px 0" }}>Community Event Calendar</h3>
+                                            <small>Browsing public concerts, workshops, and exhibitions.</small>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="primary"
+                                            onClick={() => triggerGuestLogin("Sign in as an Artist to curate and publish events.", "Artist")}
+                                        >
+                                            Artist Sign In to Create Events →
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+                                        <button
+                                            className={eventSubTab === "list" ? "primary" : "btn-secondary"}
+                                            onClick={() => {
+                                                setEventSubTab("list");
+                                                setShowReviewStep(false);
+                                            }}
+                                        >
+                                            My Events Directory ({eventsList.length})
+                                        </button>
+                                        <button
+                                            className={eventSubTab === "create" ? "primary" : "btn-secondary"}
+                                            onClick={startCreateEvent}
+                                        >
+                                            ＋ Create New Event
+                                        </button>
+                                    </div>
+                                )}
 
                                 {eventSubTab === "list" && (
                                     <div>
@@ -1244,9 +1391,11 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                                                             <div><b>Capacity:</b> {ev.capacity} attendees</div>
                                                         </div>
 
-                                                        <button className="primary full" onClick={() => startEditEvent(ev)}>
-                                                            Edit / Update Event ↗
-                                                        </button>
+                                                        {!isGuest && currentUser?.role === "Artist" && (
+                                                            <button className="primary full" onClick={() => startEditEvent(ev)}>
+                                                                Edit / Update Event ↗
+                                                            </button>
+                                                        )}
                                                     </article>
                                                 ))}
                                             </div>
@@ -1507,7 +1656,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                                 <div className="panel" style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fcfaf7" }}>
                                     <div>
                                         <span className="eyebrow">MODERATOR SESSION</span>
-                                        <h3 style={{ margin: "4px 0" }}>Logged in as {currentUser.name} (Admin ID: {currentUser.id})</h3>
+                                        <h3 style={{ margin: "4px 0" }}>Logged in as {effectiveUser.name} (Admin ID: {effectiveUser.id})</h3>
                                         <small>Policy: A different admin than the banning admin must review appeals (conflict of interest prevention).</small>
                                     </div>
 
@@ -1569,7 +1718,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                                                     <span className="pill">{selectedAppeal.status}</span>
                                                 </div>
 
-                                                {selectedAppeal.banningAdminId === currentUser.id && (
+                                                {selectedAppeal.banningAdminId === effectiveUser.id && (
                                                     <div className="conflict-warning">
                                                         ⚠️ <b>Conflict of Interest Warning:</b> You were the administrator who issued this initial ban ({selectedAppeal.banningAdminName}). Under system rules, another administrator must review and process this appeal.
                                                     </div>
@@ -1616,7 +1765,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                                                         <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
                                                             <button
                                                                 className="primary"
-                                                                disabled={selectedAppeal.banningAdminId === currentUser.id}
+                                                                disabled={selectedAppeal.banningAdminId === effectiveUser.id}
                                                                 onClick={() => handleUnbanFan(selectedAppeal.id)}
                                                             >
                                                                 Unban Fan & Restore Login ↗
@@ -1624,7 +1773,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
                                                             <button
                                                                 className="btn-danger"
-                                                                disabled={selectedAppeal.banningAdminId === currentUser.id}
+                                                                disabled={selectedAppeal.banningAdminId === effectiveUser.id}
                                                                 onClick={() => handleInvalidateAppeal(selectedAppeal.id)}
                                                             >
                                                                 Mark Appeal Invalid & Uphold Ban ✕
@@ -1640,7 +1789,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                         )}
 
                         {/* TAB: ARTIST DIRECTORY (USE CASE: SUSPEND ARTIST - ADMIN) */}
-                        {tab === "Artist Directory" && currentUser.role === "Admin" && (
+                        {tab === "Artist Directory" && !isGuest && effectiveUser.role === "Admin" && (
                             <div className="panel">
                                 <div className="section-title">
                                     <div>
@@ -1685,7 +1834,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                         )}
 
                         {/* TAB: DISCOVER */}
-                        {tab === "Discover" && currentUser.role !== "Admin" && (
+                        {tab === "Discover" && effectiveUser.role !== "Admin" && (
                             <>
                                 <section className="search-panel">
                                     <div className="section-title">
@@ -1740,7 +1889,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                                                 setSelectedArtist(a);
                                                 setModalAction("");
                                                 setModalMessage("");
-                                                if (currentUser.role === "Fan") {
+                                                if (!isGuest && effectiveUser.role === "Fan") {
                                                     await recordFanInteraction(a.id, "VIEW");
                                                 }
                                             }}
@@ -1764,7 +1913,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                             </>
                         )}
 
-                        {tab === "Discover" && currentUser.role === "Admin" && (
+                        {tab === "Discover" && !isGuest && effectiveUser.role === "Admin" && (
                             <div className="panel" style={{ textAlign: "center", padding: "48px 20px" }}>
                                 <span className="pill" style={{ background: "#fbeee8", color: "#9c3b24" }}>ROLE ACCESS RESTRICTION</span>
                                 <h2 style={{ marginTop: "14px" }}>Admin Access Restricted</h2>
@@ -1779,78 +1928,96 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
                         {/* TAB: MAKE A POST */}
                         {tab === "Make a post" && (
-                            <div className="studio-grid">
-                                <section className="panel">
-                                    <h2>Create a post</h2>
-                                    <div className="byline">
-                                        <div className="avatar">{currentUser.avatar}</div>
-                                        <div>
-                                            <b>{currentUser.name}</b>
-                                            <small>Sharing from your {currentUser.role.toLowerCase()} profile</small>
-                                        </div>
-                                    </div>
-
-                                    <form onSubmit={handlePublishPost}>
-                                        <label>
-                                            Your story
-                                            <textarea
-                                                rows={7}
-                                                maxLength={5000}
-                                                placeholder="What have you been creating?"
-                                                value={postText}
-                                                onChange={(e) => setPostText(e.target.value)}
-                                            />
-                                        </label>
-                                        <small>{postText.length} / 5,000 characters</small>
-
-                                        <div className="setting" style={{ marginTop: "16px" }}>
+                            isGuest ? (
+                                <div className="panel" style={{ textAlign: "center", padding: "48px 24px" }}>
+                                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>＋</div>
+                                    <h2>Artist Studio & Post Publishing</h2>
+                                    <p style={{ color: "var(--muted)", maxWidth: "440px", margin: "8px auto 20px", fontSize: "14px", lineHeight: "1.6" }}>
+                                        Publishing posts and sharing artwork updates is restricted to verified Artist accounts.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className="primary"
+                                        onClick={() => triggerGuestLogin("Sign in as an Artist to create posts.", "Artist")}
+                                        style={{ padding: "10px 24px" }}
+                                    >
+                                        Artist Sign In →
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="studio-grid">
+                                    <section className="panel">
+                                        <h2>Create a post</h2>
+                                        <div className="byline">
+                                            <div className="avatar">{effectiveUser.avatar}</div>
                                             <div>
-                                                <b>Public post</b>
-                                                <p>Visible to everyone. Turn off for a private post.</p>
+                                                <b>{effectiveUser.name}</b>
+                                                <small>Sharing from your {effectiveUser.role.toLowerCase()} profile</small>
                                             </div>
-                                            <input
-                                                aria-label="Public post"
-                                                type="checkbox"
-                                                checked={isPublic}
-                                                onChange={(e) => setPublic(e.target.checked)}
-                                            />
                                         </div>
 
-                                        <div className="setting">
-                                            <div>
-                                                <b>Allow comments</b>
-                                                <p>Make room for a conversation around your work.</p>
+                                        <form onSubmit={handlePublishPost}>
+                                            <label>
+                                                Your story
+                                                <textarea
+                                                    rows={7}
+                                                    maxLength={5000}
+                                                    placeholder="What have you been creating?"
+                                                    value={postText}
+                                                    onChange={(e) => setPostText(e.target.value)}
+                                                />
+                                            </label>
+                                            <small>{postText.length} / 5,000 characters</small>
+
+                                            <div className="setting" style={{ marginTop: "16px" }}>
+                                                <div>
+                                                    <b>Public post</b>
+                                                    <p>Visible to everyone. Turn off for a private post.</p>
+                                                </div>
+                                                <input
+                                                    aria-label="Public post"
+                                                    type="checkbox"
+                                                    checked={isPublic}
+                                                    onChange={(e) => setPublic(e.target.checked)}
+                                                />
                                             </div>
-                                            <input
-                                                aria-label="Allow comments"
-                                                type="checkbox"
-                                                checked={commentsAllowed}
-                                                onChange={(e) => setCommentsAllowed(e.target.checked)}
-                                            />
-                                        </div>
 
-                                        <button className="primary full">Publish post ↗</button>
-                                    </form>
-                                </section>
+                                            <div className="setting">
+                                                <div>
+                                                    <b>Allow comments</b>
+                                                    <p>Make room for a conversation around your work.</p>
+                                                </div>
+                                                <input
+                                                    aria-label="Allow comments"
+                                                    type="checkbox"
+                                                    checked={commentsAllowed}
+                                                    onChange={(e) => setCommentsAllowed(e.target.checked)}
+                                                />
+                                            </div>
 
-                                <section>
-                                    <h2 className="preview-heading">YOUR POSTS · {store.posts.length}</h2>
-                                    {store.posts.length === 0 ? (
-                                        <div className="panel"><p>Your published posts will appear here.</p></div>
-                                    ) : (
-                                        store.posts.map((p) => (
-                                            <article key={p.id} className="panel saved-post">
-                                                <small>{currentUser.name} · {p.public ? "Public" : "Private"}</small>
-                                                <p className="post-text">{p.text}</p>
-                                            </article>
-                                        ))
-                                    )}
-                                </section>
-                            </div>
+                                            <button className="primary full">Publish post ↗</button>
+                                        </form>
+                                    </section>
+
+                                    <section>
+                                        <h2 className="preview-heading">YOUR POSTS · {store.posts.length}</h2>
+                                        {store.posts.length === 0 ? (
+                                            <div className="panel"><p>Your published posts will appear here.</p></div>
+                                        ) : (
+                                            store.posts.map((p) => (
+                                                <article key={p.id} className="panel saved-post">
+                                                    <small>{effectiveUser.name} · {p.public ? "Public" : "Private"}</small>
+                                                    <p className="post-text">{p.text}</p>
+                                                </article>
+                                            ))
+                                        )}
+                                    </section>
+                                </div>
+                            )
                         )}
 
                         {/* TAB: VERIFICATIONS */}
-                        {tab === "Verifications" && currentUser.role === "Admin" && (
+                        {tab === "Verifications" && !isGuest && effectiveUser.role === "Admin" && (
                             <div className="panel">
                                 <div className="section-title">
                                     <div>
@@ -1968,22 +2135,68 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                         )}
 
                         <div className="profile-actions">
-                            <FollowButton artistId={selectedArtist.id} />
-                            <button onClick={() => { setModalAction("chat"); setModalMessage(""); }}>Start chat</button>
-                            <button className="primary" onClick={() => { setModalAction("book"); setModalMessage(""); }}>Book artist ↗</button>
+                            {isGuest ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="primary"
+                                        onClick={() => triggerGuestLogin("Sign in as a Fan to follow this artist and view favorites.")}
+                                    >
+                                        + Follow / Favorite
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => triggerGuestLogin("Sign in as a Fan to like this artist.")}
+                                    >
+                                        ♡ Like
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => triggerGuestLogin("Sign in to start a chat with this artist.")}
+                                    >
+                                        Start chat
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="primary"
+                                        onClick={() => triggerGuestLogin("Sign in as a Fan to book this artist.")}
+                                    >
+                                        Book artist ↗
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <FollowButton artistId={selectedArtist.id} />
+                                    <button onClick={() => { setModalAction("chat"); setModalMessage(""); }}>Start chat</button>
+                                    <button className="primary" onClick={() => { setModalAction("book"); setModalMessage(""); }}>Book artist ↗</button>
 
-                            {currentUser.role === "Fan" && (
-                                <button
-                                    className="primary"
-                                    style={{ background: "#4a5b66", borderColor: "#4a5b66" }}
-                                    onClick={() => { setModalAction("comment"); setModalMessage(""); }}
-                                >
-                                    Comment on Artwork 💬
-                                </button>
+                                    {currentUser?.role === "Fan" && (
+                                        <button
+                                            className="primary"
+                                            style={{ background: "#4a5b66", borderColor: "#4a5b66" }}
+                                            onClick={() => { setModalAction("comment"); setModalMessage(""); }}
+                                        >
+                                            Comment on Artwork 💬
+                                        </button>
+                                    )}
+                                </>
                             )}
                         </div>
 
-                        <ReportArtistButton artistId={selectedArtist.id} />
+                        {isGuest ? (
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => triggerGuestLogin("Sign in to submit a community moderation report.")}
+                                style={{ marginTop: "12px", fontSize: "11px" }}
+                            >
+                                ⚑ Report Artist
+                            </button>
+                        ) : (
+                            <ReportArtistButton artistId={selectedArtist.id} />
+                        )}
 
                         {modalAction && (
                             <form
@@ -2004,7 +2217,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                                         try {
                                             const dummyPostId = 101;
                                             const res = await fetch(
-                                                `${API_BASE}/api/posts/${dummyPostId}/comments?fanId=${getBackendAccountId(currentUser)}&artistId=${selectedArtist.id}&genre=${encodeURIComponent(selectedArtist.genre)}`,
+                                                `${API_BASE}/api/posts/${dummyPostId}/comments?fanId=${backendAccountId}&artistId=${selectedArtist.id}&genre=${encodeURIComponent(selectedArtist.genre)}`,
                                                 {
                                                     method: "POST",
                                                     headers: { "Content-Type": "text/plain" },
@@ -2014,7 +2227,7 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
 
                                             if (!res.ok) throw new Error("Failed to post comment.");
 
-                                            loadRecommendations(getBackendAccountId(currentUser));
+                                            loadRecommendations(backendAccountId);
                                             setModalMessage("");
                                             setModalAction("");
                                             setNotice(`Comment posted on ${selectedArtist.name}'s artwork! Your taste profile affinity for ${selectedArtist.genre} has increased.`);
@@ -2057,6 +2270,126 @@ function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: Inner
                             </form>
                         )}
                     </dialog>
+                )}
+
+                {/* FLASH LOGIN SCREEN / MODAL (FOR GUEST VISITORS) */}
+                {showLoginModal && (
+                    <div
+                        className="modal-backdrop"
+                        style={{
+                            position: "fixed",
+                            inset: 0,
+                            background: "rgba(18, 28, 20, 0.65)",
+                            backdropFilter: "blur(4px)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            zIndex: 9999,
+                            padding: "20px",
+                        }}
+                        onClick={(e) => {
+                            if (e.target === e.currentTarget) setShowLoginModal(false);
+                        }}
+                    >
+                        <div className="panel" style={{ maxWidth: "480px", width: "100%", padding: "32px", position: "relative", boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowLoginModal(false)}
+                                style={{
+                                    position: "absolute",
+                                    top: "16px",
+                                    right: "16px",
+                                    background: "none",
+                                    border: "none",
+                                    fontSize: "20px",
+                                    cursor: "pointer",
+                                    color: "var(--muted)",
+                                }}
+                                aria-label="Close"
+                            >
+                                ✕
+                            </button>
+
+                            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                                <span className="brand" style={{ justifyContent: "center", display: "inline-flex" }}>
+                                    a<span>ArtistConnect</span><i>●</i>
+                                </span>
+                                <h3 style={{ margin: "12px 0 4px", fontSize: "18px" }}>Sign In to ArtistConnect</h3>
+                                <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
+                                    {loginModalMessage || "Sign in to follow creators, save favorites, and interact."}
+                                </p>
+                            </div>
+
+                            {/* Role Toggle: Fan / Artist */}
+                            <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid var(--line)", paddingBottom: "14px", marginBottom: "20px" }}>
+                                <button
+                                    type="button"
+                                    className={modalRole === "Fan" ? "primary" : "btn-secondary"}
+                                    style={{ flex: 1, padding: "8px", fontSize: "12px" }}
+                                    onClick={() => { setModalRole("Fan"); setModalError(""); }}
+                                >
+                                    Fan Sign In
+                                </button>
+                                <button
+                                    type="button"
+                                    className={modalRole === "Artist" ? "primary" : "btn-secondary"}
+                                    style={{ flex: 1, padding: "8px", fontSize: "12px" }}
+                                    onClick={() => { setModalRole("Artist"); setModalError(""); }}
+                                >
+                                    Artist Sign In
+                                </button>
+                            </div>
+
+                            {modalNotice && <div className="notice" role="status" style={{ marginBottom: "14px" }}>{modalNotice}</div>}
+                            {modalError && <div className="error" role="alert" style={{ marginBottom: "14px" }}>{modalError}</div>}
+
+                            <form onSubmit={handleModalLogin} style={{ display: "grid", gap: "14px" }}>
+                                <div>
+                                    <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "4px" }}>
+                                        {modalRole} Username
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={modalUsername}
+                                        onChange={(e) => setModalUsername(e.target.value)}
+                                        placeholder={`Enter your ${modalRole.toLowerCase()} username`}
+                                        style={{ width: "100%", padding: "9px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "4px" }}>
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={modalPassword}
+                                        onChange={(e) => setModalPassword(e.target.value)}
+                                        placeholder="Enter your password"
+                                        style={{ width: "100%", padding: "9px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
+                                    />
+                                </div>
+
+                                <button type="submit" className="primary" style={{ padding: "10px", marginTop: "4px" }}>
+                                    Sign In as {modalRole} →
+                                </button>
+                            </form>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", paddingTop: "14px", borderTop: "1px solid var(--line)", fontSize: "12px" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowLoginModal(false)}
+                                    style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                                >
+                                    Continue browsing as guest →
+                                </button>
+                                <Link href="/admin" style={{ color: "var(--green)", fontWeight: 600 }}>
+                                    Admin portal →
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </FanCommunityProvider>

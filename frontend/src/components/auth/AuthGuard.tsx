@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Role, getActorHomePage } from "../../lib/auth";
 import { useAuth } from "../../context/AuthContext";
+import { ArtistConnectWorkspace } from "../workspace/ArtistConnectWorkspace";
 
 interface AuthGuardProps {
     allowedRoles: Role[];
@@ -22,8 +23,18 @@ export function AuthGuard({ allowedRoles, actorName, children }: AuthGuardProps)
         );
     }
 
-    // 401 Unauthorized: User is not logged in
+    // Unauthenticated: For Fan/Artist workspaces, render workspace with immediate flash login screen so guests can see content
     if (!currentUser) {
+        if (allowedRoles.includes("Fan") || allowedRoles.includes("Artist")) {
+            return (
+                <ArtistConnectWorkspace
+                    currentPath={allowedRoles.includes("Fan") ? "/fan" : "/artist"}
+                    initialFlashLogin={true}
+                    guestRole={allowedRoles[0]}
+                />
+            );
+        }
+
         const loginPath = allowedRoles.includes("Admin") ? "/admin" : "/login";
 
         return (
