@@ -35,6 +35,74 @@ export function ArtistProfileView({
         currentUser.name.toLowerCase() === artist.name.toLowerCase()
     );
 
+    const [profileMode, setProfileMode] = useState<"view" | "edit">("view");
+    const [artistData, setArtistData] = useState({
+        name: artist.name,
+        genre: artist.genre,
+        location: artist.location,
+        bio: artist.bio || "",
+        tags: artist.tags || "",
+    });
+    const [editingPostId, setEditingPostId] = useState<string | null>(null);
+    const [editingPostText, setEditingPostText] = useState("");
+    const [artistToggles, setArtistToggles] = useState(() => {
+        if (typeof window !== "undefined") {
+            const stored = localStorage.getItem(`artist_prefs_${artist.id}`);
+            if (stored) {
+                try { return JSON.parse(stored); } catch {}
+            }
+        }
+        return {
+            showInterests: true,
+            showFollowing: true,
+            showRecentInteractions: true,
+            publicProfile: true,
+        };
+    });
+
+    function handleSaveProfileEdits(e: FormEvent) {
+        e.preventDefault();
+        if (typeof window !== "undefined") {
+            localStorage.setItem(`artist_prefs_${artist.id}`, JSON.stringify(artistToggles));
+            try {
+                const storedCatalog = localStorage.getItem("artistconnect-custom-artists");
+                const list = storedCatalog ? JSON.parse(storedCatalog) : [];
+                const updated = list.map((a: { id: number }) => a.id === artist.id ? { ...a, ...artistData } : a);
+                if (!updated.some((a: { id: number }) => a.id === artist.id)) {
+                    updated.push({ id: artist.id, ...artistData });
+                }
+                localStorage.setItem("artistconnect-custom-artists", JSON.stringify(updated));
+            } catch {}
+        }
+        setNotice("Artist profile and preferences updated successfully.");
+        setProfileMode("view");
+    }
+
+    function handleSavePostEdit(postId: string) {
+        if (!editingPostText.trim()) return;
+        setPosts((prev) =>
+            prev.map((p) => (p.id === postId ? { ...p, text: editingPostText.trim() } : p))
+        );
+        try {
+            const store = JSON.parse(localStorage.getItem("appStore") || "{}");
+            if (store.posts) {
+                store.posts = store.posts.map((p: { id: string; text: string }) =>
+                    p.id === postId ? { ...p, text: editingPostText.trim() } : p
+                );
+                localStorage.setItem("appStore", JSON.stringify(store));
+            }
+            const v2 = JSON.parse(localStorage.getItem("artistconnect-ui-v2") || "{}");
+            if (v2.posts) {
+                v2.posts = v2.posts.map((p: { id: string; text: string }) =>
+                    p.id === postId ? { ...p, text: editingPostText.trim() } : p
+                );
+                localStorage.setItem("artistconnect-ui-v2", JSON.stringify(v2));
+            }
+        } catch {}
+        setEditingPostId(null);
+        setNotice("Post updated successfully.");
+    }
+
     function handleDeletePost(postId: string) {
         if (!confirm("Are you sure you want to remove this post from your artist feed?")) return;
         setPosts((prev) => prev.filter((p) => p.id !== postId));
@@ -213,6 +281,191 @@ export function ArtistProfileView({
             {notice && <div className="notice" role="status" style={{ marginBottom: "16px" }}>{notice}</div>}
             {error && <div className="error" role="alert" style={{ marginBottom: "16px" }}>{error}</div>}
 
+            {/* ARTIST PROFILE MODE SWITCHER (VIEW VS EDIT) */}
+            {isOwner && (
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "20px",
+                        background: "rgba(255, 255, 255, 0.03)",
+                        border: "1px solid var(--line-strong)",
+                        padding: "8px 16px",
+                        borderRadius: "12px",
+                    }}
+                >
+                    <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                            type="button"
+                            onClick={() => setProfileMode("view")}
+                            className={profileMode === "view" ? "primary" : "btn-secondary"}
+                            style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 700 }}
+                        >
+                            View Public Showcase
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setProfileMode("edit")}
+                            className={profileMode === "edit" ? "primary" : "btn-secondary"}
+                            style={{ padding: "8px 16px", fontSize: "12px", fontWeight: 700 }}
+                        >
+                            Edit Profile & Preferences
+                        </button>
+                    </div>
+                    <span style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                        {profileMode === "view" ? "Public Artist Showcase" : "Artist Studio Editor"}
+                    </span>
+                </div>
+            )}
+
+            {/* EDIT PROFILE & DISPLAY PREFERENCES FORM */}
+            {isOwner && profileMode === "edit" ? (
+                <section className="panel" style={{ padding: "32px", marginBottom: "24px" }}>
+                    <div className="section-title" style={{ marginBottom: "20px" }}>
+                        <div>
+                            <span className="eyebrow">ARTIST IDENTITY & DISPLAY PREFERENCES</span>
+                            <h2 style={{ margin: "4px 0 0" }}>Edit Artist Profile</h2>
+                            <p style={{ fontSize: "13px", color: "var(--muted)", margin: "4px 0 0" }}>
+                                Update your showcase details and configure what community items are displayed on your public page.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleSaveProfileEdits} className="community-form">
+                        <label>
+                            Artist / Band Name
+                            <input
+                                aria-label="Artist Name"
+                                required
+                                value={artistData.name}
+                                onChange={(e) => setArtistData({ ...artistData, name: e.target.value })}
+                            />
+                        </label>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                            <label>
+                                Primary Genre / Discipline
+                                <input
+                                    aria-label="Genre"
+                                    required
+                                    value={artistData.genre}
+                                    onChange={(e) => setArtistData({ ...artistData, genre: e.target.value })}
+                                />
+                            </label>
+                            <label>
+                                Location (City, State)
+                                <input
+                                    aria-label="Location"
+                                    required
+                                    value={artistData.location}
+                                    onChange={(e) => setArtistData({ ...artistData, location: e.target.value })}
+                                />
+                            </label>
+                        </div>
+
+                        <label>
+                            Artist Bio & Creative Story
+                            <textarea
+                                aria-label="Artist Bio"
+                                rows={5}
+                                maxLength={2000}
+                                value={artistData.bio}
+                                onChange={(e) => setArtistData({ ...artistData, bio: e.target.value })}
+                                placeholder="Describe your artistic inspirations, instruments, and creative roots..."
+                            />
+                        </label>
+
+                        <label>
+                            Artistic Tags (Comma-separated)
+                            <input
+                                aria-label="Tags"
+                                value={artistData.tags}
+                                onChange={(e) => setArtistData({ ...artistData, tags: e.target.value })}
+                                placeholder="e.g. Music, Indie Folk, Acoustic, Songwriter, Live Sessions"
+                            />
+                        </label>
+
+                        {/* Opt-in Display Toggles */}
+                        <fieldset style={{ marginTop: "20px", border: "1px solid var(--line-strong)", borderRadius: "12px", padding: "18px", background: "rgba(255, 255, 255, 0.02)" }}>
+                            <legend style={{ fontWeight: 700, fontSize: "12px", color: "var(--spray-cyan)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                                Showcase Display Opt-Ins (Fan & Community Alignment)
+                            </legend>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={artistToggles.publicProfile}
+                                    onChange={(e) => setArtistToggles({ ...artistToggles, publicProfile: e.target.checked })}
+                                />
+                                <div>
+                                    <b>Make artist showcase publicly discoverable</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Allow fans to find your showcase in Discover and For You feeds.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={artistToggles.showInterests}
+                                    onChange={(e) => setArtistToggles({ ...artistToggles, showInterests: e.target.checked })}
+                                />
+                                <div>
+                                    <b>Display artistic interests and category tags</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Show artistic tags and category badges on your showcase banner.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={artistToggles.showFollowing}
+                                    onChange={(e) => setArtistToggles({ ...artistToggles, showFollowing: e.target.checked })}
+                                />
+                                <div>
+                                    <b>Display creators and peers I support</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Show fellow artists you follow and collaborate with on your page.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <label className="community-check" style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "12px", cursor: "pointer" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={artistToggles.showRecentInteractions}
+                                    onChange={(e) => setArtistToggles({ ...artistToggles, showRecentInteractions: e.target.checked })}
+                                />
+                                <div>
+                                    <b>Display recent interactions & community activity</b>
+                                    <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                        Show recent event collaborations, peer likes, and community discussions.
+                                    </p>
+                                </div>
+                            </label>
+                        </fieldset>
+
+                        <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+                            <button type="submit" className="primary" style={{ padding: "10px 24px" }}>
+                                Save Profile Changes
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => setProfileMode("view")}
+                                style={{ padding: "10px 20px" }}
+                            >
+                                Return to Public Showcase
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            ) : (
+                <>
             {/* Profile Art / Hero banner */}
             <div
                 style={{
@@ -244,12 +497,12 @@ export function ArtistProfileView({
                         boxShadow: "0 0 20px rgba(244, 63, 94, 0.4)",
                     }}
                 >
-                    {artist.name.split(" ").map((s) => s[0]).slice(0, 2).join("")}
+                    {artistData.name.split(" ").map((s) => s[0]).slice(0, 2).join("")}
                 </div>
                 <div>
-                    <h3 style={{ margin: 0, color: "white", fontSize: "22px", fontFamily: '"Didot", "Bodoni MT", Georgia, serif' }}>{artist.name}</h3>
+                    <h3 style={{ margin: 0, color: "white", fontSize: "22px", fontFamily: '"Didot", "Bodoni MT", Georgia, serif' }}>{artistData.name}</h3>
                     <p style={{ margin: "4px 0 0", color: "var(--spray-cyan)", fontSize: "13px", fontWeight: 600 }}>
-                        {artist.genre} · {artist.location}
+                        {artistData.genre} · {artistData.location}
                     </p>
                 </div>
             </div>
@@ -595,29 +848,79 @@ export function ArtistProfileView({
                                             ARTIST POST
                                         </span>
                                         {isOwner && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeletePost(p.id)}
-                                                style={{
-                                                    background: "none",
-                                                    border: "none",
-                                                    color: "var(--spray-pink)",
-                                                    cursor: "pointer",
-                                                    fontSize: "11px",
-                                                    fontWeight: 600,
-                                                    padding: "2px 6px",
-                                                }}
-                                                title="Delete this post from your feed"
-                                            >
-                                                Delete
-                                            </button>
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setEditingPostId(editingPostId === p.id ? null : p.id);
+                                                        setEditingPostText(p.text);
+                                                    }}
+                                                    style={{
+                                                        background: "none",
+                                                        border: "none",
+                                                        color: "var(--spray-cyan)",
+                                                        cursor: "pointer",
+                                                        fontSize: "11px",
+                                                        fontWeight: 600,
+                                                        padding: "2px 6px",
+                                                    }}
+                                                    title="Edit this post text"
+                                                >
+                                                    {editingPostId === p.id ? "Cancel Edit" : "Edit"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeletePost(p.id)}
+                                                    style={{
+                                                        background: "none",
+                                                        border: "none",
+                                                        color: "var(--spray-pink)",
+                                                        cursor: "pointer",
+                                                        fontSize: "11px",
+                                                        fontWeight: 600,
+                                                        padding: "2px 6px",
+                                                    }}
+                                                    title="Delete this post from your feed"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </>
                                         )}
                                     </div>
                                 </div>
 
-                                <p style={{ fontSize: "14px", color: "var(--ink)", lineHeight: "1.7", margin: "10px 0" }}>
-                                    {p.text}
-                                </p>
+                                {editingPostId === p.id ? (
+                                    <div style={{ margin: "10px 0", display: "grid", gap: "8px" }}>
+                                        <textarea
+                                            rows={4}
+                                            value={editingPostText}
+                                            onChange={(e) => setEditingPostText(e.target.value)}
+                                            style={{ width: "100%", padding: "10px 12px", fontSize: "13px" }}
+                                        />
+                                        <div style={{ display: "flex", gap: "8px" }}>
+                                            <button
+                                                type="button"
+                                                className="primary"
+                                                style={{ fontSize: "11px", padding: "6px 14px" }}
+                                                onClick={() => handleSavePostEdit(p.id)}
+                                            >
+                                                Save Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-secondary"
+                                                style={{ fontSize: "11px", padding: "6px 14px" }}
+                                                onClick={() => setEditingPostId(null)}
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p style={{ fontSize: "14px", color: "var(--ink)", lineHeight: "1.7", margin: "10px 0" }}>
+                                        {p.text}
+                                    </p>
+                                )}
 
                                 {/* Media Content Attachments (Images, Audio, Video) */}
                                 {p.files && p.files.length > 0 && (
@@ -839,6 +1142,8 @@ export function ArtistProfileView({
                     )}
                 </div>
             </div>
+            </>
+            )}
             {reportingComment && (
                 <ReportContentModal
                     targetType="POST"

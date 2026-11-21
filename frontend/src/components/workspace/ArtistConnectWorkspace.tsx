@@ -33,6 +33,7 @@ type ArtistApplication = {
     applicantName: string;
     proposedGenre: string;
     portfolioLinks: string;
+    description?: string;
     status: string;
     submittedAt?: string;
 };
@@ -366,6 +367,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
     // Use Case 3: Admin Verifications State
     const [applicationsList, setApplicationsList] = useState<ArtistApplication[]>([]);
+    const [recFormatFilter, setRecFormatFilter] = useState("All Formats");
     const [loadingApps, setLoadingApps] = useState(false);
 
     // Use Case 1: Update Event State (Artist)
@@ -892,8 +894,23 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
         setError("");
         try {
             const res = await fetch(`${API_BASE}/api/moderation/applications/pending`);
-            if (!res.ok) throw new Error("Failed to load applications");
-            setApplicationsList(await res.json());
+            let list: ArtistApplication[] = [];
+            if (res.ok) {
+                list = await res.json();
+            }
+            if (typeof window !== "undefined") {
+                const local = localStorage.getItem("artistconnect-pending-applications");
+                if (local) {
+                    try {
+                        const localApps: ArtistApplication[] = JSON.parse(local);
+                        const seen = new Set(list.map((a) => a.id));
+                        localApps.forEach((a) => {
+                            if (!seen.has(a.id)) list.push(a);
+                        });
+                    } catch {}
+                }
+            }
+            setApplicationsList(list);
         } catch {
             setApplicationsList([]);
         } finally {
@@ -1492,7 +1509,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                         Sign In as Fan →
                                     </button>
                                 </div>
-                            ) : currentUser?.role === "Fan" ? (
+                            ) : (currentUser?.role === "Fan" || currentUser?.role === "Artist") ? (
                             <div>
                                 {loadingRecs ? (
                                     <div className="empty"><p>Calculating numerical genre affinities and latent AI features…</p></div>
@@ -1549,15 +1566,84 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                         )}
 
                                         <div className="results-heading">
-                                            <h2>
-                                                {recommendationData.hasInteractions ? "Recommended Artists" : "Popular In Community"}{" "}
-                                                <span>{recommendationData.recommendations.length}</span>
-                                            </h2>
-                                            <span>Personalized algorithmic matching</span>
+                                            <div>
+                                                <h2>
+                                                    {recommendationData.hasInteractions ? "Recommended Artists" : "Popular In Community"}{" "}
+                                                    <span>
+                                                        {recommendationData.recommendations.filter(({ artist }) => {
+                                                            if (recFormatFilter === "All Formats") return true;
+                                                            const tags = (artist.tags || "").toLowerCase();
+                                                            const genre = (artist.genre || "").toLowerCase();
+                                                            const filter = recFormatFilter.toLowerCase();
+                                                            if (filter === "music") {
+                                                                return tags.includes("music") || genre.includes("folk") || genre.includes("rock") || genre.includes("pop") || genre.includes("jazz") || genre.includes("electronic");
+                                                            }
+                                                            if (filter === "visual media") {
+                                                                return tags.includes("visual") || genre.includes("visual") || tags.includes("painting") || tags.includes("illustration");
+                                                            }
+                                                            if (filter === "street art / graffiti") {
+                                                                return tags.includes("street art") || tags.includes("graffiti") || genre.includes("street art");
+                                                            }
+                                                            if (filter === "digital art") {
+                                                                return tags.includes("digital art") || tags.includes("3d") || genre.includes("digital art");
+                                                            }
+                                                            if (filter === "photography") {
+                                                                return tags.includes("photography") || genre.includes("photography");
+                                                            }
+                                                            if (filter === "mixed-media") {
+                                                                return tags.includes("mixed-media") || genre.includes("mixed-media");
+                                                            }
+                                                            return tags.includes(filter) || genre.includes(filter);
+                                                        }).length}
+                                                    </span>
+                                                </h2>
+                                                <span>Base matches encompass all formats · Filter by discipline</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Format Filter Bar (All Formats, Music, Visual Media, etc.) */}
+                                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", margin: "14px 0 22px" }}>
+                                            {["All Formats", "Music", "Visual Media", "Street Art / Graffiti", "Digital Art", "Photography", "Mixed-Media"].map((fmt) => (
+                                                <button
+                                                    key={fmt}
+                                                    type="button"
+                                                    className={recFormatFilter === fmt ? "primary" : "btn-secondary"}
+                                                    style={{ fontSize: "12px", padding: "6px 14px", borderRadius: "18px" }}
+                                                    onClick={() => setRecFormatFilter(fmt)}
+                                                >
+                                                    {fmt}
+                                                </button>
+                                            ))}
                                         </div>
 
                                         <div className="artist-grid">
-                                            {recommendationData.recommendations.map(({ artist, matchPercentage, reason, latentFeatureSummary }, i) => (
+                                            {recommendationData.recommendations
+                                                .filter(({ artist }) => {
+                                                    if (recFormatFilter === "All Formats") return true;
+                                                    const tags = (artist.tags || "").toLowerCase();
+                                                    const genre = (artist.genre || "").toLowerCase();
+                                                    const filter = recFormatFilter.toLowerCase();
+                                                    if (filter === "music") {
+                                                        return tags.includes("music") || genre.includes("folk") || genre.includes("rock") || genre.includes("pop") || genre.includes("jazz") || genre.includes("electronic");
+                                                    }
+                                                    if (filter === "visual media") {
+                                                        return tags.includes("visual") || genre.includes("visual") || tags.includes("painting") || tags.includes("illustration");
+                                                    }
+                                                    if (filter === "street art / graffiti") {
+                                                        return tags.includes("street art") || tags.includes("graffiti") || genre.includes("street art");
+                                                    }
+                                                    if (filter === "digital art") {
+                                                        return tags.includes("digital art") || tags.includes("3d") || genre.includes("digital art");
+                                                    }
+                                                    if (filter === "photography") {
+                                                        return tags.includes("photography") || genre.includes("photography");
+                                                    }
+                                                    if (filter === "mixed-media") {
+                                                        return tags.includes("mixed-media") || genre.includes("mixed-media");
+                                                    }
+                                                    return tags.includes(filter) || genre.includes(filter);
+                                                })
+                                                .map(({ artist, matchPercentage, reason, latentFeatureSummary }, i) => (
                                                 <div className="artist-card" key={artist.id} style={{ display: "flex", flexDirection: "column" }}>
                                                     <div className={`art-cover art-${i % 6}`}>
                                                         <span className="match-pill" style={{ position: "absolute", top: "12px", right: "12px" }}>
@@ -2509,9 +2595,17 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                                                 <div style={{ background: "white", border: "1px solid #e1eadc", padding: "16px", borderRadius: "8px", marginBottom: "20px" }}>
                                                     <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Portfolio & Identity Links:</b>
-                                                    <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "8px 0 0", color: "#2c4538" }}>
-                                                        {app.portfolioLinks}
+                                                    <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "6px 0 10px", color: "#2c4538" }}>
+                                                        {app.portfolioLinks || "None provided"}
                                                     </p>
+                                                    {app.description && (
+                                                        <div style={{ marginTop: "10px", borderTop: "1px dashed #cbd6c5", paddingTop: "8px" }}>
+                                                            <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Artist Statement & Application Description:</b>
+                                                            <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "4px 0 0", color: "#2c4538" }}>
+                                                                {app.description}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 <div style={{ display: "flex", gap: "12px", borderTop: "1px solid var(--line)", paddingTop: "16px" }}>
@@ -2689,7 +2783,18 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                 </button>
                             </form>
 
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", paddingTop: "14px", borderTop: "1px solid var(--line)", fontSize: "12px" }}>
+                            <div style={{ marginTop: "14px", textAlign: "center", fontSize: "12px", color: "var(--muted)" }}>
+                                Don&apos;t have an account?{" "}
+                                <Link
+                                    href={modalRole === "Artist" ? "/register/artist" : "/register/fan"}
+                                    onClick={() => setShowLoginModal(false)}
+                                    style={{ color: "var(--green)", fontWeight: 700, textDecoration: "underline" }}
+                                >
+                                    {modalRole === "Artist" ? "Apply for Artist Profile →" : "Create Fan Account →"}
+                                </Link>
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--line)", fontSize: "12px" }}>
                                 <button
                                     type="button"
                                     onClick={() => setShowLoginModal(false)}

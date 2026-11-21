@@ -92,6 +92,11 @@ public class ModerationController {
         return moderationService.getPendingApplications();
     }
 
+    @PostMapping("/applications")
+    public ArtistApplication submitApplication(@RequestBody ArtistApplication app) {
+        return moderationService.submitApplication(app);
+    }
+
     @PutMapping("/applications/{applicationId}/approve")
     public ArtistApplication approveApplication(@PathVariable Long applicationId) {
         return moderationService.approveApplication(applicationId);

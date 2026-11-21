@@ -79,9 +79,9 @@ INSERT INTO user_interactions (id, fan_id, artist_id, interaction_type, genre, w
     (2, 1, 4, 'VIEW', 'Jazz', 1.0, CURRENT_TIMESTAMP),
     (3, 1, 2, 'LIKE', 'Indie Rock', 3.0, CURRENT_TIMESTAMP);
 
-INSERT INTO artist_applications (id, fan_id, applicant_name, proposed_genre, portfolio_links, status, submitted_at) VALUES
-    (1, 5, 'Elena Rodriguez', 'Synth-Pop', 'https://soundcloud.com/elena-synth, https://instagram.com/elenacreates', 'PENDING', CURRENT_TIMESTAMP),
-    (2, 6, 'Marcus Thorne', 'Indie Rock', 'https://youtube.com/@marcusthorne', 'PENDING', CURRENT_TIMESTAMP);
+INSERT INTO artist_applications (id, fan_id, applicant_name, proposed_genre, portfolio_links, description, status, submitted_at) VALUES
+    (1, 5, 'Elena Rodriguez', 'Synth-Pop', 'https://soundcloud.com/elena-synth, https://instagram.com/elenacreates', 'Independent synth-pop producer creating retro-futuristic soundscapes and live analog synth sets.', 'PENDING', CURRENT_TIMESTAMP),
+    (2, 6, 'Marcus Thorne', 'Indie Rock', 'https://youtube.com/@marcusthorne', 'East Nashville indie rock guitarist and songwriter preparing debut community release.', 'PENDING', CURRENT_TIMESTAMP);
 
 ALTER TABLE artists ALTER COLUMN id RESTART WITH 100;
 ALTER TABLE user_accounts ALTER COLUMN id RESTART WITH 100;

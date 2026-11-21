@@ -146,6 +146,53 @@ export default function LoginPage() {
                         </button>
                     </form>
 
+                    {/* Registration Pathways */}
+                    <div style={{ marginTop: "24px", display: "grid", gap: "10px" }}>
+                        <div
+                            className="panel"
+                            style={{
+                                padding: "12px 16px",
+                                background: "rgba(255, 255, 255, 0.03)",
+                                borderColor: "var(--line)",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                flexWrap: "wrap",
+                                gap: "8px",
+                            }}
+                        >
+                            <div>
+                                <strong style={{ fontSize: "13px", display: "block" }}>New to ArtistConnect?</strong>
+                                <span style={{ fontSize: "12px", color: "var(--muted)" }}>Create a Fan account to follow artists and join discussions.</span>
+                            </div>
+                            <Link href="/register/fan" className="primary" style={{ fontSize: "12px", padding: "6px 12px" }}>
+                                Create Fan Account →
+                            </Link>
+                        </div>
+
+                        <div
+                            className="panel"
+                            style={{
+                                padding: "12px 16px",
+                                background: "rgba(255, 255, 255, 0.03)",
+                                borderColor: "var(--line)",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                flexWrap: "wrap",
+                                gap: "8px",
+                            }}
+                        >
+                            <div>
+                                <strong style={{ fontSize: "13px", display: "block" }}>Are you a creator?</strong>
+                                <span style={{ fontSize: "12px", color: "var(--muted)" }}>Submit your portfolio for administrator verification.</span>
+                            </div>
+                            <Link href="/register/artist" className="btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}>
+                                Apply as Artist →
+                            </Link>
+                        </div>
+                    </div>
+
                     {/* Footer Links */}
                     <div style={{ borderTop: "1px solid var(--line)", marginTop: "24px", paddingTop: "16px", textAlign: "center" }}>
                         <small style={{ color: "var(--muted)" }}>
