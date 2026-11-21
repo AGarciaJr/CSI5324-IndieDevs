@@ -86,7 +86,7 @@ export function FollowButton({ artistId }: {
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
     useEffect(() => {
-        if (role !== "Fan")
+        if (role !== "Fan" && role !== "Artist")
             return;
         const controller = new AbortController();
         const load = () => request<Follow>(accountId, `${ROOT}/artists/${artistId}/follow`, { signal: controller.signal })
@@ -96,7 +96,7 @@ export function FollowButton({ artistId }: {
         window.addEventListener("fan-community-changed", load);
         return () => { controller.abort(); window.removeEventListener("fan-community-changed", load); };
     }, [accountId, artistId, role]);
-    if (role !== "Fan")
+    if (role !== "Fan" && role !== "Artist")
         return null;
     async function toggle() {
         setBusy(true);
