@@ -919,8 +919,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     const navItems = isGuest
         ? [
               { label: "Discover", icon: "⌕", tabName: "Discover" },
-              { label: "Upcoming Events", icon: "▦", tabName: "Manage Events" },
-              { label: "Following & Favorites", icon: "♡", tabName: "Following" },
+              { label: "Following", icon: "♡", tabName: "Following" },
               { label: "For You", icon: "✳", tabName: "Recommendations" },
           ]
         : currentUser.role === "Fan"
@@ -960,8 +959,8 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                 <div className="avatar" style={{ background: "#e8efe1", color: "#325c41" }}>?</div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <b style={{ display: "block", fontSize: "13px" }}>Guest Visitor</b>
-                                    <small style={{ color: "var(--muted)", fontSize: "11px" }}>Browsing catalog</small>
+                                    <b style={{ display: "block", fontSize: "13px" }}>Guest Fan</b>
+                                    <small style={{ color: "var(--muted)", fontSize: "11px" }}>Browsing artists</small>
                                 </div>
                             </div>
                             <button
@@ -1002,7 +1001,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                     )}
 
                     <p className="nav-label">
-                        {isGuest ? "PUBLIC DIRECTORY" : `${currentUser.role.toUpperCase()} WORKSPACE`}
+                        {isGuest ? "FAN DISCOVERY" : `${currentUser.role.toUpperCase()} WORKSPACE`}
                     </p>
 
                     <nav>
@@ -1222,43 +1221,26 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                             </div>
                         ) : null)}
 
-                        {/* TAB: MANAGE EVENTS (ARTIST / GUEST UPCOMING EVENTS) */}
-                        {tab === "Manage Events" && (
+                        {/* TAB: MANAGE EVENTS (ARTIST ONLY) */}
+                        {tab === "Manage Events" && currentUser?.role === "Artist" && (
                             <div>
-                                {isGuest ? (
-                                    <div className="panel" style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fbfcf8" }}>
-                                        <div>
-                                            <span className="eyebrow">UPCOMING LIVE EVENTS</span>
-                                            <h3 style={{ margin: "4px 0" }}>Community Event Calendar</h3>
-                                            <small>Browsing public concerts, workshops, and exhibitions.</small>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            className="primary"
-                                            onClick={() => triggerGuestLogin("Sign in as an Artist to curate and publish events.", "Artist")}
-                                        >
-                                            Artist Sign In to Create Events →
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-                                        <button
-                                            className={eventSubTab === "list" ? "primary" : "btn-secondary"}
-                                            onClick={() => {
-                                                setEventSubTab("list");
-                                                setShowReviewStep(false);
-                                            }}
-                                        >
-                                            My Events Directory ({eventsList.length})
-                                        </button>
-                                        <button
-                                            className={eventSubTab === "create" ? "primary" : "btn-secondary"}
-                                            onClick={startCreateEvent}
-                                        >
-                                            ＋ Create New Event
-                                        </button>
-                                    </div>
-                                )}
+                                <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+                                    <button
+                                        className={eventSubTab === "list" ? "primary" : "btn-secondary"}
+                                        onClick={() => {
+                                            setEventSubTab("list");
+                                            setShowReviewStep(false);
+                                        }}
+                                    >
+                                        My Events Directory ({eventsList.length})
+                                    </button>
+                                    <button
+                                        className={eventSubTab === "create" ? "primary" : "btn-secondary"}
+                                        onClick={startCreateEvent}
+                                    >
+                                        ＋ Create New Event
+                                    </button>
+                                </div>
 
                                 {eventSubTab === "list" && (
                                     <div>
