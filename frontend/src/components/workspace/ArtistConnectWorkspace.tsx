@@ -69,6 +69,37 @@ type BanAppeal = {
     createdAt?: string;
 };
 
+type BackendMessage = {
+    id: number;
+    conversationId: number;
+    senderId: number;
+    senderName: string;
+    recipientId?: number;
+    recipientName?: string;
+    messageText: string;
+    timestamp: string;
+};
+
+type BackendConversation = {
+    id: number;
+    user1Id: number;
+    user1Name: string;
+    user2Id: number;
+    user2Name: string;
+    lastMessageText?: string;
+    lastMessageAt?: string;
+    messages?: BackendMessage[];
+};
+
+type RecipientOption = {
+    id: number;
+    username: string;
+    displayName: string;
+    role: string;
+    avatar: string;
+    description: string;
+};
+
 type RecommendationData = {
     hasInteractions: boolean;
     message: string;
@@ -96,10 +127,6 @@ type Post = {
         type: string;
         data: string;
     }[];
-};
-
-type UserWrapper = {
-    users: (UserPersona | Artist)[];
 };
 
 type LocalStore = {
@@ -390,9 +417,18 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     const [recommendationData, setRecommendationData] = useState<RecommendationData | null>(null);
     const [loadingRecs, setLoadingRecs] = useState(false);
 
-    // Message states
-    const [recipientId, setRecipientId] = useState(0);
-    const [messageText, setMessageText] = useState("");
+    // Full Backend-Backed Messaging State
+    const [conversations, setConversations] = useState<BackendConversation[]>([]);
+    const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+    const [activeMessages, setActiveMessages] = useState<BackendMessage[]>([]);
+    const [chatInput, setChatInput] = useState("");
+    const [messageSearchQuery, setMessageSearchQuery] = useState("");
+    const [targetMessageRecipient, setTargetMessageRecipient] = useState<{ name: string; id?: number; role?: string } | null>(null);
+    const [recipientOptions, setRecipientOptions] = useState<RecipientOption[]>([]);
+    const [, setIsSearchingRecipients] = useState(false);
+    const [recipientSearchInput, setRecipientSearchInput] = useState("");
+    const [isComposingNew, setIsComposingNew] = useState(false);
+    const [sendingMessage, setSendingMessage] = useState(false);
 
     // Initialize local storage store & verify backend connection
     useEffect(() => {
@@ -1040,26 +1076,190 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
         }
     }
 
-    async function startConversation(e: FormEvent) {
-        e.preventDefault();
-        try {
-            if (!currentUser) return;
-            const recipient_res = await fetch(`${API_BASE}/api/artists/${recipientId}`);
-            if (!recipient_res.ok) throw new Error("Could not find recipient.");
-            const recipient = await recipient_res.json();
+    function loadConversations(autoSelectFirst = true) {
+        if (!currentUser) return;
+        fetch(`${API_BASE}/api/conversations/user/${backendAccountId}`)
+            .then((res) => (res.ok ? res.json() : []))
+            .then((data: BackendConversation[]) => {
+                setConversations(data);
+                if (autoSelectFirst && data.length > 0 && !activeConversationId) {
+                    setActiveConversationId(data[0].id);
+                    loadMessages(data[0].id);
+                }
+            })
+            .catch(() => {});
+    }
 
-            const userWrapper: UserWrapper = {
-                users: [currentUser, recipient],
+    function loadMessages(conversationId: number) {
+        fetch(`${API_BASE}/api/conversations/${conversationId}/messages`)
+            .then((res) => (res.ok ? res.json() : []))
+            .then((msgs: BackendMessage[]) => {
+                setActiveMessages(msgs);
+            })
+            .catch(() => {});
+    }
+
+    useEffect(() => {
+        let isMounted = true;
+        if (tab === "Messages" && currentUser) {
+            fetch(`${API_BASE}/api/conversations/user/${backendAccountId}`)
+                .then((res) => (res.ok ? res.json() : []))
+                .then((data: BackendConversation[]) => {
+                    if (!isMounted) return;
+                    setConversations(data);
+                    if (data.length > 0) {
+                        const targetId = activeConversationId || data[0].id;
+                        setActiveConversationId(targetId);
+                        fetch(`${API_BASE}/api/conversations/${targetId}/messages`)
+                            .then((res) => (res.ok ? res.json() : []))
+                            .then((msgs: BackendMessage[]) => {
+                                if (isMounted) setActiveMessages(msgs);
+                            })
+                            .catch(() => {});
+                    }
+                })
+                .catch(() => {});
+        }
+        return () => {
+            isMounted = false;
+        };
+    }, [tab, currentUser, backendAccountId, activeConversationId]);
+
+    async function handleSendMessage(e?: FormEvent) {
+        if (e) e.preventDefault();
+        const text = chatInput.trim();
+        if (!text || !currentUser) return;
+
+        setSendingMessage(true);
+        setError("");
+        try {
+            let recipientId: number | undefined = undefined;
+            let recipientName: string = "";
+
+            if (isComposingNew && targetMessageRecipient) {
+                recipientId = targetMessageRecipient.id;
+                recipientName = targetMessageRecipient.name;
+            } else if (isComposingNew && recipientSearchInput.trim()) {
+                recipientName = recipientSearchInput.trim();
+            } else if (activeConversationId) {
+                const conv = conversations.find((c) => c.id === activeConversationId);
+                if (conv) {
+                    if (conv.user1Id === backendAccountId) {
+                        recipientId = conv.user2Id;
+                        recipientName = conv.user2Name;
+                    } else {
+                        recipientId = conv.user1Id;
+                        recipientName = conv.user1Name;
+                    }
+                }
+            }
+
+            if (!recipientName) {
+                setError("Please select or enter a recipient name.");
+                setSendingMessage(false);
+                return;
+            }
+
+            const payload = {
+                senderId: backendAccountId,
+                senderName: currentUser.name,
+                recipientId,
+                recipientName,
+                messageText: text,
             };
 
-            await fetch(`${API_BASE}/api/conversations`, {
+            const res = await fetch(`${API_BASE}/api/conversations/send`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(userWrapper),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
             });
-        } catch {}
+
+            if (!res.ok) throw new Error("Failed to send message.");
+            const savedMsg: BackendMessage = await res.json();
+
+            setChatInput("");
+            setActiveMessages((prev) => [...prev, savedMsg]);
+            setActiveConversationId(savedMsg.conversationId);
+            setIsComposingNew(false);
+            setTargetMessageRecipient(null);
+            setRecipientSearchInput("");
+
+            loadConversations(false);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to send message.");
+        } finally {
+            setSendingMessage(false);
+        }
+    }
+
+    async function handleSearchRecipients(query: string) {
+        setRecipientSearchInput(query);
+        if (!query.trim()) {
+            setRecipientOptions([]);
+            return;
+        }
+        setIsSearchingRecipients(true);
+        try {
+            const res = await fetch(`${API_BASE}/api/conversations/recipients?query=${encodeURIComponent(query)}`);
+            if (res.ok) {
+                const results: RecipientOption[] = await res.json();
+                setRecipientOptions(results);
+            }
+        } catch {
+            setRecipientOptions([]);
+        } finally {
+            setIsSearchingRecipients(false);
+        }
+    }
+
+    function handleMessageUserFromComment(recipient: { name: string; id?: number }) {
+        if (isGuest) {
+            triggerGuestLogin(`Sign in to message ${recipient.name}.`);
+            return;
+        }
+        setSelectedArtist(null);
+        setTab("Messages");
+        const existing = conversations.find(
+            (c) =>
+                c.user1Name?.toLowerCase() === recipient.name.toLowerCase() ||
+                c.user2Name?.toLowerCase() === recipient.name.toLowerCase()
+        );
+        if (existing) {
+            setActiveConversationId(existing.id);
+            loadMessages(existing.id);
+            setIsComposingNew(false);
+            setTargetMessageRecipient(null);
+        } else {
+            setIsComposingNew(true);
+            setTargetMessageRecipient({ name: recipient.name, id: recipient.id });
+            setRecipientSearchInput(recipient.name);
+        }
+    }
+
+    function handleViewProfileFromComment(user: { name: string; id?: number; role?: string }) {
+        if (user.role === "Artist" || sampleArtists.some((a) => a.name.toLowerCase() === user.name.toLowerCase())) {
+            const found = sampleArtists.find(
+                (a) => a.name.toLowerCase() === user.name.toLowerCase() || (user.id && a.id === user.id)
+            );
+            if (found) {
+                setSelectedArtist(found);
+                return;
+            }
+        }
+        setTab("Fan Profile");
+    }
+
+    function handleViewProfileFromChat(conv: BackendConversation) {
+        const peerName = conv.user1Id === backendAccountId ? conv.user2Name : conv.user1Name;
+        const peerId = conv.user1Id === backendAccountId ? conv.user2Id : conv.user1Id;
+        const foundArtist = sampleArtists.find(
+            (a) => a.name.toLowerCase() === peerName.toLowerCase() || a.id === peerId
+        );
+        if (foundArtist) {
+            setSelectedArtist(foundArtist);
+        } else {
+            setTab("Fan Profile");
+        }
     }
 
     const navItems = isGuest
@@ -1073,6 +1273,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
               { label: "For You", icon: "", tabName: "Recommendations" },
               { label: "Discover", icon: "", tabName: "Discover" },
               { label: "Following", icon: "", tabName: "Following" },
+              { label: "Messages", icon: "", tabName: "Messages" },
               { label: "My Profile", icon: "", tabName: "Fan Profile" },
               { label: "Settings", icon: "", tabName: "Settings" },
           ]
@@ -1309,6 +1510,8 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                         artist={sampleArtists.find((a) => a.id === effectiveUser.id) || sampleArtists.find((a) => a.id === 9) || sampleArtists[8]}
                                         isModal={false}
                                         onNavigateTab={(targetTab) => setTab(targetTab)}
+                                        onMessageUser={handleMessageUserFromComment}
+                                        onViewUserProfile={handleViewProfileFromComment}
                                     />
                                 </div>
                             </div>
@@ -2631,27 +2834,389 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                         )}
 
                         {/* TAB: MESSAGES */}
-                        {tab === "Messages" && (
-                            <div className="studio-grid">
-                                <form onSubmit={startConversation}>
-                                    <label>Start a new conversation</label>
-                                    <textarea
-                                        rows={7}
-                                        maxLength={5000}
-                                        placeholder="Type your message here..."
-                                        value={messageText}
-                                        onChange={(e) => setMessageText(e.target.value)}
-                                    />
-                                    <input
-                                        aria-label="Recipient ID"
-                                        type="number"
-                                        placeholder="ID of the user to send the message to"
-                                        onChange={(e) => setRecipientId(e.target.valueAsNumber || 0)}
-                                    />
-                                    <button className="primary full">Send message</button>
-                                </form>
-                            </div>
-                        )}
+                        {tab === "Messages" && (() => {
+                            const filteredConversations = conversations.filter((c) => {
+                                if (!messageSearchQuery.trim()) return true;
+                                const q = messageSearchQuery.toLowerCase();
+                                const peer = (c.user1Id === backendAccountId ? c.user2Name : c.user1Name) || "";
+                                const snippet = c.lastMessageText || "";
+                                return peer.toLowerCase().includes(q) || snippet.toLowerCase().includes(q);
+                            });
+
+                            const activeConversation = conversations.find((c) => c.id === activeConversationId) || null;
+                            const peerActiveName = activeConversation
+                                ? (activeConversation.user1Id === backendAccountId ? activeConversation.user2Name : activeConversation.user1Name) || "Community Member"
+                                : "";
+
+                            return (
+                                <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+                                    {/* Messages Header */}
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+                                        <div>
+                                            <span className="eyebrow" style={{ color: "var(--spray-cyan)" }}>COMMUNITY MESSENGER</span>
+                                            <h2 style={{ margin: "4px 0 0", fontSize: "24px", fontWeight: 800 }}>Direct Messages & Inquiries</h2>
+                                            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--muted)" }}>
+                                                Converse with independent artists, community fans, and peer collaborators.
+                                            </p>
+                                        </div>
+                                        {!isGuest && (
+                                            <button
+                                                type="button"
+                                                className="primary"
+                                                style={{ padding: "8px 16px", fontSize: "13px", fontWeight: 700 }}
+                                                onClick={() => {
+                                                    setIsComposingNew(true);
+                                                    setTargetMessageRecipient(null);
+                                                    setRecipientSearchInput("");
+                                                }}
+                                            >
+                                                + New Conversation
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {isGuest ? (
+                                        <div className="panel" style={{ textAlign: "center", padding: "60px 24px" }}>
+                                            <h3 style={{ fontSize: "18px", marginBottom: "8px" }}>Sign In to Access Direct Messages</h3>
+                                            <p style={{ color: "var(--muted)", maxWidth: "440px", margin: "0 auto 20px" }}>
+                                                Messaging is available to all registered Fans and verified Artists.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                className="primary"
+                                                style={{ padding: "10px 24px" }}
+                                                onClick={() => triggerGuestLogin("Sign in to view your message history and contact artists.")}
+                                            >
+                                                Sign In Now →
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="panel"
+                                            style={{
+                                                display: "grid",
+                                                gridTemplateColumns: "320px 1fr",
+                                                minHeight: "600px",
+                                                padding: 0,
+                                                overflow: "hidden",
+                                                borderRadius: "14px",
+                                                background: "rgba(16, 20, 32, 0.75)",
+                                                border: "1px solid var(--line-strong)",
+                                                backdropFilter: "blur(20px)",
+                                            }}
+                                        >
+                                            {/* LEFT COLUMN: CONVERSATION THREADS */}
+                                            <div style={{ borderRight: "1px solid var(--line)", display: "flex", flexDirection: "column", background: "rgba(255, 255, 255, 0.02)" }}>
+                                                <div style={{ padding: "14px", borderBottom: "1px solid var(--line)" }}>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search conversation history..."
+                                                        value={messageSearchQuery}
+                                                        onChange={(e) => setMessageSearchQuery(e.target.value)}
+                                                        style={{ width: "100%", padding: "8px 12px", fontSize: "12px", borderRadius: "6px", border: "1px solid var(--line)", background: "rgba(0,0,0,0.2)", color: "inherit" }}
+                                                    />
+                                                </div>
+
+                                                <div style={{ flex: 1, overflowY: "auto" }}>
+                                                    {filteredConversations.length === 0 ? (
+                                                        <div style={{ padding: "30px 16px", textAlign: "center", color: "var(--muted)", fontSize: "13px" }}>
+                                                            No conversation history yet. Click &ldquo;+ New Conversation&rdquo; or message an artist from comments!
+                                                        </div>
+                                                    ) : (
+                                                        filteredConversations.map((c) => {
+                                                            const peerName = c.user1Id === backendAccountId ? c.user2Name : c.user1Name;
+                                                            const isSelected = activeConversationId === c.id && !isComposingNew;
+                                                            const initials = (peerName || "User").split(" ").map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "U";
+                                                            return (
+                                                                <div
+                                                                    key={c.id}
+                                                                    onClick={() => {
+                                                                        setActiveConversationId(c.id);
+                                                                        loadMessages(c.id);
+                                                                        setIsComposingNew(false);
+                                                                        setTargetMessageRecipient(null);
+                                                                    }}
+                                                                    style={{
+                                                                        padding: "14px",
+                                                                        borderBottom: "1px solid var(--line)",
+                                                                        cursor: "pointer",
+                                                                        background: isSelected ? "rgba(6, 182, 212, 0.12)" : "transparent",
+                                                                        borderLeft: isSelected ? "3px solid var(--spray-cyan)" : "3px solid transparent",
+                                                                        transition: "background 0.15s ease",
+                                                                    }}
+                                                                >
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                                                        <div
+                                                                            style={{
+                                                                                width: "32px",
+                                                                                height: "32px",
+                                                                                borderRadius: "50%",
+                                                                                background: "linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(6, 182, 212, 0.3))",
+                                                                                border: "1px solid var(--line)",
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                justifyContent: "center",
+                                                                                fontSize: "11px",
+                                                                                fontWeight: 800,
+                                                                                color: "#ffffff",
+                                                                                flexShrink: 0,
+                                                                            }}
+                                                                        >
+                                                                            {initials}
+                                                                        </div>
+                                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                                                                                <strong style={{ fontSize: "13px", color: isSelected ? "#ffffff" : "inherit", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                                                    {peerName}
+                                                                                </strong>
+                                                                            </div>
+                                                                            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                                                {c.lastMessageText || "New conversation"}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* RIGHT COLUMN: ACTIVE CHAT OR COMPOSER */}
+                                            <div style={{ display: "flex", flexDirection: "column", background: "rgba(0, 0, 0, 0.15)" }}>
+                                                {isComposingNew ? (
+                                                    /* NEW MESSAGE COMPOSER */
+                                                    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                                                        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--line)", background: "rgba(255, 255, 255, 0.03)" }}>
+                                                            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>Start New Conversation</h3>
+                                                            <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--muted)" }}>
+                                                                Message an artist or fan directly by their account name or handle.
+                                                            </p>
+                                                        </div>
+
+                                                        <div style={{ padding: "20px", flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
+                                                            <div>
+                                                                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px" }}>
+                                                                    Recipient Account Name / Handle *
+                                                                </label>
+                                                                {targetMessageRecipient ? (
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(6, 182, 212, 0.15)", border: "1px solid var(--spray-cyan)", borderRadius: "8px", padding: "8px 12px" }}>
+                                                                        <strong style={{ fontSize: "13px", color: "#ffffff" }}>{targetMessageRecipient.name}</strong>
+                                                                        {targetMessageRecipient.role && (
+                                                                            <span className={`role-badge ${targetMessageRecipient.role.toLowerCase()}`} style={{ fontSize: "10px", padding: "2px 6px" }}>
+                                                                                {targetMessageRecipient.role}
+                                                                            </span>
+                                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setTargetMessageRecipient(null);
+                                                                                setRecipientSearchInput("");
+                                                                            }}
+                                                                            style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "12px", textDecoration: "underline" }}
+                                                                        >
+                                                                            Change
+                                                                        </button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div style={{ position: "relative" }}>
+                                                                        <input
+                                                                            type="text"
+                                                                            placeholder="Type artist name (e.g., Luna Park, William) or fan handle..."
+                                                                            value={recipientSearchInput}
+                                                                            onChange={(e) => handleSearchRecipients(e.target.value)}
+                                                                            style={{ width: "100%", padding: "10px 12px", fontSize: "13px", borderRadius: "8px", border: "1px solid var(--line)", background: "rgba(0,0,0,0.2)", color: "inherit" }}
+                                                                            autoFocus
+                                                                        />
+                                                                        {recipientOptions.length > 0 && (
+                                                                            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10, background: "#18202f", border: "1px solid var(--line-strong)", borderRadius: "8px", marginTop: "4px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)", maxHeight: "200px", overflowY: "auto" }}>
+                                                                                {recipientOptions.map((r) => (
+                                                                                    <div
+                                                                                        key={`${r.role}-${r.id}`}
+                                                                                        onClick={() => {
+                                                                                            setTargetMessageRecipient({ name: r.displayName, id: r.id, role: r.role });
+                                                                                            setRecipientSearchInput(r.displayName);
+                                                                                            setRecipientOptions([]);
+                                                                                        }}
+                                                                                        style={{ padding: "10px 14px", borderBottom: "1px solid var(--line)", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                                                                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                                                                                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                                                                                    >
+                                                                                        <div>
+                                                                                            <strong>{r.displayName}</strong>
+                                                                                            <small style={{ display: "block", color: "var(--muted)", fontSize: "11px" }}>{r.description}</small>
+                                                                                        </div>
+                                                                                        <span className={`role-badge ${r.role.toLowerCase()}`} style={{ fontSize: "9px" }}>
+                                                                                            {r.role}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                                                                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px" }}>
+                                                                    Message *
+                                                                </label>
+                                                                <textarea
+                                                                    rows={6}
+                                                                    value={chatInput}
+                                                                    onChange={(e) => setChatInput(e.target.value)}
+                                                                    placeholder="Write your message, collaboration request, or question..."
+                                                                    style={{ width: "100%", flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid var(--line)", background: "rgba(0,0,0,0.2)", color: "inherit", fontSize: "13px", resize: "none" }}
+                                                                />
+                                                            </div>
+
+                                                            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn-secondary"
+                                                                    onClick={() => {
+                                                                        setIsComposingNew(false);
+                                                                        setTargetMessageRecipient(null);
+                                                                    }}
+                                                                    style={{ padding: "9px 18px" }}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="primary"
+                                                                    disabled={sendingMessage || !chatInput.trim() || (!targetMessageRecipient && !recipientSearchInput.trim())}
+                                                                    onClick={() => handleSendMessage()}
+                                                                    style={{ padding: "9px 24px", fontWeight: 700 }}
+                                                                >
+                                                                    {sendingMessage ? "Sending..." : "Send Message →"}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : activeConversation ? (
+                                                    /* ACTIVE CHAT FEED */
+                                                    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                                                        {/* Chat Header */}
+                                                        <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--line)", background: "rgba(255, 255, 255, 0.03)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                                                <div
+                                                                    style={{
+                                                                        width: "36px",
+                                                                        height: "36px",
+                                                                        borderRadius: "50%",
+                                                                        background: "linear-gradient(135deg, rgba(244, 63, 94, 0.35), rgba(6, 182, 212, 0.35))",
+                                                                        border: "1px solid var(--line)",
+                                                                        display: "flex",
+                                                                        alignItems: "center",
+                                                                        justifyContent: "center",
+                                                                        fontSize: "12px",
+                                                                        fontWeight: 800,
+                                                                        color: "#ffffff",
+                                                                    }}
+                                                                >
+                                                                    {(peerActiveName || "U").split(" ").map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "U"}
+                                                                </div>
+                                                                <div>
+                                                                    <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#ffffff" }}>
+                                                                        {peerActiveName}
+                                                                    </h3>
+                                                                    <span style={{ fontSize: "11px", color: "var(--muted)" }}>Community Member</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleViewProfileFromChat(activeConversation)}
+                                                                className="btn-secondary"
+                                                                style={{ fontSize: "12px", padding: "6px 14px", fontWeight: 600 }}
+                                                                title={`View ${peerActiveName}'s homepage`}
+                                                            >
+                                                                View Homepage / Profile →
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Message History Feed */}
+                                                        <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+                                                            {activeMessages.length === 0 ? (
+                                                                <div style={{ margin: "auto", textAlign: "center", color: "var(--muted)", fontSize: "13px" }}>
+                                                                    No messages in this conversation yet. Send the first message below!
+                                                                </div>
+                                                            ) : (
+                                                                activeMessages.map((msg) => {
+                                                                    const isMine = msg.senderId === backendAccountId || msg.senderName === currentUser.name;
+                                                                    return (
+                                                                        <div
+                                                                            key={msg.id}
+                                                                            style={{
+                                                                                alignSelf: isMine ? "flex-end" : "flex-start",
+                                                                                maxWidth: "75%",
+                                                                                display: "flex",
+                                                                                flexDirection: "column",
+                                                                                alignItems: isMine ? "flex-end" : "flex-start",
+                                                                            }}
+                                                                        >
+                                                                            <div
+                                                                                style={{
+                                                                                    padding: "10px 14px",
+                                                                                    borderRadius: isMine ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
+                                                                                    background: isMine
+                                                                                        ? "linear-gradient(135deg, var(--spray-pink), var(--spray-purple))"
+                                                                                        : "rgba(255, 255, 255, 0.05)",
+                                                                                    color: "#ffffff",
+                                                                                    border: isMine ? "none" : "1px solid var(--line-strong)",
+                                                                                    fontSize: "13px",
+                                                                                    lineHeight: 1.5,
+                                                                                    boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
+                                                                                    wordBreak: "break-word",
+                                                                                }}
+                                                                            >
+                                                                                {msg.messageText}
+                                                                            </div>
+                                                                            <span style={{ fontSize: "10px", color: "var(--muted)", marginTop: "4px", padding: "0 4px" }}>
+                                                                                {isMine ? "You" : msg.senderName} · {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Just now"}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            )}
+                                                        </div>
+
+                                                        {/* Chat Compose Bar */}
+                                                        <div style={{ padding: "14px 20px", borderTop: "1px solid var(--line)", background: "rgba(255, 255, 255, 0.02)" }}>
+                                                            <form
+                                                                onSubmit={handleSendMessage}
+                                                                style={{ display: "flex", gap: "10px", alignItems: "center" }}
+                                                            >
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder={`Message ${peerActiveName}...`}
+                                                                    value={chatInput}
+                                                                    onChange={(e) => setChatInput(e.target.value)}
+                                                                    style={{ flex: 1, padding: "10px 14px", fontSize: "13px", borderRadius: "8px", border: "1px solid var(--line)", background: "rgba(0,0,0,0.2)", color: "inherit" }}
+                                                                />
+                                                                <button
+                                                                    type="submit"
+                                                                    className="primary"
+                                                                    disabled={sendingMessage || !chatInput.trim()}
+                                                                    style={{ padding: "10px 20px", fontSize: "13px", fontWeight: 700 }}
+                                                                >
+                                                                    {sendingMessage ? "Sending..." : "Send →"}
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ margin: "auto", textAlign: "center", color: "var(--muted)", padding: "40px" }}>
+                                                        <p style={{ fontSize: "14px" }}>Select a conversation from the left, or click &ldquo;+ New Conversation&rdquo; to reach out to an artist or fan.</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
                     </main>
 
                     <footer>
@@ -2675,6 +3240,8 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                             isModal={true}
                             onCloseModal={() => setSelectedArtist(null)}
                             onTriggerLogin={triggerGuestLogin}
+                            onMessageUser={handleMessageUserFromComment}
+                            onViewUserProfile={handleViewProfileFromComment}
                         />
                     </dialog>
                 )}

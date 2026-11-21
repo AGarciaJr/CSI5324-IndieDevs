@@ -5,6 +5,7 @@ DELETE FROM event_ticket_tiers;
 DELETE FROM reports;
 DELETE FROM notifications;
 DELETE FROM posts;
+DELETE FROM messages;
 DELETE FROM conversations;
 DELETE FROM user_accounts;
 DELETE FROM events;
@@ -49,10 +50,15 @@ INSERT INTO reports (id, reporter_id, target_type, target_id, reported_user_id, 
     (2, 5, 'EVENT', 1, 4, 'Event looks like a scam', 'PENDING', DATEADD('HOUR', -2, CURRENT_TIMESTAMP)),
     (3, 1, 'USER', 4, 4, 'Harassing messages', 'PENDING', DATEADD('HOUR', -1, CURRENT_TIMESTAMP));
 
--- Conversations between demo accounts (fan 1 <-> artist 2, admin 3 <-> artist 2)
-INSERT INTO conversations (user1_id, user2_id) VALUES
-    (1, 2),
-    (3, 2);
+-- Conversations between demo accounts (fan 1 <-> artist 2, fan 1 <-> artist 4)
+INSERT INTO conversations (id, user1_id, user1_name, user2_id, user2_name, last_message_text, last_message_at) VALUES
+    (1, 1, 'Nicholas Nolen', 2, 'The Riverbeds', 'Thanks Nicholas! We have a special acoustic encore planned for the community.', DATEADD('HOUR', -4, CURRENT_TIMESTAMP)),
+    (2, 1, 'Nicholas Nolen', 4, 'Brazos Static', 'Loved your ambient release! Do you have prints of the cover art?', DATEADD('HOUR', -1, CURRENT_TIMESTAMP));
+
+INSERT INTO messages (id, conversation_id, sender_id, sender_name, recipient_id, recipient_name, message_text, timestamp) VALUES
+    (1, 1, 1, 'Nicholas Nolen', 2, 'The Riverbeds', 'Hey! Really looking forward to your live set this Friday.', DATEADD('HOUR', -5, CURRENT_TIMESTAMP)),
+    (2, 1, 2, 'The Riverbeds', 1, 'Nicholas Nolen', 'Thanks Nicholas! We have a special acoustic encore planned for the community.', DATEADD('HOUR', -4, CURRENT_TIMESTAMP)),
+    (3, 2, 1, 'Nicholas Nolen', 4, 'Brazos Static', 'Loved your ambient release! Do you have prints of the cover art?', DATEADD('HOUR', -1, CURRENT_TIMESTAMP));
 
 INSERT INTO fans (id, username, email, banned, can_login, can_appeal) VALUES
     (1, 'nicholas_fan', 'nicholas@indiedev.com', false, true, false),
@@ -92,3 +98,5 @@ ALTER TABLE artist_applications ALTER COLUMN id RESTART WITH 100;
 ALTER TABLE ban_appeals ALTER COLUMN id RESTART WITH 100;
 ALTER TABLE fans ALTER COLUMN id RESTART WITH 100;
 ALTER TABLE user_interactions ALTER COLUMN id RESTART WITH 100;
+ALTER TABLE conversations ALTER COLUMN id RESTART WITH 100;
+ALTER TABLE messages ALTER COLUMN id RESTART WITH 100;

@@ -15,6 +15,8 @@ interface ArtistProfileViewProps {
     onCloseModal?: () => void;
     onTriggerLogin?: (message: string) => void;
     onNavigateTab?: (tab: string) => void;
+    onMessageUser?: (recipient: { name: string; id?: number }) => void;
+    onViewUserProfile?: (user: { name: string; id?: number; role?: string }) => void;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -25,6 +27,8 @@ export function ArtistProfileView({
     onCloseModal,
     onTriggerLogin,
     onNavigateTab,
+    onMessageUser,
+    onViewUserProfile,
 }: ArtistProfileViewProps) {
     const { currentUser } = useAuth();
     const isGuest = !currentUser;
@@ -126,20 +130,51 @@ export function ArtistProfileView({
     const [liked, setLiked] = useState(false);
     const [reportingComment, setReportingComment] = useState<{ id: string; authorName: string; text: string } | null>(null);
     const [reportingPost, setReportingPost] = useState<ArtistPost | null>(null);
-    const [postComments, setPostComments] = useState<Record<string, { id: string; authorName: string; text: string; createdAt: string }[]>>({
+    const [postComments, setPostComments] = useState<Record<string, { id: string; authorName: string; text: string; createdAt: string; authorId?: number; authorRole?: "Fan" | "Artist" }[]>>({
         "post-ww-1": [
-            { id: "c1", authorName: "Alex Fan", text: "Love the warm acoustic guitar tone on this track!", createdAt: "2 hours ago" },
-            { id: "c2", authorName: "Jordan T.", text: "Can not wait for the vinyl release.", createdAt: "1 hour ago" },
+            { id: "c1", authorName: "Alex Fan", authorId: 5, authorRole: "Fan", text: "Love the warm acoustic guitar tone on this track!", createdAt: "2 hours ago" },
+            { id: "c2", authorName: "Jordan T.", authorId: 2, authorRole: "Fan", text: "Can not wait for the vinyl release.", createdAt: "1 hour ago" },
         ],
         "post-ww-2": [
-            { id: "c3", authorName: "Taylor M.", text: "The Waco live session was magical, thank you for sharing!", createdAt: "Yesterday" },
+            { id: "c3", authorName: "Taylor M.", authorId: 1, authorRole: "Fan", text: "The Waco live session was magical, thank you for sharing!", createdAt: "Yesterday" },
+            { id: "c3b", authorName: "Luna Park", authorId: 2, authorRole: "Artist", text: "Stellar arrangement William, let's collaborate on an acoustic set soon!", createdAt: "3 hours ago" },
         ],
         "post-lp-1": [
-            { id: "c4", authorName: "Morgan K.", text: "Hill Country Echoes sounds like an instant classic.", createdAt: "3 hours ago" },
+            { id: "c4", authorName: "Morgan K.", authorId: 4, authorRole: "Fan", text: "Hill Country Echoes sounds like an instant classic.", createdAt: "3 hours ago" },
+            { id: "c5", authorName: "Nicholas Nolen", authorId: 1, authorRole: "Fan", text: "Incredible depth and songwriting, playing this on repeat.", createdAt: "1 hour ago" },
         ]
     });
     const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
     const [commentInput, setCommentInput] = useState("");
+
+    function handleAuthorClick(c: { authorName: string; authorId?: number; authorRole?: "Fan" | "Artist" }) {
+        if (isGuest) {
+            onTriggerLogin?.(`Sign in to explore ${c.authorName}'s full profile and network.`);
+            return;
+        }
+        if (onViewUserProfile) {
+            onViewUserProfile({ name: c.authorName, id: c.authorId, role: c.authorRole });
+        } else if (c.authorRole === "Artist" && onNavigateTab) {
+            onNavigateTab("Artist Home");
+        } else if (onNavigateTab) {
+            onNavigateTab("Fan Profile");
+        }
+    }
+
+    function handleMessageAuthor(c: { authorName: string; authorId?: number; authorRole?: "Fan" | "Artist" }) {
+        if (isGuest) {
+            onTriggerLogin?.(`Sign in to message ${c.authorName}.`);
+            return;
+        }
+        if (onCloseModal) {
+            onCloseModal();
+        }
+        if (onMessageUser) {
+            onMessageUser({ name: c.authorName, id: c.authorId });
+        } else if (onNavigateTab) {
+            onNavigateTab("Messages");
+        }
+    }
 
     useEffect(() => {
         const controller = new AbortController();
@@ -1045,40 +1080,133 @@ export function ArtistProfileView({
                                                     gap: "12px",
                                                 }}
                                             >
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                                                        <b style={{ fontSize: "12px", color: "#ffffff" }}>{c.authorName}</b>
-                                                        <span style={{ fontSize: "10px", color: "var(--muted)" }}>{c.createdAt}</span>
-                                                    </div>
-                                                    <p style={{ margin: 0, fontSize: "13px", color: "var(--ink)", lineHeight: "1.5" }}>
-                                                        {c.text}
-                                                    </p>
-                                                </div>
-                                                {!isOwner && (
+                                                {/* Author Avatar Icon & Details */}
+                                                <div style={{ display: "flex", gap: "10px", flex: 1, minWidth: 0 }}>
                                                     <button
                                                         type="button"
-                                                        onClick={() => {
-                                                            if (isGuest) {
-                                                                onTriggerLogin?.("Sign in to report comments.");
-                                                            } else {
-                                                                setReportingComment({ id: c.id, authorName: c.authorName, text: c.text });
-                                                            }
-                                                        }}
+                                                        onClick={() => handleAuthorClick(c)}
                                                         style={{
-                                                            background: "none",
-                                                            border: "1px solid var(--line)",
-                                                            borderRadius: "4px",
-                                                            color: "var(--spray-pink)",
-                                                            fontSize: "10px",
+                                                            width: "34px",
+                                                            height: "34px",
+                                                            borderRadius: "50%",
+                                                            background: c.authorRole === "Artist"
+                                                                ? "linear-gradient(135deg, rgba(244, 63, 94, 0.35), rgba(168, 85, 247, 0.35))"
+                                                                : "linear-gradient(135deg, rgba(6, 182, 212, 0.35), rgba(16, 185, 129, 0.35))",
+                                                            border: c.authorRole === "Artist" ? "1px solid var(--spray-pink)" : "1px solid var(--spray-cyan)",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            fontSize: "12px",
+                                                            fontWeight: 800,
+                                                            color: "#ffffff",
                                                             cursor: "pointer",
-                                                            padding: "2px 8px",
-                                                            whiteSpace: "nowrap",
+                                                            padding: 0,
+                                                            flexShrink: 0,
+                                                            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
                                                         }}
-                                                        title="Report inappropriate comment"
+                                                        title={`Click to view profile or message ${c.authorName}`}
                                                     >
-                                                        Report
+                                                        {c.authorName.split(" ").map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "U"}
                                                     </button>
-                                                )}
+
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px", flexWrap: "wrap" }}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleAuthorClick(c)}
+                                                                style={{
+                                                                    background: "none",
+                                                                    border: "none",
+                                                                    padding: 0,
+                                                                    fontSize: "12px",
+                                                                    fontWeight: 700,
+                                                                    color: "#ffffff",
+                                                                    cursor: "pointer",
+                                                                    textDecoration: "underline",
+                                                                    textAlign: "left",
+                                                                }}
+                                                                title={`View ${c.authorName}'s homepage`}
+                                                            >
+                                                                {c.authorName}
+                                                            </button>
+                                                            <span className={`role-badge ${(c.authorRole || "Fan").toLowerCase()}`} style={{ fontSize: "9px", padding: "1px 6px" }}>
+                                                                {c.authorRole || "Fan"}
+                                                            </span>
+                                                            <span style={{ fontSize: "10px", color: "var(--muted)" }}>{c.createdAt}</span>
+
+                                                            {/* Contextual Actions */}
+                                                            <div style={{ display: "flex", gap: "6px", marginLeft: "auto", flexWrap: "wrap" }}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleAuthorClick(c)}
+                                                                    style={{
+                                                                        background: "rgba(255, 255, 255, 0.05)",
+                                                                        border: "1px solid var(--line)",
+                                                                        borderRadius: "4px",
+                                                                        fontSize: "10px",
+                                                                        padding: "2px 8px",
+                                                                        color: "var(--muted)",
+                                                                        cursor: "pointer",
+                                                                        whiteSpace: "nowrap",
+                                                                    }}
+                                                                    title={`View ${c.authorName}'s homepage`}
+                                                                >
+                                                                    View Profile →
+                                                                </button>
+
+                                                                {currentUser?.name !== c.authorName && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleMessageAuthor(c)}
+                                                                        style={{
+                                                                            background: "rgba(6, 182, 212, 0.15)",
+                                                                            border: "1px solid var(--spray-cyan)",
+                                                                            borderRadius: "4px",
+                                                                            fontSize: "10px",
+                                                                            padding: "2px 8px",
+                                                                            color: "var(--spray-cyan)",
+                                                                            cursor: "pointer",
+                                                                            fontWeight: 600,
+                                                                            whiteSpace: "nowrap",
+                                                                        }}
+                                                                        title={`Send message to ${c.authorName}`}
+                                                                    >
+                                                                        Message
+                                                                    </button>
+                                                                )}
+
+                                                                {!isOwner && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (isGuest) {
+                                                                                onTriggerLogin?.("Sign in to report comments.");
+                                                                            } else {
+                                                                                setReportingComment({ id: c.id, authorName: c.authorName, text: c.text });
+                                                                            }
+                                                                        }}
+                                                                        style={{
+                                                                            background: "none",
+                                                                            border: "1px solid var(--line)",
+                                                                            borderRadius: "4px",
+                                                                            color: "var(--spray-pink)",
+                                                                            fontSize: "10px",
+                                                                            cursor: "pointer",
+                                                                            padding: "2px 8px",
+                                                                            whiteSpace: "nowrap",
+                                                                        }}
+                                                                        title="Report inappropriate comment"
+                                                                    >
+                                                                        Report
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <p style={{ margin: 0, fontSize: "13px", color: "var(--ink)", lineHeight: "1.5" }}>
+                                                            {c.text}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
 
@@ -1100,7 +1228,14 @@ export function ArtistProfileView({
                                                             ...prev,
                                                             [p.id]: [
                                                                 ...(prev[p.id] || []),
-                                                                { id: `c-${Date.now()}`, authorName: currentUser?.name || "Fan", text, createdAt: "Just now" },
+                                                                {
+                                                                    id: `c-${Date.now()}`,
+                                                                    authorName: currentUser?.name || "Fan",
+                                                                    authorId: currentUser?.id,
+                                                                    authorRole: currentUser?.role === "Artist" ? ("Artist" as const) : ("Fan" as const),
+                                                                    text,
+                                                                    createdAt: "Just now",
+                                                                },
                                                             ],
                                                         }));
                                                         setCommentInput("");
@@ -1120,7 +1255,14 @@ export function ArtistProfileView({
                                                         ...prev,
                                                         [p.id]: [
                                                             ...(prev[p.id] || []),
-                                                            { id: `c-${Date.now()}`, authorName: currentUser?.name || "Fan", text, createdAt: "Just now" },
+                                                            {
+                                                                id: `c-${Date.now()}`,
+                                                                authorName: currentUser?.name || "Fan",
+                                                                authorId: currentUser?.id,
+                                                                authorRole: currentUser?.role === "Artist" ? ("Artist" as const) : ("Fan" as const),
+                                                                text,
+                                                                createdAt: "Just now",
+                                                            },
                                                         ],
                                                     }));
                                                     setCommentInput("");

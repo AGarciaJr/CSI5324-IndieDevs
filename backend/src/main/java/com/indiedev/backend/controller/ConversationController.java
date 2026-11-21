@@ -3,7 +3,8 @@
 
 package com.indiedev.backend.controller;
 
-
+import com.indiedev.backend.dto.RecipientDTO;
+import com.indiedev.backend.dto.SendMessageRequest;
 import com.indiedev.backend.model.Conversation;
 import com.indiedev.backend.model.Message;
 import com.indiedev.backend.model.MessageWrapper;
@@ -20,7 +21,33 @@ public class ConversationController {
 
     private final ConversationService conversationService;
 
-    public ConversationController(ConversationService conversationService) { this.conversationService = conversationService; }
+    public ConversationController(ConversationService conversationService) {
+        this.conversationService = conversationService;
+    }
+
+    // Send a message to an artist or fan by account name or ID (creates conversation if not existing)
+    @PostMapping("/send")
+    public Message sendMessage(@RequestBody SendMessageRequest request) {
+        return conversationService.sendMessage(request);
+    }
+
+    // Get all conversations for a specific user (Fan or Artist)
+    @GetMapping("/user/{userId}")
+    public List<Conversation> getConversationsForUser(@PathVariable Long userId) {
+        return conversationService.getConversationsForUser(userId);
+    }
+
+    // Get all messages in a specific conversation
+    @GetMapping("/{conversationId}/messages")
+    public List<Message> getMessagesForConversation(@PathVariable Long conversationId) {
+        return conversationService.getMessagesForConversation(conversationId);
+    }
+
+    // Search potential recipients by name, handle, or genre
+    @GetMapping("/recipients")
+    public List<RecipientDTO> searchRecipients(@RequestParam(required = false, defaultValue = "") String query) {
+        return conversationService.searchRecipients(query);
+    }
 
     // Begin a new conversation between two users
     @PostMapping
@@ -36,15 +63,13 @@ public class ConversationController {
 
     // Get all stored conversations
     @GetMapping
-    public List<Conversation> getAllConversations() { return conversationService.getAllConversations(); }
+    public List<Conversation> getAllConversations() {
+        return conversationService.getAllConversations();
+    }
 
     // Get a conversation object (containing a list of messages) corresponding to a given conversation id
     @GetMapping(path = "/byconversationid/{conversationId}")
     public Conversation getConversation(@PathVariable Long conversationId) {
         return conversationService.getConversationById(conversationId);
     }
-
-    // Get a conversation object given the ids of the users it belongs to
-    // TODO
-
 }
