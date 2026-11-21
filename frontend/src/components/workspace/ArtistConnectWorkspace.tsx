@@ -111,15 +111,18 @@ type LocalStore = {
 const initialStore: LocalStore = { posts: [], follows: [], chats: {}, bookings: [] };
 
 const sampleArtists: Artist[] = [
-    { id: 1, name: "Luna Park", genre: "Indie Folk", location: "Austin, TX", bio: "Intimate acoustic melodies and story-driven songwriting rooted in the Texas Hill Country.", tags: "Indie, Folk, Acoustic, Songwriter, Austin" },
-    { id: 2, name: "The Riverbeds", genre: "Indie Rock", location: "Nashville, TN", bio: "Gritty guitars, driving drums, and energetic rock anthems from East Nashville.", tags: "Rock, Indie, Alternative, Nashville, Band" },
-    { id: 3, name: "Marisol Vega", genre: "Latin Pop", location: "Miami, FL", bio: "Sun-soaked Latin rhythms blended with modern electronic synths and soulful bilingual vocals.", tags: "Latin, Pop, Electronic, Dance, Miami" },
-    { id: 4, name: "Northside Brass", genre: "Jazz", location: "Chicago, IL", bio: "Classic Chicago brass quintet fusing traditional jazz standards with modern improv.", tags: "Jazz, Brass, Instrumental, Chicago, Improv" },
-    { id: 5, name: "The Juniper Collective", genre: "Indie Folk", location: "Waco, TX", bio: "Harmonies, banjos, and campfire ballads created by a community of Central Texas artists.", tags: "Indie, Folk, Acoustic, Harmony, Texas" },
-    { id: 6, name: "Miles Bennett", genre: "Jazz", location: "Austin, TX", bio: "Neo-soul saxophone player and producer creating smooth late-night soundscapes.", tags: "Jazz, Soul, Neo-Soul, Saxophone, Chill" },
-    { id: 7, name: "Amara Studio", genre: "Visual Art", location: "Dallas, TX", bio: "Abstract oil painter and digital illustrator capturing organic shapes and urban textures.", tags: "Visual Art, Painting, Illustration, Dallas" },
-    { id: 8, name: "Sage & Sound", genre: "Alternative", location: "Portland, OR", bio: "Ethereal dreampop and indie-electronic textures for introspective listeners.", tags: "Alternative, Dreampop, Ambient, Electronic" },
-    { id: 9, name: "William Waweru", genre: "Indie Folk", location: "Waco, TX", bio: "Acoustic storytelling, heartfelt guitar work, and community-driven indie sessions.", tags: "Indie, Folk, Acoustic, Singer, Storyteller" },
+    { id: 1, name: "Luna Park", genre: "Indie Folk", location: "Austin, TX", bio: "Intimate acoustic melodies and story-driven songwriting rooted in the Texas Hill Country.", tags: "Music, Indie Folk, Acoustic, Songwriter, Austin" },
+    { id: 2, name: "The Riverbeds", genre: "Indie Rock", location: "Nashville, TN", bio: "Gritty guitars, driving drums, and energetic rock anthems from East Nashville.", tags: "Music, Rock, Indie Rock, Nashville, Band" },
+    { id: 3, name: "Marisol Vega", genre: "Latin Pop", location: "Miami, FL", bio: "Sun-soaked Latin rhythms blended with modern electronic synths and soulful bilingual vocals.", tags: "Music, Latin Pop, Electronic, Dance, Miami" },
+    { id: 4, name: "Northside Brass", genre: "Jazz", location: "Chicago, IL", bio: "Classic Chicago brass quintet fusing traditional jazz standards with modern improv.", tags: "Music, Jazz, Brass, Chicago, Improv" },
+    { id: 5, name: "The Juniper Collective", genre: "Indie Folk", location: "Waco, TX", bio: "Harmonies, banjos, and campfire ballads created by a community of Central Texas artists.", tags: "Music, Indie Folk, Banjo, Harmony, Texas" },
+    { id: 6, name: "Miles Bennett", genre: "Jazz", location: "Austin, TX", bio: "Neo-soul saxophone player and producer creating smooth late-night soundscapes.", tags: "Music, Jazz, Neo-Soul, Saxophone, Chill" },
+    { id: 7, name: "Amara Studio", genre: "Visual Art", location: "Dallas, TX", bio: "Abstract oil painter and digital illustrator capturing organic shapes and urban textures.", tags: "Visual Media, Fine Art, Oil Painting, Illustration, Dallas" },
+    { id: 8, name: "Sage & Sound", genre: "Alternative", location: "Portland, OR", bio: "Ethereal dreampop and indie-electronic textures for introspective listeners.", tags: "Mixed-Media, Audio-Visual, Dreampop, Ambient, Electronic" },
+    { id: 9, name: "William Waweru", genre: "Indie Folk", location: "Waco, TX", bio: "Acoustic storytelling, heartfelt guitar work, and community-driven indie sessions.", tags: "Music, Acoustic, Singer, Storyteller, Live Sessions" },
+    { id: 10, name: "Mateo Cruz", genre: "Street Art", location: "Austin, TX", bio: "Large-scale urban murals, aerosol spray typography, and stencil graffiti blending street culture with gallery fine art.", tags: "Street Art / Graffiti, Murals, Spray Art, Urban Stencils, Austin" },
+    { id: 11, name: "Kora Lin", genre: "Digital Art", location: "San Francisco, CA", bio: "Futuristic cyberpunk 3D motion graphics, procedural generative animations, and interactive shader art.", tags: "Digital Art, 3D Render, Motion Graphics, Generative Art" },
+    { id: 12, name: "Elena Rostova", genre: "Photography", location: "New York, NY", bio: "Medium format film photography, street documentary portraiture, and architectural chiaroscuro.", tags: "Photography, Film Photography, 35mm, Documentary, Black & White" },
 ];
 
 const emptyEventForm = (): Partial<EventItem> => ({
@@ -238,8 +241,92 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     const [artistResults, setArtistResults] = useState<Artist[]>(sampleArtists);
     const [busySearch, setBusySearch] = useState(false);
     const [searched, setSearched] = useState(false);
+    const [selectedTag, setSelectedTag] = useState<string>("All Tags");
     const source = "api";
     const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+
+    const ARTIST_TAG_FILTERS = [
+        "All Tags",
+        "Music",
+        "Visual Media",
+        "Mixed-Media",
+        "Street Art / Graffiti",
+        "Digital Art",
+        "Photography",
+    ] as const;
+
+    function handleTagFilter(tag: string) {
+        setSelectedTag(tag);
+        if (tag === "All Tags") {
+            setArtistResults(sampleArtists);
+            setSearched(false);
+            return;
+        }
+        const filtered = sampleArtists.filter((a) => {
+            const t = (a.tags || "").toLowerCase();
+            const g = (a.genre || "").toLowerCase();
+            const query = tag.toLowerCase();
+            if (query === "street art / graffiti") {
+                return t.includes("street art") || t.includes("graffiti") || t.includes("mural");
+            }
+            if (query === "visual media") {
+                return t.includes("visual") || t.includes("painting") || t.includes("illustration") || g.includes("visual");
+            }
+            if (query === "mixed-media") {
+                return t.includes("mixed-media") || t.includes("audio-visual") || g.includes("alternative");
+            }
+            if (query === "photography") {
+                return t.includes("photography") || t.includes("photo") || g.includes("photo");
+            }
+            if (query === "digital art") {
+                return t.includes("digital") || t.includes("3d") || g.includes("digital");
+            }
+            if (query === "music") {
+                return t.includes("music") || (!t.includes("visual") && !t.includes("photo") && !t.includes("digital") && !t.includes("street"));
+            }
+            return t.includes(query) || g.includes(query);
+        });
+        setArtistResults(filtered);
+        setSearched(true);
+    }
+
+    // Settings Tab State
+    const [settings, setSettings] = useState(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const s = localStorage.getItem("artistconnect-settings");
+                if (s) return JSON.parse(s);
+            } catch {}
+        }
+        return {
+            nickname: currentUser?.name || "Member",
+            bio: "Community supporter and music lover.",
+            messagingPermission: "everyone",
+            theme: "dark",
+            emailNotifications: true,
+            allowCommentsOnPosts: true,
+        };
+    });
+
+    useEffect(() => {
+        if (typeof document !== "undefined") {
+            if (settings.theme === "light") {
+                document.body.classList.add("light-theme");
+            } else {
+                document.body.classList.remove("light-theme");
+            }
+        }
+    }, [settings.theme]);
+
+    function handleSaveSettings(e: FormEvent) {
+        e.preventDefault();
+        try {
+            localStorage.setItem("artistconnect-settings", JSON.stringify(settings));
+            setNotice("Settings updated successfully! Preferences saved.");
+        } catch {
+            setError("Could not save settings to local storage.");
+        }
+    }
 
     // Make a Post Tab State
     const [postText, setPostText] = useState("");
@@ -970,6 +1057,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
               { label: "Discover", icon: "⌕", tabName: "Discover" },
               { label: "Following", icon: "♡", tabName: "Following" },
               { label: "My profile", icon: "◎", tabName: "Fan Profile" },
+              { label: "Settings", icon: "⚙", tabName: "Settings" },
               { label: "Report content", icon: "⚑", tabName: "Fan Reports" },
           ]
         : currentUser.role === "Artist"
@@ -982,6 +1070,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
               { label: "Manage Events", icon: "▦", tabName: "Manage Events" },
               { label: "Messages", icon: "✉", tabName: "Messages" },
               { label: "My profile", icon: "◎", tabName: "Fan Profile" },
+              { label: "Settings", icon: "⚙", tabName: "Settings" },
           ]
         : [
               { label: "Ban Appeals", icon: "⚖", tabName: "Ban Appeals" },
@@ -1001,32 +1090,70 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                     {/* AUTHENTICATED USER PROFILE OR GUEST CARD */}
                     {isGuest ? (
-                        <div className="account-switcher" style={{ background: "#fbfcf8", border: "1px solid var(--line)", borderRadius: "10px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <div className="avatar" style={{ background: "#e8efe1", color: "#325c41" }}>?</div>
+                        <div
+                            className="account-switcher"
+                            style={{
+                                background: "rgba(255, 255, 255, 0.05)",
+                                border: "1px solid var(--line-strong)",
+                                backdropFilter: "blur(16px)",
+                                borderRadius: "12px",
+                                padding: "14px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "12px",
+                                boxShadow: "var(--glass-specular), 0 8px 20px rgba(0,0,0,0.4)",
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                <div
+                                    className="avatar"
+                                    style={{
+                                        background: "linear-gradient(135deg, rgba(6, 182, 212, 0.35), rgba(244, 63, 94, 0.35))",
+                                        border: "1px solid var(--spray-cyan)",
+                                        color: "#ffffff",
+                                        fontWeight: 800,
+                                        fontSize: "14px",
+                                        boxShadow: "0 0 12px rgba(6, 182, 212, 0.4)",
+                                    }}
+                                >
+                                    ?
+                                </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <b style={{ display: "block", fontSize: "13px" }}>Guest Fan</b>
-                                    <small style={{ color: "var(--muted)", fontSize: "11px" }}>Browsing artists</small>
+                                    <b style={{ display: "block", fontSize: "13px", color: "#ffffff", fontWeight: 700 }}>Guest Fan</b>
+                                    <small style={{ color: "var(--ink-secondary)", fontSize: "11px", display: "block", marginTop: "2px" }}>Browsing artists</small>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 className="primary"
                                 onClick={() => triggerGuestLogin("Sign in to follow creators, save favorites, and interact with the community.")}
-                                style={{ width: "100%", padding: "7px 10px", fontSize: "12px", textAlign: "center" }}
+                                style={{ width: "100%", padding: "8px 12px", fontSize: "12px", textAlign: "center", fontWeight: 700 }}
                             >
                                 Sign In / Register →
                             </button>
                         </div>
                     ) : (
-                        <div className="account-switcher" style={{ background: "#fbfcf8", border: "1px solid var(--line)", borderRadius: "10px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div
+                            className="account-switcher"
+                            style={{
+                                background: "rgba(255, 255, 255, 0.05)",
+                                border: "1px solid var(--line-strong)",
+                                backdropFilter: "blur(16px)",
+                                borderRadius: "12px",
+                                padding: "14px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "12px",
+                                boxShadow: "var(--glass-specular), 0 8px 20px rgba(0,0,0,0.4)",
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                 <div className="avatar">{currentUser.avatar}</div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "13px" }}>
+                                    <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "13px", color: "#ffffff", fontWeight: 700 }}>
                                         {currentUser.name}
                                     </b>
-                                    <span className={`role-badge ${currentUser.role.toLowerCase()}`} style={{ marginTop: "2px" }}>
+                                    <span className={`role-badge ${currentUser.role.toLowerCase()}`} style={{ marginTop: "4px", display: "inline-block" }}>
                                         {currentUser.role}
                                     </span>
                                 </div>
@@ -1088,6 +1215,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                             <div>
                                 <h1>
                                     {tab === "Artist Home" && "Your creative sanctuary."}
+                                    {tab === "Settings" && "Customize your workspace."}
                                     {tab === "Following" && "Your creative community."}
                                     {tab === "Fan Profile" && "Make yourself at home."}
                                     {tab === "Fan Reports" && "Help keep the community safe."}
@@ -1100,6 +1228,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                 </h1>
                                 <p>
                                     {tab === "Artist Home" && "Your continuous feed of live events, exhibitions, and media-rich creative posts."}
+                                    {tab === "Settings" && "Manage who can message you, change your display nickname, and customize light vs dark appearance."}
                                     {tab === "Recommendations" && "Personalized artist matches constructed from your platform interaction history and genre affinities."}
                                     {tab === "Discover" && "Discover independent artists, view profiles, and engage with emerging communities."}
                                     {tab === "Make a post" && "Share your art, creative process, and multimedia updates with your community."}
@@ -1119,6 +1248,128 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     artist={sampleArtists.find((a) => a.id === effectiveUser.id) || sampleArtists.find((a) => a.id === 9) || sampleArtists[8]}
                                     isModal={false}
                                 />
+                            </div>
+                        )}
+
+                        {/* TAB: SETTINGS */}
+                        {!isGuest && tab === "Settings" && (
+                            <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+                                <section className="panel" style={{ padding: "32px" }}>
+                                    <div className="section-title">
+                                        <div>
+                                            <span className="eyebrow">ACCOUNT SETTINGS & PREFERENCES</span>
+                                            <h2 style={{ margin: "4px 0 0" }}>Preferences & Privacy</h2>
+                                            <p style={{ fontSize: "13px", color: "var(--muted)", margin: "4px 0 0" }}>
+                                                Customize who can message you, change your nickname, and toggle light vs dark appearance.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <form onSubmit={handleSaveSettings} style={{ display: "grid", gap: "22px", marginTop: "16px" }}>
+                                        {/* Profile Nickname */}
+                                        <div>
+                                            <label style={{ display: "block", marginBottom: "6px" }}>
+                                                Display Nickname / Alias
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={settings.nickname}
+                                                onChange={(e) => setSettings({ ...settings, nickname: e.target.value })}
+                                                placeholder="Enter your public nickname"
+                                            />
+                                            <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
+                                                This name appears on your public comments and profile activities.
+                                            </small>
+                                        </div>
+
+                                        {/* Bio */}
+                                        <div>
+                                            <label style={{ display: "block", marginBottom: "6px" }}>
+                                                Status / About Excerpt
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={settings.bio}
+                                                onChange={(e) => setSettings({ ...settings, bio: e.target.value })}
+                                                placeholder="Tell the community about your artistic taste"
+                                            />
+                                        </div>
+
+                                        {/* Messaging Permissions */}
+                                        <div style={{ borderTop: "1px solid var(--line)", paddingTop: "18px" }}>
+                                            <label style={{ display: "block", marginBottom: "6px" }}>
+                                                Who Can Direct Message You?
+                                            </label>
+                                            <select
+                                                value={settings.messagingPermission}
+                                                onChange={(e) => setSettings({ ...settings, messagingPermission: e.target.value })}
+                                            >
+                                                <option value="everyone">🌐 Everyone (Fans, Artists, and Community Members)</option>
+                                                <option value="followed">👥 Only Followed Creators & Booked Contacts</option>
+                                                <option value="nobody">🔒 Nobody (Disable Incoming Direct Messages)</option>
+                                            </select>
+                                            <small style={{ color: "var(--muted)", display: "block", marginTop: "4px" }}>
+                                                Control message requests and unsolicited artist inquiries.
+                                            </small>
+                                        </div>
+
+                                        {/* Appearance: Light Mode vs Dark Mode */}
+                                        <div style={{ borderTop: "1px solid var(--line)", paddingTop: "18px" }}>
+                                            <label style={{ display: "block", marginBottom: "10px" }}>
+                                                Appearance Theme (Light Mode vs Dark Mode)
+                                            </label>
+                                            <div style={{ display: "flex", gap: "12px" }}>
+                                                <button
+                                                    type="button"
+                                                    className={settings.theme === "dark" ? "primary" : "btn-secondary"}
+                                                    style={{ flex: 1, padding: "12px", borderRadius: "10px", fontSize: "13px" }}
+                                                    onClick={() => setSettings({ ...settings, theme: "dark" })}
+                                                >
+                                                    🌙 Dark Mode (Obsidian & Neon Glow)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={settings.theme === "light" ? "primary" : "btn-secondary"}
+                                                    style={{ flex: 1, padding: "12px", borderRadius: "10px", fontSize: "13px" }}
+                                                    onClick={() => setSettings({ ...settings, theme: "light" })}
+                                                >
+                                                    ☀️ Light Mode (Studio White Canvas)
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Notifications & Comments */}
+                                        <div style={{ borderTop: "1px solid var(--line)", paddingTop: "18px" }}>
+                                            <div className="setting" style={{ padding: "10px 0" }}>
+                                                <div>
+                                                    <b>Allow Comments on Activity</b>
+                                                    <p>Allow fans and artists to comment on your profile posts and artwork.</p>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={settings.allowCommentsOnPosts}
+                                                    onChange={(e) => setSettings({ ...settings, allowCommentsOnPosts: e.target.checked })}
+                                                />
+                                            </div>
+
+                                            <div className="setting" style={{ padding: "10px 0" }}>
+                                                <div>
+                                                    <b>Email Show & Booking Alerts</b>
+                                                    <p>Receive email digests when followed creators schedule live shows near you.</p>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={settings.emailNotifications}
+                                                    onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button type="submit" className="primary" style={{ padding: "12px 24px", marginTop: "10px" }}>
+                                            Save Settings & Preferences ↗
+                                        </button>
+                                    </form>
+                                </section>
                             </div>
                         )}
 
@@ -1815,6 +2066,35 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                             {busySearch ? "Searching…" : "Search artists ↗"}
                                         </button>
                                     </form>
+
+                                    {/* Self-Assigned Tag Filters */}
+                                    <div style={{ marginTop: "18px", borderTop: "1px solid var(--line)", paddingTop: "14px" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "1px", marginRight: "4px" }}>
+                                                Filter by Artist Tags:
+                                            </span>
+                                            {ARTIST_TAG_FILTERS.map((tag) => (
+                                                <button
+                                                    key={tag}
+                                                    type="button"
+                                                    onClick={() => handleTagFilter(tag)}
+                                                    className={selectedTag === tag ? "pill" : "btn-secondary"}
+                                                    style={{
+                                                        fontSize: "11px",
+                                                        padding: "5px 12px",
+                                                        borderRadius: "20px",
+                                                        cursor: "pointer",
+                                                        background: selectedTag === tag ? "rgba(244, 63, 94, 0.2)" : "rgba(255, 255, 255, 0.04)",
+                                                        borderColor: selectedTag === tag ? "var(--spray-pink)" : "var(--line)",
+                                                        color: selectedTag === tag ? "#ffffff" : "var(--ink-secondary)",
+                                                        boxShadow: selectedTag === tag ? "0 0 14px rgba(244, 63, 94, 0.3)" : "none",
+                                                    }}
+                                                >
+                                                    {tag === "All Tags" ? "✦ All Media" : `#${tag}`}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </section>
 
                                 <div className="results-heading">

@@ -7,7 +7,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Indie Folk",
         location: "Austin, TX",
         bio: "Intimate acoustic melodies and story-driven songwriting rooted in the Texas Hill Country.",
-        tags: "Indie, Folk, Acoustic, Songwriter, Austin",
+        tags: "Music, Indie Folk, Acoustic, Songwriter, Austin",
         profileThumbnail: "https://example.com/thumbnails/luna-park.jpg",
     },
     {
@@ -16,7 +16,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Indie Rock",
         location: "Nashville, TN",
         bio: "Gritty guitars, driving drums, and energetic rock anthems from East Nashville.",
-        tags: "Rock, Indie, Alternative, Nashville, Band",
+        tags: "Music, Rock, Indie Rock, Alternative, Nashville, Band",
     },
     {
         id: 3,
@@ -24,7 +24,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Latin Pop",
         location: "Miami, FL",
         bio: "Sun-soaked Latin rhythms blended with modern electronic synths and soulful bilingual vocals.",
-        tags: "Latin, Pop, Electronic, Dance, Miami",
+        tags: "Music, Latin Pop, Electronic, Dance, Miami",
     },
     {
         id: 4,
@@ -32,7 +32,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Jazz",
         location: "Chicago, IL",
         bio: "Classic Chicago brass quintet fusing traditional jazz standards with modern improv.",
-        tags: "Jazz, Brass, Instrumental, Chicago, Improv",
+        tags: "Music, Jazz, Brass, Instrumental, Chicago, Improv",
     },
     {
         id: 5,
@@ -40,7 +40,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Indie Folk",
         location: "Waco, TX",
         bio: "Harmonies, banjos, and campfire ballads created by a community of Central Texas artists.",
-        tags: "Indie, Folk, Acoustic, Harmony, Texas",
+        tags: "Music, Indie Folk, Acoustic, Harmony, Texas",
     },
     {
         id: 6,
@@ -48,7 +48,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Jazz",
         location: "Austin, TX",
         bio: "Neo-soul saxophone player and producer creating smooth late-night soundscapes.",
-        tags: "Jazz, Soul, Neo-Soul, Saxophone, Chill",
+        tags: "Music, Jazz, Neo-Soul, Saxophone, Chill",
     },
     {
         id: 7,
@@ -56,7 +56,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Visual Art",
         location: "Dallas, TX",
         bio: "Abstract oil painter and digital illustrator capturing organic shapes and urban textures.",
-        tags: "Visual Art, Painting, Illustration, Dallas",
+        tags: "Visual Media, Fine Art, Oil Painting, Illustration, Dallas",
     },
     {
         id: 8,
@@ -64,7 +64,7 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Alternative",
         location: "Portland, OR",
         bio: "Ethereal dreampop and indie-electronic textures for introspective listeners.",
-        tags: "Alternative, Dreampop, Ambient, Electronic",
+        tags: "Mixed-Media, Audio-Visual, Dreampop, Ambient, Electronic",
     },
     {
         id: 9,
@@ -72,7 +72,31 @@ export const SAMPLE_ARTISTS: Artist[] = [
         genre: "Indie Folk",
         location: "Waco, TX",
         bio: "Acoustic storytelling, heartfelt guitar work, and community-driven indie sessions.",
-        tags: "Indie, Folk, Acoustic, Singer, Storyteller",
+        tags: "Music, Acoustic, Singer, Storyteller, Live Sessions",
+    },
+    {
+        id: 10,
+        name: "Mateo Cruz",
+        genre: "Street Art",
+        location: "Austin, TX",
+        bio: "Large-scale urban murals, aerosol spray typography, and stencil graffiti blending street culture with gallery fine art.",
+        tags: "Street Art / Graffiti, Murals, Spray Art, Urban Stencils, Austin",
+    },
+    {
+        id: 11,
+        name: "Kora Lin",
+        genre: "Digital Art",
+        location: "San Francisco, CA",
+        bio: "Futuristic cyberpunk 3D motion graphics, procedural generative animations, and interactive shader art.",
+        tags: "Digital Art, 3D Render, Motion Graphics, Generative Art",
+    },
+    {
+        id: 12,
+        name: "Elena Rostova",
+        genre: "Photography",
+        location: "New York, NY",
+        bio: "Medium format film photography, street documentary portraiture, and architectural chiaroscuro.",
+        tags: "Photography, Film Photography, 35mm, Documentary, Black & White",
     },
 ];
 

@@ -132,7 +132,7 @@ export function ArtistProfileView({
                                 className="primary"
                                 style={{ fontSize: "12px", padding: "6px 14px", textDecoration: "none" }}
                             >
-                                Open Full Page ↗
+                                Visit Page ↗
                             </Link>
                             {onCloseModal && (
                                 <button

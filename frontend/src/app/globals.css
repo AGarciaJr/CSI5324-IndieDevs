@@ -1219,3 +1219,55 @@ footer {
 .account-switcher .account-btn small { white-space: normal; }
 aside .nav-label { margin-top: 8px; }
 @media (min-width: 651px) { aside { overflow-y: auto; } aside nav { flex-shrink: 0; } .sidebar-note { margin-top: 24px; flex-shrink: 0; } }
+
+/* Light Theme Switcher Overrides */
+body.light-theme {
+  background-color: #f8fafc !important;
+  background-image:
+    radial-gradient(circle at 12% 15%, rgba(244, 63, 94, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 88% 22%, rgba(6, 182, 212, 0.06) 0%, transparent 48%) !important;
+  color: #1e293b !important;
+}
+body.light-theme aside,
+body.light-theme header,
+body.light-theme .panel,
+body.light-theme .search-panel,
+body.light-theme .artist-card,
+body.light-theme .affinity-widget,
+body.light-theme .modal {
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06) !important;
+}
+body.light-theme h1,
+body.light-theme h2,
+body.light-theme h3,
+body.light-theme h4,
+body.light-theme h5,
+body.light-theme .brand {
+  color: #0f172a !important;
+}
+body.light-theme p,
+body.light-theme small,
+body.light-theme label {
+  color: #475569 !important;
+}
+body.light-theme input:not([type=checkbox]),
+body.light-theme textarea,
+body.light-theme select {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body.light-theme .btn-secondary,
+body.light-theme button:not(.primary):not(.btn-danger) {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body.light-theme .btn-secondary:hover,
+body.light-theme button:not(.primary):not(.btn-danger):hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
