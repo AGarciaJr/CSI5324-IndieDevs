@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import {
-    MOCK_USERS,
     UserPersona,
     Role,
     getStoredUser,
@@ -24,17 +23,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOGGED_OUT_FLAG = "artistconnect-explicit-logout";
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [currentUser, setCurrentUserState] = useState<UserPersona | null>(() => {
-        if (typeof window === "undefined") return MOCK_USERS[0];
-        const stored = getStoredUser();
-        const explicitLogout = localStorage.getItem(LOGGED_OUT_FLAG) === "true";
-
-        if (stored) return stored;
-        if (explicitLogout) return null;
-        return MOCK_USERS[0]; // Nicholas Nolen (Fan) default for instant compatibility
+        if (typeof window === "undefined") return null;
+        return getStoredUser();
     });
 
     const [isInitialized, setIsInitialized] = useState(false);
@@ -50,7 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (username: string, password?: string, requiredRole?: Role): { success: boolean; error?: string } => {
             const result = mockAuthenticate(username, password, requiredRole);
             if (result.user) {
-                localStorage.removeItem(LOGGED_OUT_FLAG);
                 setStoredUser(result.user);
                 setCurrentUserState(result.user);
                 return { success: true };
@@ -61,19 +52,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     const loginAsPersona = useCallback((persona: UserPersona) => {
-        localStorage.removeItem(LOGGED_OUT_FLAG);
         setStoredUser(persona);
         setCurrentUserState(persona);
     }, []);
 
     const logout = useCallback(() => {
-        localStorage.setItem(LOGGED_OUT_FLAG, "true");
         clearStoredUser();
         setCurrentUserState(null);
     }, []);
 
     const switchUser = useCallback((persona: UserPersona) => {
-        localStorage.removeItem(LOGGED_OUT_FLAG);
         setStoredUser(persona);
         setCurrentUserState(persona);
     }, []);

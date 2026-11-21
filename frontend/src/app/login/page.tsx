@@ -3,22 +3,20 @@
 import React, { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Role, MOCK_USERS, getActorHomePage, UserPersona } from "../../lib/auth";
+import { Role, MOCK_USERS, getActorHomePage } from "../../lib/auth";
 import { useAuth } from "../../context/AuthContext";
 
 const MEMBER_ROLES: Role[] = ["Fan", "Artist"];
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login, loginAsPersona, currentUser } = useAuth();
+    const { login, currentUser } = useAuth();
 
     const [selectedRole, setSelectedRole] = useState<Role>("Fan");
-    const [username, setUsername] = useState("nicholas");
-    const [password, setPassword] = useState("password");
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
-
-    const filteredPersonas = MOCK_USERS.filter((u) => u.role === selectedRole);
 
     function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -52,18 +50,9 @@ export default function LoginPage() {
         }
     }
 
-    function handleQuickLogin(persona: UserPersona) {
-        setError("");
-        loginAsPersona(persona);
-        setNotice(`Signed in as ${persona.name} (${persona.role}). Redirecting to ${getActorHomePage(persona.role)}…`);
-        setTimeout(() => {
-            router.push(getActorHomePage(persona.role));
-        }, 300);
-    }
-
     return (
         <div className="app-shell" style={{ justifyContent: "center", alignItems: "center", minHeight: "100vh", padding: "40px 16px" }}>
-            <div style={{ maxWidth: "560px", width: "100%" }}>
+            <div style={{ maxWidth: "520px", width: "100%" }}>
                 {/* Brand Header */}
                 <div style={{ textAlign: "center", marginBottom: "28px" }}>
                     <Link className="brand" href="/" style={{ justifyContent: "center" }}>
@@ -72,11 +61,6 @@ export default function LoginPage() {
                     <p style={{ color: "var(--muted)", marginTop: "8px", fontSize: "14px" }}>
                         Member Sign In · Fans & Artists
                     </p>
-                </div>
-
-                {/* Database Handoff Notice */}
-                <div className="conflict-warning" style={{ fontSize: "12px", marginBottom: "20px" }}>
-                    <strong>Architecture Note:</strong> Fans and artists authenticate from this shared screen. System administrators authenticate strictly from <code>/admin</code>. This form operates via mock authentication ready for database handoff.
                 </div>
 
                 {/* Active Session Notice */}
@@ -108,8 +92,6 @@ export default function LoginPage() {
                                     setSelectedRole(r);
                                     setError("");
                                     setNotice("");
-                                    const first = MOCK_USERS.find((u) => u.role === r);
-                                    if (first) setUsername(first.username);
                                 }}
                             >
                                 {r === "Fan" ? "Fan Sign In" : "Artist Sign In"}
@@ -141,7 +123,7 @@ export default function LoginPage() {
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder={selectedRole === "Fan" ? "e.g. nicholas, jordan" : "e.g. william"}
+                                placeholder={`Enter your ${selectedRole.toLowerCase()} username`}
                                 style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
                             />
                         </div>
@@ -154,12 +136,9 @@ export default function LoginPage() {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Enter password (mock: any value)"
+                                placeholder="Enter your password"
                                 style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
                             />
-                            <small style={{ color: "var(--muted)", marginTop: "4px", display: "block" }}>
-                                Any password accepted for lightweight mock authentication.
-                            </small>
                         </div>
 
                         <button type="submit" className="primary" style={{ padding: "12px", marginTop: "8px" }}>
@@ -167,45 +146,8 @@ export default function LoginPage() {
                         </button>
                     </form>
 
-                    {/* Quick Demo Login Buttons for Fan & Artist */}
-                    <div style={{ borderTop: "1px solid var(--line)", marginTop: "28px", paddingTop: "20px" }}>
-                        <small style={{ fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "10px" }}>
-                            DEMO {selectedRole.toUpperCase()} ACCOUNTS
-                        </small>
-                        <div style={{ display: "grid", gap: "8px" }}>
-                            {filteredPersonas.map((p) => (
-                                <button
-                                    key={p.id}
-                                    type="button"
-                                    onClick={() => handleQuickLogin(p)}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "12px",
-                                        textAlign: "left",
-                                        padding: "10px 14px",
-                                        background: "#fafbf9",
-                                        border: "1px solid var(--line)",
-                                        borderRadius: "6px",
-                                    }}
-                                >
-                                    <div className="avatar" style={{ width: "32px", height: "32px", fontSize: "12px" }}>
-                                        {p.avatar}
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <b style={{ fontSize: "13px", display: "block" }}>{p.name}</b>
-                                        <small style={{ color: "var(--muted)" }}>username: {p.username} · {p.description}</small>
-                                    </div>
-                                    <span style={{ fontSize: "12px", color: "var(--green)", fontWeight: 600 }}>
-                                        Sign in →
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Footer Links */}
-                    <div style={{ borderTop: "1px solid var(--line)", marginTop: "20px", paddingTop: "16px", textAlign: "center" }}>
+                    <div style={{ borderTop: "1px solid var(--line)", marginTop: "24px", paddingTop: "16px", textAlign: "center" }}>
                         <small style={{ color: "var(--muted)" }}>
                             Administrator? Access the moderation console at{" "}
                             <Link href="/admin" style={{ color: "var(--green)", fontWeight: 600 }}>

@@ -12,7 +12,7 @@ import {
     AdminReportsPanel,
 } from "../fan-community";
 import { useEffect, useState, type FormEvent } from "react";
-import { UserPersona, MOCK_USERS, getBackendAccountId, getActorHomePage } from "../../lib/auth";
+import { UserPersona, getBackendAccountId } from "../../lib/auth";
 import { useAuth } from "../../context/AuthContext";
 
 type Artist = {
@@ -140,16 +140,22 @@ interface ArtistConnectWorkspaceProps {
 }
 
 export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspaceProps) {
+    const { currentUser, logout } = useAuth();
+    if (!currentUser) return null;
+    return <ArtistConnectWorkspaceInner currentUser={currentUser} logout={logout} currentPath={currentPath} />;
+}
+
+interface InnerWorkspaceProps {
+    currentUser: UserPersona;
+    logout: () => void;
+    currentPath?: string;
+}
+
+function ArtistConnectWorkspaceInner({ currentUser, logout, currentPath }: InnerWorkspaceProps) {
     const router = useRouter();
-    const { currentUser: authUser, switchUser, logout } = useAuth();
-
-    // Fallback to MOCK_USERS[0] if authUser is temporarily null during hydration
-    const currentUser = authUser || MOCK_USERS[0];
-
-    const [showAccountMenu, setShowAccountMenu] = useState(false);
 
     // Active Navigation Tab
-    const [tab, setTab] = useState(() => (currentUser.role === "Fan" ? "Discover" : currentUser.role === "Artist" ? "Manage Events" : "Ban Appeals"));
+    const [tab, setTab] = useState(() => (currentUser.role === "Artist" ? "Manage Events" : currentUser.role === "Admin" ? "Ban Appeals" : "Discover"));
 
     // General app state
     const [store, setStore] = useState<LocalStore>(initialStore);
@@ -162,7 +168,7 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
     const [artistResults, setArtistResults] = useState<Artist[]>(sampleArtists);
     const [busySearch, setBusySearch] = useState(false);
     const [searched, setSearched] = useState(false);
-    const [source, setSource] = useState("api");
+    const source = "api";
     const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
     const [modalAction, setModalAction] = useState("");
     const [modalMessage, setModalMessage] = useState("");
@@ -200,7 +206,7 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
     const [recipientId, setRecipientId] = useState(0);
     const [messageText, setMessageText] = useState("");
 
-    // Initialize local demo data & verify backend connection
+    // Initialize local storage store & verify backend connection
     useEffect(() => {
         const timer = setTimeout(() => {
             try {
@@ -275,6 +281,7 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
         if (tab === "Ban Appeals" && currentUser.role === "Admin") {
             loadAppeals();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab, currentUser, appealsViewMode]);
 
     // Keep both the fan/artist discovery page and the admin moderation directory populated.
@@ -324,7 +331,7 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
             const data: RecommendationData = await res.json();
             setRecommendationData(data);
         } catch {
-            // Fallback for offline demo
+            // Fallback if recommendations service is unavailable
             setRecommendationData({
                 hasInteractions: fanId === 1,
                 message:
@@ -875,23 +882,6 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
                   { label: "Report queue", icon: "⚑", tabName: "Report Queue" },
               ];
 
-    function handleAccountSwitch(targetUser: UserPersona) {
-        switchUser(targetUser);
-        setTab(targetUser.role === "Fan" ? "Discover" : targetUser.role === "Artist" ? "Manage Events" : "Ban Appeals");
-        setError("");
-        setSelectedArtist(null);
-        setShowAccountMenu(false);
-        setNotice(`Switched active account to ${targetUser.name} (${targetUser.role})`);
-
-        // If on an actor-specific route, redirect to that actor's dedicated home page
-        if (currentPath === "/fan" || currentPath === "/artist" || currentPath === "/admin") {
-            const targetHome = getActorHomePage(targetUser.role);
-            if (targetHome !== currentPath) {
-                router.push(targetHome);
-            }
-        }
-    }
-
     return (
         <FanCommunityProvider key={`${backendAccountId}-${currentUser.role}`} accountId={backendAccountId} role={currentUser.role}>
             <div className="app-shell">
@@ -901,47 +891,30 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
                         a<span>ArtistConnect</span><i>●</i>
                     </Link>
 
-                    {/* ACCOUNT PROFILE BUTTON & SWITCHER */}
-                    <div className="account-switcher">
-                        {showAccountMenu && (
-                            <div className="account-menu" id="demo-account-menu">
-                                <small style={{ fontWeight: 700, padding: "4px 8px", color: "var(--muted)" }}>
-                                    PRESENTATION DEMO ACCOUNTS
-                                </small>
-                                {MOCK_USERS.map((p) => (
-                                    <button
-                                        key={p.id}
-                                        className={`account-menu-item ${currentUser.id === p.id ? "active" : ""}`}
-                                        onClick={() => handleAccountSwitch(p)}
-                                    >
-                                        <div className="avatar">{p.avatar}</div>
-                                        <div>
-                                            <b style={{ fontSize: "12px", display: "block" }}>{p.name}</b>
-                                            <small>{p.description}</small>
-                                        </div>
-                                        <span className={`role-badge ${p.role.toLowerCase()}`}>{p.role}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        <button
-                            className="account-btn"
-                            onClick={() => setShowAccountMenu(!showAccountMenu)}
-                            aria-expanded={showAccountMenu}
-                            aria-controls="demo-account-menu"
-                            title="Switch demo account"
-                        >
+                    {/* AUTHENTICATED USER PROFILE CARD */}
+                    <div className="account-switcher" style={{ background: "#fbfcf8", border: "1px solid var(--line)", borderRadius: "10px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <div className="avatar">{currentUser.avatar}</div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "13px" }}>
                                     {currentUser.name}
                                 </b>
-                                <small>{currentUser.role} · switch demo account ▾</small>
+                                <span className={`role-badge ${currentUser.role.toLowerCase()}`} style={{ marginTop: "2px" }}>
+                                    {currentUser.role}
+                                </span>
                             </div>
-                            <span className={`role-badge ${currentUser.role.toLowerCase()}`}>
-                                {currentUser.role}
-                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => {
+                                logout();
+                                router.push(currentUser.role === "Admin" ? "/admin" : "/login");
+                            }}
+                            style={{ width: "100%", padding: "6px 8px", fontSize: "11px", textAlign: "center" }}
+                            title="Sign out of your session"
+                        >
+                            Sign Out
                         </button>
                     </div>
 
@@ -1116,9 +1089,9 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
                                                         className="btn-secondary"
                                                         style={{ fontSize: "11px", padding: "6px 12px" }}
                                                         onClick={clearFanInteractions}
-                                                        title="Clear interaction records to test the New Fan cold-start view"
+                                                        title="Clear interaction history"
                                                     >
-                                                        Clear history (Test Cold-Start)
+                                                        Clear history
                                                     </button>
                                                 </div>
 
@@ -1140,7 +1113,7 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
                                             <div className="panel" style={{ marginBottom: "24px", background: "#f8faf5", borderColor: "#cbd6c5" }}>
                                                 <div className="section-title">
                                                     <div>
-                                                        <span className="pill" style={{ background: "#e8efe1", color: "#325c41" }}>EXTENSION 1A: NEW FAN</span>
+                                                        <span className="pill" style={{ background: "#e8efe1", color: "#325c41" }}>NEW FAN PROFILE</span>
                                                         <h2 style={{ margin: "8px 0 4px" }}>Start Discovering New Artists</h2>
                                                     </div>
                                                 </div>
@@ -1150,17 +1123,6 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
                                                 <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
                                                     <button className="primary" onClick={() => setTab("Discover")}>
                                                         Explore Discover Directory ↗
-                                                    </button>
-                                                    <button
-                                                        className="btn-secondary"
-                                                        onClick={async () => {
-                                                            await recordFanInteraction(1, "FOLLOW");
-                                                            await recordFanInteraction(5, "LIKE");
-                                                            setNotice("Sample interactions recorded! Recommendations generated.");
-                                                            loadRecommendations(getBackendAccountId(currentUser));
-                                                        }}
-                                                    >
-                                                        Simulate Sample Fan Activity
                                                     </button>
                                                 </div>
                                             </div>
@@ -1551,16 +1513,6 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
 
                                     <div style={{ display: "flex", gap: "8px" }}>
                                         <button
-                                            className="btn-secondary"
-                                            onClick={() => {
-                                                const otherAdmin = currentUser.id === 101 ? MOCK_USERS[4] : MOCK_USERS[3];
-                                                handleAccountSwitch(otherAdmin);
-                                            }}
-                                        >
-                                            Switch to {currentUser.id === 101 ? "Admin Garrett (102)" : "Admin Alex (101)"} ⇄
-                                        </button>
-
-                                        <button
                                             className={appealsViewMode === "all" ? "primary" : "btn-secondary"}
                                             onClick={() => setAppealsViewMode(appealsViewMode === "all" ? "eligible" : "all")}
                                             title="Toggle viewing all appeals vs only eligible unbanned appeals"
@@ -1738,20 +1690,6 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
                                 <section className="search-panel">
                                     <div className="section-title">
                                         <h2>Discover artists</h2>
-                                        <label className="source">
-                                            Source:{" "}
-                                            <select
-                                                value={source}
-                                                onChange={(e) => {
-                                                    setSource(e.target.value);
-                                                    setArtistResults(e.target.value === "demo" ? sampleArtists : []);
-                                                    setSearched(false);
-                                                }}
-                                            >
-                                                <option value="api">Live Backend (H2)</option>
-                                                <option value="demo">Demo Catalog</option>
-                                            </select>
-                                        </label>
                                     </div>
 
                                     <form onSubmit={handleSearch} className="search-grid">
@@ -1790,7 +1728,7 @@ export function ArtistConnectWorkspace({ currentPath }: ArtistConnectWorkspacePr
                                         {searched ? "Search Results" : "Meet The Community"}{" "}
                                         <span>{artistResults.length}</span>
                                     </h2>
-                                    <span>{source === "api" ? "Registered Database Artists" : "Sample Artists"}</span>
+                                    <span>Registered Database Artists</span>
                                 </div>
 
                                 <div className="artist-grid">

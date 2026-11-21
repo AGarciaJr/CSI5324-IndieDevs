@@ -138,7 +138,7 @@ export function mockAuthenticate(
     if (!user) {
         return {
             user: null,
-            error: `User "${usernameOrId}" not found in mock database.`,
+            error: `User "${usernameOrId}" not found.`,
         };
     }
 

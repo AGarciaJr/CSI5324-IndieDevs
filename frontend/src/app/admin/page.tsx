@@ -3,17 +3,14 @@
 import React, { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
-import { MOCK_USERS, UserPersona } from "../../lib/auth";
 import { ArtistConnectWorkspace } from "../../components/workspace/ArtistConnectWorkspace";
 
 export default function AdminPage() {
-    const { currentUser, isInitialized, login, loginAsPersona } = useAuth();
-    const [username, setUsername] = useState("alex");
-    const [password, setPassword] = useState("password");
+    const { currentUser, isInitialized, login } = useAuth();
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
-
-    const adminPersonas = MOCK_USERS.filter((u) => u.role === "Admin");
 
     if (!isInitialized) {
         return (
@@ -92,15 +89,9 @@ export default function AdminPage() {
         }
     }
 
-    function handleQuickAdminLogin(persona: UserPersona) {
-        setError("");
-        loginAsPersona(persona);
-        setNotice(`Signed in as ${persona.name}. Loading moderation console…`);
-    }
-
     return (
         <div className="app-shell" style={{ justifyContent: "center", alignItems: "center", minHeight: "100vh", padding: "40px 16px" }}>
-            <div style={{ maxWidth: "520px", width: "100%" }}>
+            <div style={{ maxWidth: "480px", width: "100%" }}>
                 <div style={{ textAlign: "center", marginBottom: "28px" }}>
                     <Link className="brand" href="/" style={{ justifyContent: "center" }}>
                         a<span>ArtistConnect</span><i>●</i>
@@ -108,10 +99,6 @@ export default function AdminPage() {
                     <p style={{ color: "var(--muted)", marginTop: "8px", fontSize: "14px" }}>
                         Administrative Service · Moderation Portal
                     </p>
-                </div>
-
-                <div className="conflict-warning" style={{ fontSize: "12px", marginBottom: "20px" }}>
-                    <strong>Isolated Admin Route:</strong> System administrators authenticate directly from this <code>/admin</code> route. Public fan and artist accounts cannot access this administrative portal.
                 </div>
 
                 <div className="panel" style={{ padding: "32px", background: "white" }}>
@@ -136,7 +123,7 @@ export default function AdminPage() {
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder="e.g. alex, garrett"
+                                placeholder="Enter administrator username"
                                 style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
                             />
                         </div>
@@ -149,7 +136,7 @@ export default function AdminPage() {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Enter password (mock: any value)"
+                                placeholder="Enter administrator password"
                                 style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: "6px" }}
                             />
                         </div>
@@ -159,43 +146,7 @@ export default function AdminPage() {
                         </button>
                     </form>
 
-                    <div style={{ borderTop: "1px solid var(--line)", marginTop: "24px", paddingTop: "20px" }}>
-                        <small style={{ fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "10px" }}>
-                            DEMO ADMINISTRATOR ACCOUNTS
-                        </small>
-                        <div style={{ display: "grid", gap: "8px" }}>
-                            {adminPersonas.map((p) => (
-                                <button
-                                    key={p.id}
-                                    type="button"
-                                    onClick={() => handleQuickAdminLogin(p)}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "12px",
-                                        textAlign: "left",
-                                        padding: "10px 14px",
-                                        background: "#fafbf9",
-                                        border: "1px solid var(--line)",
-                                        borderRadius: "6px",
-                                    }}
-                                >
-                                    <div className="avatar" style={{ width: "32px", height: "32px", fontSize: "12px" }}>
-                                        {p.avatar}
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <b style={{ fontSize: "13px", display: "block" }}>{p.name}</b>
-                                        <small style={{ color: "var(--muted)" }}>username: {p.username} · {p.description}</small>
-                                    </div>
-                                    <span style={{ fontSize: "12px", color: "var(--green)", fontWeight: 600 }}>
-                                        Sign in →
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div style={{ borderTop: "1px solid var(--line)", marginTop: "20px", paddingTop: "14px", textAlign: "center" }}>
+                    <div style={{ borderTop: "1px solid var(--line)", marginTop: "24px", paddingTop: "14px", textAlign: "center" }}>
                         <Link href="/login" style={{ fontSize: "12px", color: "var(--muted)" }}>
                             ← Looking for Fan or Artist login?
                         </Link>
