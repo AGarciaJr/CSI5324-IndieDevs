@@ -48,7 +48,7 @@ export function AuthGuard({ allowedRoles, actorName, children }: AuthGuardProps)
                         Sign in required for {actorName} access
                     </h2>
                     <p style={{ color: "var(--muted)", fontSize: "14px", lineHeight: "1.6" }}>
-                        Per project documentation, access to {actorName} use cases requires an active authenticated account.
+                        Access to the {actorName} workspace requires an active authenticated account.
                         Please sign in with your credentials to proceed.
                     </p>
                     <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "24px", flexWrap: "wrap" }}>
@@ -80,7 +80,7 @@ export function AuthGuard({ allowedRoles, actorName, children }: AuthGuardProps)
                     </div>
 
                     <div className="conflict-warning" style={{ margin: "16px 0", fontSize: "13px" }}>
-                        <strong>Documentation Precondition:</strong> &quot;The {actorName} is authenticated with an active {actorName} account in good standing. Other actor roles cannot access or perform these use cases.&quot;
+                        <strong>Access Restriction:</strong> The {actorName} workspace is restricted to active {actorName} accounts. Other roles cannot perform actions in this portal.
                     </div>
 
                     <p style={{ fontSize: "14px", color: "var(--ink)", lineHeight: "1.6" }}>

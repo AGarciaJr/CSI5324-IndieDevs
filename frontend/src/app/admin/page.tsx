@@ -41,7 +41,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="conflict-warning" style={{ margin: "16px 0", fontSize: "13px" }}>
-                        <strong>System Specification:</strong> &quot;The Admin is authenticated with administrative privileges. Non-admin accounts (Fans and Artists) are strictly forbidden from accessing administrative moderation services.&quot;
+                        <strong>Access Restriction:</strong> Administrative moderation tools are strictly restricted to authenticated system administrators.
                     </div>
 
                     <p style={{ fontSize: "14px", color: "var(--ink)", lineHeight: "1.6" }}>

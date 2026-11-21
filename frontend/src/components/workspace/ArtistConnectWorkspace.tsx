@@ -227,7 +227,6 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
     const [store, setStore] = useState<LocalStore>(initialStore);
     const [notice, setNotice] = useState("");
     const [error, setError] = useState("");
-    const [backendConnected, setBackendConnected] = useState<boolean | null>(null);
 
     // Discover Tab State
     const [criteria, setCriteria] = useState({ name: "", genre: "", location: "" });
@@ -286,14 +285,6 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
             } catch {
                 // ignore
             }
-
-            // Test backend connectivity
-            fetch(`${API_BASE}/api/artists`, { signal: AbortSignal.timeout(3000) })
-                .then((res) => {
-                    if (res.ok) setBackendConnected(true);
-                    else setBackendConnected(false);
-                })
-                .catch(() => setBackendConnected(false));
         }, 0);
         return () => clearTimeout(timer);
     }, []);
@@ -555,9 +546,9 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
         setError("");
         setNotice("");
 
-        // Extension 6a: Check acknowledgment
+        // Check review acknowledgment
         if (!eventForm.reviewedAcknowledgment) {
-            setError("Error: Artist must acknowledge they have reviewed the details of their submission before submitting (Extension 6a).");
+            setError("Please acknowledge you have reviewed the details of your event submission before submitting.");
             return;
         }
 
@@ -1040,19 +1031,12 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                 {/* MAIN WORKSPACE */}
                 <div className="workspace">
                     <header>
-                        <span>Independent art. Shared experiences. Full-stack verified.</span>
-                        <span className="status-dot">
-                            Backend ({API_BASE}):{" "}
-                            <strong style={{ color: backendConnected ? "#2c604c" : "#9e3926" }}>
-                                {backendConnected ? "Live Connected ●" : "Connecting/Offline ○"}
-                            </strong>
-                        </span>
+                        <span>ArtistConnect · The Independent Music & Art Community</span>
                     </header>
 
                     <main>
                         <div className="eyebrow">
                             {isGuest ? "BROWSING AS GUEST VISITOR" : `LOGGED IN AS ${currentUser.name.toUpperCase()} (${currentUser.role.toUpperCase()})`}
-                            {currentPath && <span style={{ marginLeft: "10px", opacity: 0.8 }}>· ROUTE: {currentPath}</span>}
                         </div>
 
                         <div className="page-heading">
@@ -1076,16 +1060,6 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     {tab === "Ban Appeals" && "Review fan ban appeals, inspect report evidence, and evaluate automated AI Terms of Service recommendations."}
                                 </p>
                             </div>
-
-                            <span className="pill">
-                                {["Following", "Fan Profile", "Fan Reports"].includes(tab) && "FAN COMMUNITY"}
-                                {tab === "Report Queue" && "ADMIN REVIEW"}
-                                {tab === "Recommendations" && "USE CASE: RECEIVE RECOMMENDATION"}
-                                {tab === "Manage Events" && "USE CASE: UPDATE EVENT"}
-                                {tab === "Ban Appeals" && "USE CASE: UNBAN FAN"}
-                                {tab === "Discover" && "COMMUNITY EXPLORER"}
-                                {tab === "Make a post" && "ARTIST STUDIO"}
-                            </span>
                         </div>
 
                         {notice && <div className="notice" role="status">{notice}</div>}
@@ -1340,7 +1314,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                     <div className="panel" style={{ maxWidth: "780px" }}>
                                         <div className="section-title">
                                             <div>
-                                                <span className="eyebrow">STEP 1 & 2: MODIFY EVENT INFORMATION</span>
+                                                <span className="eyebrow">EVENT INFORMATION</span>
                                                 <h2>Edit Event: {eventForm.title || "Existing Event"}</h2>
                                             </div>
                                             <button className="btn-secondary" onClick={() => setEventSubTab("list")}>Cancel</button>
@@ -2043,7 +2017,7 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                     <footer>
                         <b>ArtistConnect</b>
                         <span>A home for independent expression.</span>
-                        <span>Role-Based Access Control · Split Actor Routes Active</span>
+                        <span>© 2026 ArtistConnect. All rights reserved.</span>
                     </footer>
                 </div>
 
