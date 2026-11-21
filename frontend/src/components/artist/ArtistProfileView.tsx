@@ -116,6 +116,11 @@ export function ArtistProfileView({
                 store.posts = store.posts.filter((p: { id: string }) => p.id !== postId);
                 localStorage.setItem("appStore", JSON.stringify(store));
             }
+            const v2 = JSON.parse(localStorage.getItem("artistconnect-ui-v2") || "{}");
+            if (v2.posts) {
+                v2.posts = v2.posts.filter((p: { id: string }) => p.id !== postId);
+                localStorage.setItem("artistconnect-ui-v2", JSON.stringify(v2));
+            }
         } catch {}
         setNotice("Post removed from your artist showcase.");
     }
@@ -894,7 +899,7 @@ export function ArtistProfileView({
                                         <span className="pill" style={{ fontSize: "9px" }}>
                                             ARTIST POST
                                         </span>
-                                        {isOwner && (
+                                        {(isOwner || currentUser?.role === "Admin" || (currentUser?.name && p.authorName === currentUser.name)) && (
                                             <>
                                                 <button
                                                     type="button"
@@ -1197,7 +1202,7 @@ export function ArtistProfileView({
                                                                 )}
 
                                                                 {/* Monitor Comments Options for Artist */}
-                                                                {isOwner && (
+                                                                {(isOwner || currentUser?.role === "Admin" || (currentUser?.name && p.authorName === currentUser.name)) && (
                                                                     <>
                                                                         <button
                                                                             type="button"

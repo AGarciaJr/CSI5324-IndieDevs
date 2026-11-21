@@ -182,13 +182,24 @@ export function getPostsForArtist(artistId: number): ArtistPost[] {
         if (stored) {
             const parsed = JSON.parse(stored);
             if (parsed && Array.isArray(parsed.posts)) {
+                const artistObj = SAMPLE_ARTISTS.find((a) => a.id === artistId);
                 const userPosts: ArtistPost[] = parsed.posts
-                    .filter((p: { artistId?: number }) => !p.artistId || p.artistId === artistId)
+                    .filter((p: { artistId?: number; authorName?: string }) => {
+                        // If post has an explicit artistId, strictly check it
+                        if (p.artistId !== undefined && p.artistId !== null) {
+                            return Number(p.artistId) === artistId;
+                        }
+                        // If it's a legacy post without an artistId, only match if the author matches
+                        if (p.authorName && artistObj) {
+                            return p.authorName.toLowerCase() === artistObj.name.toLowerCase();
+                        }
+                        return false;
+                    })
                     .map((p: ArtistPost) => ({
                         ...p,
-                        artistId: p.artistId || artistId,
-                        authorName: p.authorName || (artistId === 9 ? "William Waweru" : "Artist"),
-                        authorAvatar: p.authorAvatar || "WW",
+                        artistId,
+                        authorName: p.authorName || artistObj?.name || "Artist",
+                        authorAvatar: p.authorAvatar || (artistObj ? artistObj.name.split(" ").map((s) => s[0]).slice(0, 2).join("") : "AR"),
                     }));
                 const samples = SAMPLE_ARTIST_POSTS.filter((p) => p.artistId === artistId);
                 const combined = [...userPosts, ...samples];

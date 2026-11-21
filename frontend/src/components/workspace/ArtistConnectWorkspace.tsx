@@ -1772,14 +1772,14 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="panel" style={{ marginBottom: "24px", background: "#f8faf5", borderColor: "#cbd6c5" }}>
+                                            <div className="panel" style={{ marginBottom: "24px", borderLeft: "4px solid var(--spray-cyan)" }}>
                                                 <div className="section-title">
                                                     <div>
-                                                        <span className="pill" style={{ background: "#e8efe1", color: "#325c41" }}>NEW FAN PROFILE</span>
-                                                        <h2 style={{ margin: "8px 0 4px" }}>Start Discovering New Artists</h2>
+                                                        <span className="pill" style={{ background: "rgba(6, 182, 212, 0.15)", color: "var(--spray-cyan)", borderColor: "rgba(6, 182, 212, 0.35)" }}>NEW FAN PROFILE</span>
+                                                        <h2 style={{ margin: "8px 0 4px", color: "#ffffff" }}>Start Discovering New Artists</h2>
                                                     </div>
                                                 </div>
-                                                <p style={{ fontSize: "13px", color: "#45594e" }}>
+                                                <p style={{ fontSize: "13px", color: "var(--ink-secondary)" }}>
                                                     {recommendationData.message}
                                                 </p>
                                                 <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
@@ -1885,10 +1885,10 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                         <p>{artist.genre} · {artist.location}</p>
 
                                                         <div style={{ margin: "10px 0", flex: 1 }}>
-                                                            <div style={{ background: "#f5f8f2", padding: "10px", borderRadius: "8px", border: "1px solid #e1eadc", fontSize: "11px", color: "#314b3d" }}>
-                                                                <b>AI Reason:</b> {reason}
+                                                            <div style={{ background: "rgba(6, 182, 212, 0.08)", padding: "10px", borderRadius: "8px", border: "1px solid rgba(6, 182, 212, 0.25)", fontSize: "11px", color: "var(--spray-cyan)" }}>
+                                                                <b>AI Match Reason:</b> {reason}
                                                             </div>
-                                                            <small style={{ display: "block", marginTop: "6px", color: "#6a7c6f", fontSize: "10px" }}>
+                                                            <small style={{ display: "block", marginTop: "6px", color: "var(--muted)", fontSize: "10px" }}>
                                                                 {latentFeatureSummary}
                                                             </small>
                                                         </div>
@@ -2235,11 +2235,11 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                         {/* TAB: BAN APPEALS (USE CASE: UNBAN FAN - ADMIN) */}
                         {tab === "Ban Appeals" && (
                             <div>
-                                <div className="panel" style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fcfaf7" }}>
+                                <div className="panel" style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderLeft: "4px solid var(--spray-purple)" }}>
                                     <div>
-                                        <span className="eyebrow">MODERATOR SESSION</span>
-                                        <h3 style={{ margin: "4px 0" }}>Logged in as {effectiveUser.name} (Admin ID: {effectiveUser.id})</h3>
-                                        <small>Policy: A different admin than the banning admin must review appeals (conflict of interest prevention).</small>
+                                        <span className="eyebrow" style={{ color: "var(--spray-purple)", letterSpacing: "1px" }}>MODERATOR SESSION</span>
+                                        <h3 style={{ margin: "4px 0", color: "#ffffff" }}>Logged in as {effectiveUser.name} (Admin ID: {effectiveUser.id})</h3>
+                                        <small style={{ color: "var(--muted)" }}>Policy: A different admin than the banning admin must review appeals (conflict of interest prevention).</small>
                                     </div>
 
                                     <div style={{ display: "flex", gap: "8px" }}>
@@ -2308,21 +2308,21 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
 
                                                 <div style={{ marginTop: "16px" }}>
                                                     <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Fan&apos;s Submitted Reason for Appeal:</b>
-                                                    <p style={{ background: "#f8faf5", padding: "14px", borderRadius: "8px", border: "1px solid #dce5dc", margin: "6px 0 16px", fontSize: "13px" }}>
+                                                    <p style={{ background: "rgba(255, 255, 255, 0.04)", padding: "14px 16px", borderRadius: "10px", border: "1px solid var(--line-strong)", margin: "6px 0 16px", fontSize: "13px", color: "var(--ink)", lineHeight: "1.6" }}>
                                                         &ldquo;{selectedAppeal.reason}&rdquo;
                                                     </p>
                                                 </div>
 
                                                 <div>
-                                                    <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Offending Content (Flagged Violation):</b>
-                                                    <div style={{ background: "#fffaf7", padding: "12px 14px", borderRadius: "8px", border: "1px dashed #e8c5ba", margin: "6px 0 16px", fontSize: "13px", color: "#8a3525", fontStyle: "italic" }}>
+                                                    <b style={{ fontSize: "11px", color: "var(--spray-pink)", textTransform: "uppercase" }}>Offending Content (Flagged Violation):</b>
+                                                    <div style={{ background: "rgba(244, 63, 94, 0.08)", padding: "12px 16px", borderRadius: "10px", border: "1px dashed rgba(244, 63, 94, 0.35)", margin: "6px 0 16px", fontSize: "13px", color: "#fda4af", fontStyle: "italic", lineHeight: "1.6" }}>
                                                         &ldquo;{selectedAppeal.offendingContent || "some sentence breaking ToS"}&rdquo;
                                                     </div>
                                                 </div>
 
                                                 <div>
-                                                    <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Incident Report Material & Evidence:</b>
-                                                    <div style={{ background: "#fff5f2", padding: "12px 14px", borderRadius: "8px", border: "1px solid #f2dbd5", margin: "6px 0 16px", fontSize: "12px", fontFamily: "monospace", color: "#8a3525" }}>
+                                                    <b style={{ fontSize: "11px", color: "var(--spray-cyan)", textTransform: "uppercase" }}>Incident Report Material & Evidence:</b>
+                                                    <div style={{ background: "rgba(0, 0, 0, 0.35)", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--line)", margin: "6px 0 16px", fontSize: "12px", fontFamily: "var(--font-mono, monospace)", color: "var(--spray-cyan)", lineHeight: "1.6" }}>
                                                         {selectedAppeal.reportMaterial}
                                                     </div>
                                                 </div>
@@ -2806,27 +2806,27 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                 ) : (
                                     <div style={{ display: "grid", gap: "20px", marginTop: "20px" }}>
                                         {applicationsList.map((app) => (
-                                            <div key={app.id} style={{ background: "#fcfaf7", border: "1px solid var(--line)", borderRadius: "12px", padding: "20px" }}>
+                                            <div key={app.id} className="panel" style={{ padding: "20px" }}>
                                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
                                                     <div>
                                                         <h3 style={{ margin: "0 0 4px" }}>{app.applicantName}</h3>
                                                         <span className="pill">Proposed Genre: {app.proposedGenre}</span>
-                                                        <span className="pill" style={{ marginLeft: "8px", background: "#f5f5ea" }}>App ID: {app.id}</span>
+                                                        <span className="pill" style={{ marginLeft: "8px" }}>App ID: {app.id}</span>
                                                     </div>
                                                     <span style={{ fontSize: "12px", color: "var(--muted)" }}>
                                                         Submitted: {app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "Unknown"}
                                                     </span>
                                                 </div>
 
-                                                <div style={{ background: "white", border: "1px solid #e1eadc", padding: "16px", borderRadius: "8px", marginBottom: "20px" }}>
+                                                <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid var(--line)", padding: "16px", borderRadius: "10px", marginBottom: "20px" }}>
                                                     <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Portfolio & Identity Links:</b>
-                                                    <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "6px 0 10px", color: "#2c4538" }}>
+                                                    <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "6px 0 10px", color: "var(--ink)" }}>
                                                         {app.portfolioLinks || "None provided"}
                                                     </p>
                                                     {app.description && (
-                                                        <div style={{ marginTop: "10px", borderTop: "1px dashed #cbd6c5", paddingTop: "8px" }}>
-                                                            <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Artist Statement & Application Description:</b>
-                                                            <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "4px 0 0", color: "#2c4538" }}>
+                                                        <div style={{ marginTop: "10px", borderTop: "1px dashed var(--line)", paddingTop: "8px" }}>
+                                                             <b style={{ fontSize: "11px", color: "var(--muted)", textTransform: "uppercase" }}>Artist Statement & Application Description:</b>
+                                                             <p style={{ fontSize: "13px", whiteSpace: "pre-line", margin: "4px 0 0", color: "var(--ink-secondary)" }}>
                                                                 {app.description}
                                                             </p>
                                                         </div>
@@ -2841,9 +2841,8 @@ function ArtistConnectWorkspaceInner({ currentUser, login, logout, currentPath, 
                                                         Approve & Provision Artist Profile
                                                     </button>
                                                     <button
-                                                        className="btn-secondary"
+                                                        className="btn-danger"
                                                         onClick={() => handleRejectApplication(app.id, app.applicantName)}
-                                                        style={{ color: "#9e3926", borderColor: "#eccdc6" }}
                                                     >
                                                         Reject Application
                                                     </button>
