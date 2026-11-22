@@ -45,6 +45,12 @@ public class FanCommunityService {
         accounts.lockById(id).orElseThrow(() -> fail(HttpStatus.UNAUTHORIZED, "Unknown account"));
         return fan(id);
     }
+    private UserAccount communityMember(Long id) { return access.requireAnyRole(id, Role.FAN, Role.ARTIST); }
+    private UserAccount lockedMember(Long id) {
+        communityMember(id);
+        accounts.lockById(id).orElseThrow(() -> fail(HttpStatus.UNAUTHORIZED, "Unknown account"));
+        return communityMember(id);
+    }
     private Artist artist(Long id) {
         return artists.findById(id).orElseThrow(() -> fail(HttpStatus.NOT_FOUND, "Artist not found"));
     }
@@ -57,9 +63,9 @@ public class FanCommunityService {
                 follows.existsByFanIdAndArtistId(fanId, artist.getId()));
     }
     public FollowView followState(Long fanId, Long artistId) {
-        fan(fanId); return view(fanId, artist(artistId));
+        communityMember(fanId); return view(fanId, artist(artistId));
     }
-    public List<FollowView> following(Long fanId) { fan(fanId); return followList(fanId); }
+    public List<FollowView> following(Long fanId) { communityMember(fanId); return followList(fanId); }
     private List<FollowView> followList(Long fanId) {
         return follows.findByFanIdOrderByCreatedAtDesc(fanId).stream()
                 .map(f -> artists.findById(f.getArtistId()).map(a -> view(fanId, a)).orElse(null))
@@ -67,7 +73,10 @@ public class FanCommunityService {
     }
     public FollowView follow(Long fanId, Long artistId) {
         // Serializes same-account mutations. The unique constraint also protects the relationship.
-        lockedFan(fanId);
+        lockedMember(fanId);
+        if (accounts.findByArtistId(artistId).stream().anyMatch(a -> a.getId().equals(fanId))) {
+            throw fail(HttpStatus.FORBIDDEN, "You cannot follow your own artist profile");
+        }
         Artist artist = artist(artistId);
         if (!available(artist)) throw fail(HttpStatus.CONFLICT, "This artist is unavailable and cannot be followed");
         if (!follows.existsByFanIdAndArtistId(fanId, artistId)) {
@@ -83,7 +92,7 @@ public class FanCommunityService {
         return view(fanId, artist);
     }
     public void unfollow(Long fanId, Long artistId) {
-        lockedFan(fanId); follows.deleteByFanIdAndArtistId(fanId, artistId);
+        lockedMember(fanId); follows.deleteByFanIdAndArtistId(fanId, artistId);
         interactions.deleteAll(interactions.findByFanIdAndArtistId(fanId, artistId).stream()
                 .filter(i -> "FOLLOW".equals(i.getInteractionType())).toList());
     }

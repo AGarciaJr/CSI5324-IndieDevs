@@ -27,6 +27,9 @@ public class ArtistApplication {
     @Column(name = "portfolio_links", length = 1000)
     private String portfolioLinks;
 
+    @Column(name = "description", length = 2000)
+    private String description;
+
     @Column(name = "status", length = 20)
     private String status = "PENDING";
 

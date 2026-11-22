@@ -36,4 +36,21 @@ public class AccessControlService {
         return account;
     }
 
+    public UserAccount requireAnyRole(Long userId, Role... allowedRoles) {
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sign in to continue");
+        }
+        UserAccount account = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown account"));
+        if (!account.isActive()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This account is " + account.getStatus().name().toLowerCase());
+        }
+        for (Role r : allowedRoles) {
+            if (account.getRole() == r) {
+                return account;
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only authorized accounts can do this");
+    }
+
 }

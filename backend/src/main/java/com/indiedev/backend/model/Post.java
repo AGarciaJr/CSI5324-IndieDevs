@@ -22,6 +22,22 @@ public class Post {
     private boolean isPublic;
     private boolean commentsAllowed;
 
+    public boolean isPublic() {
+        return isPublic;
+    }
+
+    public boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public void setIsPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
     private String postText;
 
     // Set when an admin removes the post after a report

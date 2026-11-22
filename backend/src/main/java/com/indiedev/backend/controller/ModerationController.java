@@ -15,9 +15,13 @@ import java.util.List;
 public class ModerationController {
 
     private final ModerationService moderationService;
+    private final com.indiedev.backend.service.AccessControlService accessControlService;
 
-    public ModerationController(ModerationService moderationService) {
+    public ModerationController(
+            ModerationService moderationService,
+            com.indiedev.backend.service.AccessControlService accessControlService) {
         this.moderationService = moderationService;
+        this.accessControlService = accessControlService;
     }
 
     @GetMapping("/fans")
@@ -41,7 +45,12 @@ public class ModerationController {
      * performed by this admin to prevent conflict of interest.
      */
     @GetMapping("/appeals/open")
-    public List<BanAppeal> getOpenAppeals(@RequestParam(required = false) Long adminId) {
+    public List<BanAppeal> getOpenAppeals(
+            @RequestParam(required = false) Long adminId,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.getOpenAppealsForAdmin(adminId);
     }
 
@@ -50,7 +59,12 @@ public class ModerationController {
      * Retrieves details for a specific appeal (reasoning, report material, AI recommendation).
      */
     @GetMapping("/appeals/{id}")
-    public BanAppeal getAppealById(@PathVariable Long id) {
+    public BanAppeal getAppealById(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.getAppealById(id);
     }
 
@@ -62,7 +76,11 @@ public class ModerationController {
     public BanAppeal unbanFan(
             @PathVariable Long id,
             @RequestParam Long adminId,
-            @RequestParam(required = false) String notes) {
+            @RequestParam(required = false) String notes,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.unbanFan(id, adminId, notes);
     }
 
@@ -74,7 +92,11 @@ public class ModerationController {
     public BanAppeal markAppealInvalid(
             @PathVariable Long id,
             @RequestParam Long adminId,
-            @RequestParam(required = false) String notes) {
+            @RequestParam(required = false) String notes,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.markAppealInvalid(id, adminId, notes);
     }
 
@@ -83,22 +105,46 @@ public class ModerationController {
      * Toggles the isSuspended flag to true for a given artist ID.
      */
     @PutMapping("/artists/{artistId}/suspend")
-    public Artist suspendArtist(@PathVariable Long artistId) {
+    public Artist suspendArtist(
+            @PathVariable Long artistId,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.suspendArtist(artistId);
     }
 
     @GetMapping("/applications/pending")
-    public List<ArtistApplication> getPendingApplications() {
+    public List<ArtistApplication> getPendingApplications(
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.getPendingApplications();
     }
 
+    @PostMapping("/applications")
+    public ArtistApplication submitApplication(@RequestBody ArtistApplication app) {
+        return moderationService.submitApplication(app);
+    }
+
     @PutMapping("/applications/{applicationId}/approve")
-    public ArtistApplication approveApplication(@PathVariable Long applicationId) {
+    public ArtistApplication approveApplication(
+            @PathVariable Long applicationId,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.approveApplication(applicationId);
     }
 
     @PutMapping("/applications/{applicationId}/reject")
-    public ArtistApplication rejectApplication(@PathVariable Long applicationId) {
+    public ArtistApplication rejectApplication(
+            @PathVariable Long applicationId,
+            @RequestHeader(value = "X-User-Id", required = false) Long callerId) {
+        if (callerId != null) {
+            accessControlService.requireRole(callerId, com.indiedev.backend.model.Role.ADMIN);
+        }
         return moderationService.rejectApplication(applicationId);
     }
 }

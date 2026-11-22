@@ -30,6 +30,13 @@ public class ModerationService {
         return applicationRepository.findByStatus("PENDING");
     }
 
+    public ArtistApplication submitApplication(ArtistApplication app) {
+        if (app.getStatus() == null || app.getStatus().isBlank()) {
+            app.setStatus("PENDING");
+        }
+        return applicationRepository.save(app);
+    }
+
     public ModerationService(FanRepository fanRepository, BanAppealRepository banAppealRepository,
                              ArtistRepository artistRepository, ArtistApplicationRepository applicationRepository) {
         this.fanRepository = fanRepository;
