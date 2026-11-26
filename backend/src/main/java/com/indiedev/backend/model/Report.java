@@ -34,12 +34,13 @@ public class Report {
     @Column(nullable = false)
     private Long reportedUserId;
 
+    @Column(columnDefinition = "TEXT")
     private String reason;
 
     @Column(length = 2000)
     private String details;
 
-    @Column(length = 4500)
+    @Column(columnDefinition = "TEXT")
     private String targetSnapshot;
 
     @Enumerated(EnumType.STRING)
@@ -53,6 +54,7 @@ public class Report {
     private ModerationAction action;
     private Long resolvedBy;
     private LocalDateTime resolvedAt;
+    @Column(columnDefinition = "TEXT")
     private String resolutionNotes;
 
     public Report() {

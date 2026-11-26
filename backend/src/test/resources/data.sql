@@ -34,7 +34,7 @@ INSERT INTO user_accounts (id, username, display_name, role, status, artist_id, 
 INSERT INTO posts (id, poster_id, post_date, is_public, comments_allowed, post_text, hidden) VALUES
     (1000, 4, CURRENT_TIMESTAMP, TRUE, TRUE, 'New single out Friday!', FALSE);
 
-INSERT INTO events (id, artist_id, event_type, title, description, starts_at, location, virtual, capacity, status, reviewed_acknowledgment, created_at, updated_at) VALUES
+INSERT INTO events (id, artist_id, event_type, title, description, starts_at, location, is_virtual, capacity, status, reviewed_acknowledgment, created_at, updated_at) VALUES
     (1, 5, 'Concert', 'Free Tickets Giveaway', 'Click this link to claim free tickets', DATEADD('DAY', 30, CURRENT_TIMESTAMP), 'Waco, TX', FALSE, 100, 'PENDING_APPROVAL', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (2, 1, 'Concert', 'Austin Acoustic Night', 'An intimate evening of acoustic songs and storytelling at the historic Paramount Theatre.', DATEADD('DAY', 15, CURRENT_TIMESTAMP), 'Paramount Theatre, Austin, TX', FALSE, 120, 'PUBLISHED', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     (3, 1, 'Workshop', 'Songwriting from the Heart', 'Hands-on interactive lyric writing and song arrangement workshop for local independent artists.', DATEADD('DAY', 25, CURRENT_TIMESTAMP), 'Downtown Cultural Arts Center, Austin, TX', FALSE, 35, 'DRAFT', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),

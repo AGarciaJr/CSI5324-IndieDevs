@@ -13,6 +13,8 @@ public class ReportEvidence {
     @Enumerated(EnumType.STRING) private ReportTargetType targetType;
     private Long targetId;
     private Long reportedUserId;
+
+    @Lob
     @Column(length = 4500) private String snapshot;
     private LocalDateTime capturedAt = LocalDateTime.now();
 }

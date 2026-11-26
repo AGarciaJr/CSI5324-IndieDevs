@@ -32,22 +32,22 @@ public class BanAppeal {
     private String banningAdminName;
     private Long reviewingAdminId;
 
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String reason;
 
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String offendingContent;
 
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String reportMaterial;
 
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String aiRecommendation;
 
     @Enumerated(EnumType.STRING)
     private AppealStatus status = AppealStatus.OPEN;
 
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String reviewNotes;
 
     private LocalDateTime createdAt;

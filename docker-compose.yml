@@ -1,4 +1,24 @@
 services:
+  database:
+    image: mysql:8.4
+    container_name: artistconnect-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-artistconnect}
+      MYSQL_USER: ${MYSQL_USER:-artistconnect}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -7,8 +27,15 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - PORT=8080
-      - SPRING_PROFILES_ACTIVE=default
+      PORT: 8080
+      SPRING_PROFILES_ACTIVE: default
+      SPRING_DATASOURCE_URL: jdbc:mysql://database:3306/${MYSQL_DATABASE:-artistconnect}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-artistconnect}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-password}
+      JPA_DDL_AUTO: update
+    depends_on:
+      database:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -16,32 +43,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://localhost:8080
+        NEXT_PUBLIC_API_URL: http://localhost:8080
     container_name: artistconnect-frontend
     ports:
       - "3000:3000"
     environment:
-      - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      INTERNAL_API_URL: http://backend:8080
     depends_on:
       - backend
     restart: unless-stopped
-
-  # Optional database service ready for database handoff
-  database:
-    image: postgres:16-alpine
-    container_name: artistconnect-db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: artistconnect
-      POSTGRES_USER: artistconnect
-      POSTGRES_PASSWORD: password
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    restart: unless-stopped
-    profiles:
-      - db
 
 volumes:
   db-data:

@@ -36,7 +36,7 @@ public class Conversation {
     @Column(name = "user2_name")
     private String user2Name;
 
-    @Column(name = "last_message_text", length = 1000)
+    @Column(name = "last_message_text", columnDefinition = "TEXT")
     private String lastMessageText;
 
     @Column(name = "last_message_at")

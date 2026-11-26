@@ -39,10 +39,12 @@ public class Event {
     // A street address, or a meeting link when the event is virtual
     private String location;
 
+    @Column(name = "is_virtual")
     private Boolean virtual = false;
 
     private Integer capacity;
 
+    @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
     @ElementCollection(fetch = FetchType.EAGER)

@@ -24,10 +24,10 @@ public class ArtistApplication {
     @Column(name = "proposed_genre")
     private String proposedGenre;
 
-    @Column(name = "portfolio_links", length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String portfolioLinks;
 
-    @Column(name = "description", length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "status", length = 20)

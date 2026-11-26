@@ -9,10 +9,20 @@ import lombok.Setter;
 public class FanProfile {
     @Id private Long userId;
     @Version private Long version;
-    @Column(length = 80) private String displayName;
-    @Column(length = 2000) private String biography = "";
-    @Column(length = 300) private String interests = "";
-    @Column(length = 700000) private String image = "";
+
+    @Column(length = 80)
+    private String displayName;
+
+    @Column(length = 2000)
+    private String biography = "";
+
+    @Column(length = 300)
+    private String interests = "";
+
+    @Lob
+    @Column(length = 700000)
+    private String image = "";
+
     private boolean publicProfile = true;
     private boolean showInterests = true;
     private boolean showFollowing = true;

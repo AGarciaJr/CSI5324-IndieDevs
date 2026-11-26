@@ -12,12 +12,14 @@ import lombok.Setter;
 public class PostFile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long postId;
 
     private String type;
+
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
 
     public PostFile() {}
